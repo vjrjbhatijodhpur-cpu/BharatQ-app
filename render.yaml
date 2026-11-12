@@ -37,4 +37,4 @@ databases:
   - name: bharatq-postgres-db
     databaseName: bharatq_prod
     user: bharatq_admin
-    plan: free
+    plan: basic-256mb
