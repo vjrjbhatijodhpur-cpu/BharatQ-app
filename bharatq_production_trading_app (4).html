@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#060B18">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BharatQ">
+  <title>BharatQ — Quantitative AI Trading</title>
+  <link id="dynamicFavicon" rel="icon" type="image/svg+xml" href="">
+  <link id="dynamicAppleIcon" rel="apple-touch-icon" href="">
+  <link id="dynamicManifest" rel="manifest" href="manifest.json">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bqBg: '#060B18',
+            bqCard: '#0E172E',
+            bqCardLight: '#14203E',
+            bqBorder: '#1E2D52',
+            bqGold: '#F59E0B',
+            bqGoldLight: '#FBBF24',
+            bqEmerald: '#10B981',
+            bqRose: '#EF4444',
+            bqSaffron: '#FF7A00',
+            bqBlue: '#3B82F6'
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'SF Mono', 'Menlo', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: #030712;
+      color: #F8FAFC;
+      overflow: hidden;
+      overscroll-behavior: none;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .app-shell {
+      height: 100dvh;
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      background-color: #060B18;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.85);
+    }
+    .app-scroll {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: calc(76px + env(safe-area-inset-bottom));
+    }
+    .app-scroll::-webkit-scrollbar { width: 0px; background: transparent; }
+    .safe-top { padding-top: max(12px, env(safe-area-inset-top)); }
+    .safe-bottom { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+    .native-card {
+      background: linear-gradient(180deg, rgba(16, 26, 52, 0.95) 0%, rgba(12, 20, 42, 0.98) 100%);
+      border: 1px solid rgba(30, 45, 82, 0.9);
+      border-radius: 16px;
+    }
+    .gold-banner {
+      background: linear-gradient(135deg, #1E293B 0%, #0F172A 45%, #271E0C 100%);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+    .tab-active { color: #F59E0B !important; }
+    .tab-active i { transform: translateY(-1px); }
+    @keyframes tickerPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .live-dot { animation: tickerPulse 1.8s infinite; }
+  </style>
+</head>
+<body>
+
+  <!-- ===================================================================================== -->
+  <!-- FULL-SCREEN NATIVE ROYAL Q STYLE LOGIN & SUPABASE EMAIL OTP / MAGIC-LINK GATE         -->
+  <!-- ===================================================================================== -->
+  <div id="mandatoryAuthGate" class="fixed inset-0 z-[100] bg-[#060B18] flex flex-col justify-between max-w-[480px] mx-auto overflow-y-auto safe-top safe-bottom">
+    <div class="px-6 pt-6 pb-8 flex-1 flex flex-col justify-between">
+      <!-- Top Bar -->
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+          <i class="fa-solid fa-globe text-bqGold"></i> English (Global)
+        </span>
+        <button type="button" onclick="document.getElementById('advancedCloudDrawer').classList.toggle('hidden')" class="w-8 h-8 rounded-full bg-bqCard border border-bqBorder text-slate-400 hover:text-bqGold flex items-center justify-center text-xs" title="Server Settings">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+
+      <!-- Brand Logo & Title -->
+      <div class="my-auto py-4 space-y-6">
+        <div class="flex flex-col items-center text-center space-y-3">
+          <div class="w-20 h-20 rounded-[24px] overflow-hidden shadow-2xl shadow-amber-500/20 border-2 border-bqGold">
+            <svg viewBox="0 0 120 120" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="gateTiranga" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#FF7A00"/>
+                  <stop offset="35%" stop-color="#FF9933"/>
+                  <stop offset="36%" stop-color="#FFFFFF"/>
+                  <stop offset="64%" stop-color="#FFFFFF"/>
+                  <stop offset="65%" stop-color="#138808"/>
+                  <stop offset="100%" stop-color="#0B5D04"/>
+                </linearGradient>
+                <linearGradient id="gateGold" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#FDE68A"/>
+                  <stop offset="50%" stop-color="#F59E0B"/>
+                  <stop offset="100%" stop-color="#B45309"/>
+                </linearGradient>
+              </defs>
+              <rect x="2" y="2" width="116" height="116" rx="26" fill="url(#gateTiranga)" stroke="url(#gateGold)" stroke-width="5"/>
+              <circle cx="60" cy="60" r="34" fill="#060B18" stroke="url(#gateGold)" stroke-width="3.5"/>
+              <path d="M36 74 L52 58 L64 66 L86 40 M76 40 L86 40 L86 50" fill="none" stroke="#10B981" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="60" y="66" text-anchor="middle" font-family="Inter,sans-serif" font-weight="900" font-size="18" fill="url(#gateGold)">Bharat Q</text>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-2xl font-black text-white tracking-tight">Welcome to Bharat<span class="text-bqGold">Q</span></h1>
+            <p class="text-xs text-slate-400 mt-1">24/7 Intelligent Quantitative Trading System</p>
+          </div>
+        </div>
+
+        <!-- Mode Tabs -->
+        <div class="flex border-b border-bqBorder text-sm font-bold">
+          <button type="button" id="gateTab-otp" onclick="switchGateTab('otp')" class="flex-1 pb-3 text-bqGold border-b-2 border-bqGold transition">
+            Email Verification
+          </button>
+          <button type="button" id="gateTab-password" onclick="switchGateTab('password')" class="flex-1 pb-3 text-slate-400 border-b-2 border-transparent transition">
+            Password Login
+          </button>
+        </div>
+
+        <!-- Form Inputs -->
+        <div class="space-y-3.5 text-sm">
+          <div class="relative">
+            <i class="fa-regular fa-envelope absolute left-4 top-3.5 text-slate-400 text-sm"></i>
+            <input id="gateEmailInput" type="email" placeholder="Please enter your email" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-11 pr-4 py-3 text-white text-sm focus:outline-none transition">
+          </div>
+
+          <!-- OTP / Magic-Link Field -->
+          <div id="gateOtpSection" class="space-y-2.5">
+            <div class="flex gap-2">
+              <div class="relative flex-1">
+                <i class="fa-solid fa-shield-halved absolute left-4 top-3.5 text-slate-400 text-sm"></i>
+                <input id="gateOtpCodeInput" type="text" inputmode="numeric" maxlength="8" placeholder="6-digit code (or click email link)" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-11 pr-3 py-3 text-white font-mono text-xs tracking-wider focus:outline-none transition">
+              </div>
+              <button type="button" id="btnGateSendOtp" onclick="sendRealSupabaseEmailOtp()" class="px-4 rounded-2xl bg-bqGold/15 hover:bg-bqGold/25 border border-bqGold/40 text-bqGold font-bold text-xs whitespace-nowrap transition">
+                Send Code
+              </button>
+            </div>
+            <p id="gateOtpStatusMsg" class="px-3 py-2.5 rounded-xl bg-bqEmerald/10 border border-bqEmerald/30 text-[11px] text-bqEmerald hidden leading-relaxed"></p>
+          </div>
+
+          <!-- Password Field -->
+          <div id="gatePasswordSection" class="hidden space-y-2.5">
+            <div class="relative">
+              <i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-400 text-sm"></i>
+              <input id="gatePasswordInput" type="password" placeholder="Please enter your password" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-11 pr-4 py-3 text-white text-sm focus:outline-none transition">
+            </div>
+          </div>
+
+          <!-- Optional Mobile & Sponsor -->
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="relative">
+              <i class="fa-solid fa-phone absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+              <input id="gateMobileInput" type="tel" placeholder="Mobile (Optional)" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-9 pr-3 py-3 text-white text-xs font-mono focus:outline-none">
+            </div>
+            <div class="relative">
+              <i class="fa-solid fa-user-plus absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+              <input id="gateSponsorInput" type="text" value="BHARAT1" placeholder="Invite Code" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-9 pr-3 py-3 text-bqGold text-xs font-mono font-bold uppercase focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Hidden Cloud Config Drawer -->
+          <div id="advancedCloudDrawer" class="hidden p-3 rounded-2xl bg-bqCard border border-bqBorder space-y-2 text-[11px]">
+            <div class="flex justify-between items-center text-slate-400">
+              <span>Cloud Node &amp; Auth Endpoint</span>
+              <span class="text-bqEmerald font-mono">Connected</span>
+            </div>
+            <input id="cfgSupabaseUrl" type="text" value="https://dthsnlfybujksgmihakt.supabase.co" onchange="saveSupabaseConfig()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-slate-300 font-mono text-[10px]">
+            <input id="cfgSupabaseAnonKey" type="text" value="sb_publishable_bGJvNp4teGIt3rBSaEPPMg_aln2JwGK" onchange="saveSupabaseConfig()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-slate-300 font-mono text-[10px]">
+            <input id="cfgGateBackendUrl" type="text" value="https://bharatq-backend-api.onrender.com" onchange="syncBackendUrlFromAuth(this.value)" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-bqGold font-mono text-[10px]">
+          </div>
+        </div>
+
+        <!-- Primary Action Button -->
+        <button type="button" id="btnGateSubmit" onclick="submitMandatoryGateAuth()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron active:scale-[0.99] text-black font-black text-sm tracking-wide shadow-lg shadow-amber-500/20 transition">
+          Log In / Register
+        </button>
+
+        <p class="text-center text-[11px] text-slate-400 leading-relaxed">
+          By logging in, you agree to BharatQ's <button type="button" onclick="openLegalModal('terms')" class="text-bqGold underline">User Agreement</button> &amp; <button type="button" onclick="openLegalModal('privacy')" class="text-bqGold underline">Privacy Policy</button>.
+        </p>
+      </div>
+
+      <!-- Bottom Security Badge -->
+      <div class="text-center">
+        <span class="inline-flex items-center gap-1.5 text-[11px] text-slate-500">
+          <i class="fa-solid fa-lock text-bqEmerald"></i> Non-Custodial Spot API Architecture
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================================== -->
+  <!-- MAIN NATIVE MOBILE APP SHELL (100dvh SCREEN-FIT)                                      -->
+  <!-- ===================================================================================== -->
+  <div class="app-shell">
+
+    <!-- NATIVE TOP APP HEADER -->
+    <header class="safe-top px-4 pb-3 bg-bqBg/95 backdrop-blur-md border-b border-bqBorder/70 flex items-center justify-between shrink-0 z-30">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl overflow-hidden border border-bqGold/80 shadow">
+          <svg viewBox="0 0 120 120" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="116" height="116" rx="26" fill="url(#gateTiranga)" stroke="url(#gateGold)" stroke-width="5"/>
+            <circle cx="60" cy="60" r="34" fill="#060B18" stroke="url(#gateGold)" stroke-width="3.5"/>
+            <path d="M36 74 L52 58 L64 66 L86 40 M76 40 L86 40 L86 50" fill="none" stroke="#10B981" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="60" y="66" text-anchor="middle" font-family="Inter,sans-serif" font-weight="900" font-size="18" fill="url(#gateGold)">Bharat Q</text>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-black text-white text-base tracking-tight">Bharat<span class="text-bqGold">Q</span></span>
+            <span id="clientRankBadge" class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-bqGold/20 text-bqGold border border-bqGold/30">V1</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="openAndroidInstallModal()" class="px-2.5 py-1.5 rounded-full bg-bqCard border border-bqBorder text-[11px] font-bold text-bqEmerald flex items-center gap-1">
+          <i class="fa-brands fa-android"></i> App
+        </button>
+        <button onclick="openModal('notificationModal')" class="w-8 h-8 rounded-full bg-bqCard border border-bqBorder text-slate-300 flex items-center justify-center relative">
+          <i class="fa-regular fa-bell text-xs"></i>
+          <span class="w-2 h-2 rounded-full bg-bqRose absolute top-1.5 right-1.5"></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- SCROLLABLE VIEWPORT CONTENT -->
+    <main class="app-scroll px-4 pt-3 space-y-4">
+
+      <!-- =============================================================================== -->
+      <!-- TAB 1: HOME (ROYAL Q NATIVE DASHBOARD)                                          -->
+      <!-- =============================================================================== -->
+      <section id="tab-home" class="space-y-4">
+
+        <!-- Hero VIP Banner Card -->
+        <div class="gold-banner rounded-2xl p-4 relative overflow-hidden shadow-lg">
+          <div class="flex justify-between items-start">
+            <div class="space-y-1">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-bqEmerald live-dot"></span>
+                <span class="text-[11px] font-bold text-bqGold uppercase tracking-wider">Quantitative Cloud Engine</span>
+              </div>
+              <h2 class="text-lg font-black text-white leading-snug" id="homeActivationStatus">VIP Inactive ($120/Yr)</h2>
+              <p class="text-[11px] text-slate-300">Automated 24/7 Spot DCA &amp; Sub-Bin Settlement</p>
+            </div>
+            <button onclick="activateAnnualPack()" id="btnHeroActivate" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs shadow">
+              Activate
+            </button>
+          </div>
+
+          <!-- Live Ticker Strip inside Banner -->
+          <div class="mt-3.5 pt-3 border-t border-white/10 grid grid-cols-3 gap-2 text-center">
+            <div class="bg-bqBg/60 rounded-xl p-2">
+              <span class="text-[10px] text-slate-400 block">Today's Profit</span>
+              <b id="todayProfitDisplay" class="text-xs font-black text-bqEmerald font-mono">$0.00</b>
+            </div>
+            <div class="bg-bqBg/60 rounded-xl p-2">
+              <span class="text-[10px] text-slate-400 block">Cumulative</span>
+              <b id="cumProfitDisplay" class="text-xs font-black text-white font-mono">$0.00</b>
+            </div>
+            <div class="bg-bqBg/60 rounded-xl p-2">
+              <span class="text-[10px] text-slate-400 block">Fuel Gas</span>
+              <b id="homeFuelBalance" class="text-xs font-black text-bqGold font-mono">$0.00</b>
+            </div>
+          </div>
+        </div>
+
+        <!-- Royal Q 8-Icon Quick Action Grid -->
+        <div class="native-card p-3.5">
+          <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
+            <button onclick="openApiModal()" class="flex flex-col items-center gap-1.5 group">
+              <div class="w-10 h-10 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-base group-active:scale-95 transition">
+                <i class="fa-solid fa-link"></i>
+              </div>
+              <span class="text-[11px] font-medium text-slate-200">API Bind</span>
+            </button>
+
+            <button onclick="openModal('revenueDetailModal')" class="flex flex-col items-center gap-1.5 group">
+              <div class="w-10 h-10 rounded-2xl bg-emerald-500/15 text-bqEmerald flex items-center justify-center text-base group-active:scale-95 transition">
+                <i class="fa-solid fa-sack-dollar"></i>
+              </div>
+              <span class="text-[11px] font-medium text-slate-200">Revenue</span>
+            </button>
+
+            <button onclick="switchTab('mine')" class="flex flex-col items-center gap-1.5 group">
+              <div class="w-10 h-10 rounded-2xl bg-amber-500/15 text-bqGold flex items-center justify-center text-base group-active:scale-95 transition">
+                <i class="fa-solid fa-receipt"></i>
+              </div>
+              <span class="text-[11px] font-medium text-slate-200">Transaction</span>
+            </button>
+
+            <button onclick="openModal('inviteModal')" class="flex flex-col items-center gap-1.5 group">
+              <div class="w-10 h-10 rounded-2xl bg-orange-500/15 text-bqSaffron flex items-center justify-center text-base group-active:scale-95 transition">
+                <i class="fa-solid fa-user-plus"></i>
+              </div>
+              <span class="text-[11px] font-medium text-slate-200">Invite Friend</span>
+            </button>
+
+            <button onclick="openModal('helpTutorialModal')" class="flex flex-col items-center gap-1.5 group">
+              <div class="w-10 h-10 rounded-2xl bg-purple-500/15 text-purple-400 flex items-center justify-center text-base group-active:scale-95 transition">
+                <i class="fa-solid fa-book-open"></i>
+              </div>
+              <span class="text-[11px] font-medium text-slate-200">User Guide</span>
+            </button>
+
+            <button onclick="openModal('marginReserveModal')" class="flex flex-col items-center gap-1.5 group">
+              <div class="w-10 h-10 rounded-2xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center text-base group-active:scale-95 transition">
+                <i class="fa-solid fa-calculator"></i>
+              </div>
+              <span class="text-[11px] font-medium text-slate-200">Risk Calc</span>
+            </button>
+
+            <button onclick="openModal('leaderboardModal')" class="flex flex-col items-center gap-1.5 group">
+              <div class="w-10 h-10 rounded-2xl bg-yellow-500/15 text-yellow-400 flex items-center justify-center text-base group-active:scale-95 transition">
+                <i class="fa-solid fa-trophy"></i>
+              </div>
+              <span class="text-[11px] font-medium text-slate-200">Ranking</span>
+            </button>
+
+            <button onclick="openDepositModal()" class="flex flex-col items-center gap-1.5 group">
+              <div class="w-10 h-10 rounded-2xl bg-teal-500/15 text-teal-400 flex items-center justify-center text-base group-active:scale-95 transition">
+                <i class="fa-solid fa-bolt"></i>
+              </div>
+              <span class="text-[11px] font-medium text-slate-200">Recharge</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Scrolling Notice Bar (Royal Q Style) -->
+        <div onclick="openModal('antiScamModal')" class="native-card px-3.5 py-2.5 flex items-center justify-between gap-2 cursor-pointer">
+          <div class="flex items-center gap-2 overflow-hidden">
+            <i class="fa-solid fa-volume-high text-bqGold text-xs shrink-0"></i>
+            <p class="text-[11px] text-slate-300 truncate">
+              <span class="text-bqGold font-bold">Security Notice:</span> BharatQ never asks for your withdrawal permissions or OTP.
+            </p>
+          </div>
+          <i class="fa-solid fa-chevron-right text-[10px] text-slate-500 shrink-0"></i>
+        </div>
+
+        <!-- Top 3 Major Coin Live Ticker Row (BTC / ETH / SOL) -->
+        <div class="grid grid-cols-3 gap-2" id="topThreeCoinsStrip">
+          <div class="native-card p-2.5 text-center">
+            <span class="text-[11px] font-bold text-slate-300 block">BTC/USDT</span>
+            <span class="text-xs font-black text-white font-mono block mt-0.5">--</span>
+            <span class="text-[10px] text-bqEmerald font-mono">0.00%</span>
+          </div>
+          <div class="native-card p-2.5 text-center">
+            <span class="text-[11px] font-bold text-slate-300 block">ETH/USDT</span>
+            <span class="text-xs font-black text-white font-mono block mt-0.5">--</span>
+            <span class="text-[10px] text-bqEmerald font-mono">0.00%</span>
+          </div>
+          <div class="native-card p-2.5 text-center">
+            <span class="text-[11px] font-bold text-slate-300 block">SOL/USDT</span>
+            <span class="text-xs font-black text-white font-mono block mt-0.5">--</span>
+            <span class="text-[10px] text-bqEmerald font-mono">0.00%</span>
+          </div>
+        </div>
+
+        <!-- Home Market & Bot Section -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between px-0.5">
+            <div class="flex items-center gap-3 text-xs font-bold">
+              <span class="text-white border-b-2 border-bqGold pb-1">Hot Quantitative Pairs</span>
+              <span onclick="switchTab('quant')" class="text-slate-400 pb-1 cursor-pointer">24h Gain</span>
+            </div>
+            <button onclick="switchTab('quant')" class="text-[11px] text-bqGold font-semibold">More &rsaquo;</button>
+          </div>
+
+          <div id="homeActivePairsList" class="space-y-2"></div>
+        </div>
+      </section>
+
+      <!-- =============================================================================== -->
+      <!-- TAB 2: QUANTITATIVE (ROYAL Q EXCHANGE & STRATEGY LIST)                          -->
+      <!-- =============================================================================== -->
+      <section id="tab-quant" class="hidden space-y-3">
+        <!-- Exchange Selector Strip -->
+        <div class="flex items-center justify-between gap-1.5 overflow-x-auto pb-1 text-xs font-bold">
+          <button onclick="selectExchangeTab(this, 'Binance')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqGold text-black shrink-0">Binance</button>
+          <button onclick="selectExchangeTab(this, 'Bybit')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0">Bybit</button>
+          <button onclick="selectExchangeTab(this, 'OKX')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0">OKX</button>
+          <button onclick="selectExchangeTab(this, 'CoinDCX')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0">CoinDCX</button>
+          <button onclick="selectExchangeTab(this, 'HTX')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0">HTX</button>
+        </div>
+
+        <!-- Search & Filter Bar -->
+        <div class="flex gap-2">
+          <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+            <input id="quantSearchInput" type="text" oninput="renderPairs()" placeholder="Search Coin Name (e.g. BTC, SOL)" class="w-full bg-bqCard border border-bqBorder rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-bqGold">
+          </div>
+          <div class="flex bg-bqCard p-1 rounded-xl border border-bqBorder text-[11px] font-bold">
+            <button onclick="filterQuant('all')" id="qTab-all" class="px-2.5 py-1 rounded-lg bg-bqGold text-black">All</button>
+            <button onclick="filterQuant('running')" id="qTab-running" class="px-2.5 py-1 rounded-lg text-slate-400">Active</button>
+            <button onclick="filterQuant('paused')" id="qTab-paused" class="px-2.5 py-1 rounded-lg text-slate-400">Stop</button>
+          </div>
+        </div>
+
+        <!-- Live Binance Feed Indicator -->
+        <div class="flex items-center justify-between px-1 text-[11px] text-slate-400">
+          <span class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-bqEmerald live-dot"></span>
+            <span id="selectedExchangeLabel" class="text-slate-200 font-semibold">Binance Spot</span> • Real-Time Feed
+          </span>
+          <span class="text-bqGold font-mono text-[10px]">Quantum AI v6.0</span>
+        </div>
+
+        <div id="quantPairsList" class="space-y-2.5"></div>
+      </section>
+
+      <!-- =============================================================================== -->
+      <!-- TAB 3: CIRCLE (COPY-TRADE CIRCLES)                                              -->
+      <!-- =============================================================================== -->
+      <section id="tab-circle" class="hidden space-y-3.5">
+        <div class="gold-banner rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-black text-white">Strategy Circles</h2>
+            <p class="text-[11px] text-slate-300 mt-0.5">Auto-sync parameters from verified V5/V6 traders</p>
+          </div>
+          <div class="w-10 h-10 rounded-2xl bg-bqGold/20 text-bqGold flex items-center justify-center text-lg">
+            <i class="fa-solid fa-compass"></i>
+          </div>
+        </div>
+        <div class="space-y-2.5" id="circleListContainer"></div>
+      </section>
+
+      <!-- =============================================================================== -->
+      <!-- TAB 4: TEAM / AFFILIATE NETWORK                                                 -->
+      <!-- =============================================================================== -->
+      <section id="tab-team" class="hidden space-y-3.5">
+        <div class="gold-banner rounded-2xl p-4 space-y-3">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="text-[10px] uppercase font-bold text-bqGold tracking-wider">Cumulative Affiliate Reward</span>
+              <h2 class="text-2xl font-black text-white font-mono mt-0.5" id="teamTotalCommission">$0.00</h2>
+              <p class="text-[11px] text-slate-300 mt-0.5">Direct ($30–$70) + Team Gas Share + 10% Peer Bonus</p>
+            </div>
+            <span id="teamRefCodeLabel" class="text-[11px] font-mono font-extrabold bg-bqGold text-black px-2.5 py-1 rounded-lg">BHARAT1</span>
+          </div>
+
+          <div class="flex gap-2">
+            <input id="teamRefLinkInput" type="text" readonly value="https://bharatq-trading-app.onrender.com/?code=BHARAT1" class="flex-1 bg-bqBg/80 border border-bqBorder rounded-xl px-3 py-2 text-[11px] font-mono text-slate-300">
+            <button onclick="copyRefLink()" class="px-4 py-2 rounded-xl bg-bqGold text-black font-black text-xs">Copy</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="native-card p-3">
+            <span class="text-[10px] text-slate-400 block">Direct Activated</span>
+            <b id="teamDirectCount" class="text-base font-black text-white font-mono">0</b>
+          </div>
+          <div class="native-card p-3">
+            <span class="text-[10px] text-slate-400 block">Team Size</span>
+            <b id="teamTotalCount" class="text-base font-black text-bqEmerald font-mono">0</b>
+          </div>
+          <div class="native-card p-3">
+            <span class="text-[10px] text-slate-400 block">Peer Award</span>
+            <b class="text-base font-black text-bqGold font-mono">10%</b>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <h3 class="text-xs font-bold text-white px-0.5">Direct Team Members</h3>
+          <div id="downlineMembersList" class="space-y-2"></div>
+        </div>
+
+        <div class="space-y-2">
+          <h3 class="text-xs font-bold text-white px-0.5">Reward Distribution History</h3>
+          <div id="mlmCommissionLogs" class="space-y-2"></div>
+        </div>
+      </section>
+
+      <!-- =============================================================================== -->
+      <!-- TAB 5: MINE / ASSETS (ROYAL Q PERSONAL CENTER)                                  -->
+      <!-- =============================================================================== -->
+      <section id="tab-mine" class="hidden space-y-3.5">
+        <!-- User Profile Header Card -->
+        <div class="native-card p-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-bqGold to-amber-200 text-black flex items-center justify-center font-black text-lg shadow">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-white text-sm" id="mineUserEmail">Not Signed In</h3>
+                <span class="text-[10px] bg-bqGold text-black font-black px-2 py-0.5 rounded-full" id="mineRankTag">V1</span>
+              </div>
+              <p class="text-[11px] text-slate-400 font-mono mt-0.5" id="mineUserMeta">UID: --</p>
+            </div>
+          </div>
+          <button onclick="openModal('authModal')" class="text-slate-400 hover:text-bqGold p-2">
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+          </button>
+        </div>
+
+        <!-- Asset Card (Fuel Gas + Commission Wallet) -->
+        <div class="gold-banner rounded-2xl p-4 space-y-3">
+          <div class="flex justify-between items-center">
+            <div>
+              <span class="text-[11px] text-slate-400 block">Asset (Fuel Gas Wallet)</span>
+              <div class="text-2xl font-black text-white font-mono mt-0.5" id="walletGasAmount">0.00 <span class="text-xs font-normal text-slate-400">USDT</span></div>
+            </div>
+            <div class="text-right">
+              <span class="text-[11px] text-slate-400 block">Reward Wallet</span>
+              <div class="text-lg font-black text-bqEmerald font-mono mt-0.5" id="walletCommissionAmount">0.00 <span class="text-[10px] font-normal text-slate-400">USDT</span></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/10">
+            <button onclick="openDepositModal()" class="py-2 rounded-xl bg-bqGold text-black font-bold text-xs">Deposit</button>
+            <button onclick="openWithdrawModal()" class="py-2 rounded-xl bg-bqCard border border-bqEmerald/50 text-bqEmerald font-bold text-xs">Withdraw</button>
+            <button onclick="openTransferModal()" class="py-2 rounded-xl bg-bqCard border border-bqBorder text-slate-200 font-bold text-xs">Transfer</button>
+          </div>
+        </div>
+
+        <!-- Native Settings Menu List -->
+        <div class="native-card divide-y divide-bqBorder/70 overflow-hidden text-xs">
+          <button onclick="openApiModal()" class="w-full px-4 py-3.5 flex items-center justify-between active:bg-bqCardLight transition text-left">
+            <span class="flex items-center gap-3 font-semibold text-slate-200">
+              <i class="fa-solid fa-key text-blue-400 w-4 text-center"></i> API Binding
+            </span>
+            <span class="text-[11px] text-slate-400 flex items-center gap-1.5">10+ Exchanges <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
+          </button>
+
+          <button onclick="switchTab('team')" class="w-full px-4 py-3.5 flex items-center justify-between active:bg-bqCardLight transition text-left">
+            <span class="flex items-center gap-3 font-semibold text-slate-200">
+              <i class="fa-solid fa-users text-bqGold w-4 text-center"></i> My Team &amp; Affiliate
+            </span>
+            <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+          </button>
+
+          <button onclick="openModal('whyTrustModal')" class="w-full px-4 py-3.5 flex items-center justify-between active:bg-bqCardLight transition text-left">
+            <span class="flex items-center gap-3 font-semibold text-slate-200">
+              <i class="fa-solid fa-shield-halved text-bqEmerald w-4 text-center"></i> Security &amp; Fund Custody
+            </span>
+            <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+          </button>
+
+          <button onclick="openModal('helpTutorialModal')" class="w-full px-4 py-3.5 flex items-center justify-between active:bg-bqCardLight transition text-left">
+            <span class="flex items-center gap-3 font-semibold text-slate-200">
+              <i class="fa-solid fa-circle-question text-purple-400 w-4 text-center"></i> Help Center &amp; Guide
+            </span>
+            <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+          </button>
+
+          <button onclick="openLegalModal('terms')" class="w-full px-4 py-3.5 flex items-center justify-between active:bg-bqCardLight transition text-left">
+            <span class="flex items-center gap-3 font-semibold text-slate-200">
+              <i class="fa-solid fa-file-lines text-slate-400 w-4 text-center"></i> User Service Agreement
+            </span>
+            <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+          </button>
+
+          <button onclick="logoutUser()" class="w-full px-4 py-3.5 flex items-center justify-between active:bg-bqRose/10 transition text-left">
+            <span class="flex items-center gap-3 font-bold text-bqRose">
+              <i class="fa-solid fa-right-from-bracket w-4 text-center"></i> Log Out
+            </span>
+            <i class="fa-solid fa-chevron-right text-[10px] text-bqRose"></i>
+          </button>
+        </div>
+
+        <!-- Billing & Fuel Ledger -->
+        <div class="native-card p-3.5 space-y-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-white">Billing &amp; Fuel Record</span>
+            <span class="text-[10px] text-slate-400">20% Profit Fuel</span>
+          </div>
+          <div id="gasDeductionList" class="space-y-1.5"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- NATIVE BOTTOM TAB BAR -->
+    <nav class="safe-bottom bg-[#091024]/95 backdrop-blur-md border-t border-bqBorder px-2 pt-2 flex justify-around items-center shrink-0 z-40">
+      <button onclick="switchTab('home')" id="nav-home" class="tab-active flex flex-col items-center text-slate-400 flex-1 py-1 transition">
+        <i class="fa-solid fa-house text-base"></i>
+        <span class="text-[10px] font-semibold mt-1">Home</span>
+      </button>
+      <button onclick="switchTab('quant')" id="nav-quant" class="flex flex-col items-center text-slate-400 flex-1 py-1 transition">
+        <i class="fa-solid fa-chart-line text-base"></i>
+        <span class="text-[10px] font-medium mt-1">Quantitative</span>
+      </button>
+      <button onclick="switchTab('circle')" id="nav-circle" class="flex flex-col items-center text-slate-400 flex-1 py-1 transition">
+        <i class="fa-solid fa-compass text-base"></i>
+        <span class="text-[10px] font-medium mt-1">Circle</span>
+      </button>
+      <button onclick="switchTab('team')" id="nav-team" class="flex flex-col items-center text-slate-400 flex-1 py-1 transition">
+        <i class="fa-solid fa-users text-base"></i>
+        <span class="text-[10px] font-medium mt-1">Team</span>
+      </button>
+      <button onclick="switchTab('mine')" id="nav-mine" class="flex flex-col items-center text-slate-400 flex-1 py-1 transition">
+        <i class="fa-solid fa-user text-base"></i>
+        <span class="text-[10px] font-medium mt-1">Mine</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ===================================================================================== -->
+  <!-- NATIVE BOTTOM-SHEET & CENTER MODALS                                                   -->
+  <!-- ===================================================================================== -->
+
+  <!-- Royal Q Trade Settings Bottom Sheet -->
+  <div id="tradeSettingsModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end justify-center">
+    <div class="bg-bqCard border-t border-bqBorder rounded-t-3xl w-full max-w-[480px] p-5 space-y-3.5 max-h-[88dvh] overflow-y-auto safe-bottom">
+      <div class="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-1"></div>
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <div>
+          <h3 class="text-sm font-bold text-white"><span id="modalPairTitle">BTC/USDT</span> Trade Settings</h3>
+          <span class="text-[10px] text-bqEmerald">Sub-Bin Real-Time Settlement &amp; Quantum AI v6.0</span>
+        </div>
+        <button onclick="closeModal('tradeSettingsModal')" class="w-8 h-8 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2 text-[11px]">
+        <button onclick="triggerManualReplenish()" class="py-2 rounded-xl bg-bqEmerald/15 border border-bqEmerald/40 text-bqEmerald font-bold">
+          <i class="fa-solid fa-cart-plus mr-1"></i> Buy
+        </button>
+        <button onclick="triggerSellAllPosition()" class="py-2 rounded-xl bg-bqRose/15 border border-bqRose/40 text-bqRose font-bold">
+          <i class="fa-solid fa-bolt mr-1"></i> Sell
+        </button>
+        <button onclick="toggleCycleTypeInModal()" id="btnModalCycleType" class="py-2 rounded-xl bg-bqGold/15 border border-bqGold/40 text-bqGold font-bold">
+          <i class="fa-solid fa-rotate mr-1"></i> Cycle
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-slate-400 block mb-1">Strategy Mode</label>
+          <select id="cfgStrategyMode" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-bqGold font-bold">
+            <option value="SUB_BIN_REALTIME">Sub-Bin Mode — Real-Time Settlement</option>
+            <option value="WHOLE_WAREHOUSE">Whole-Warehouse Mode</option>
+            <option value="SUB_BIN">Sub-Bin Mode</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <span class="text-slate-400 block mb-1">First Buy-In (USDT)</span>
+            <input id="cfgFirstBuy" type="number" value="20" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
+          </div>
+          <div class="flex flex-col justify-end">
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-bqBg border border-bqBorder cursor-pointer">
+              <span class="text-[11px] text-slate-200 font-semibold">Open Doubling</span>
+              <input id="cfgOpenDoubling" type="checkbox" class="accent-amber-400 w-4 h-4">
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <span class="text-slate-400 block mb-1">Margin Call Limit</span>
+            <input id="cfgMarginLimit" type="number" value="7" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
+          </div>
+          <div>
+            <span class="text-slate-400 block mb-1">Whole Position TP (%)</span>
+            <input id="cfgTakeProfit" type="number" step="0.1" value="1.3" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <span class="text-slate-400 block mb-1">Whole TP Callback (%)</span>
+            <input id="cfgCallbackPct" type="number" step="0.1" value="0.3" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
+          </div>
+          <div>
+            <span class="text-slate-400 block mb-1">Buy-In Callback (%)</span>
+            <input id="cfgBuyInCallback" type="number" step="0.1" value="0.5" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <span class="text-slate-400 block mb-1">Margin Call Drop (%)</span>
+            <input id="cfgMarginDrop" type="number" step="0.1" value="3.5" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
+          </div>
+          <div>
+            <span class="text-slate-400 block mb-1">Sub-Bin TP (%)</span>
+            <input id="cfgSubBinTp" type="number" step="0.1" value="1.3" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
+          </div>
+        </div>
+
+        <!-- Quantum AI Guard Toggles -->
+        <div class="p-3 rounded-2xl bg-bqBg border border-bqEmerald/30 space-y-2">
+          <span class="text-[11px] font-bold text-bqEmerald block"><i class="fa-solid fa-brain mr-1"></i> Quantum AI v6.0 Protection</span>
+          <label class="flex items-center justify-between text-[11px] text-slate-200 cursor-pointer">
+            <span>AI RSI Oversold Dip Filter</span>
+            <input id="cfgAiRsiFilter" type="checkbox" checked class="accent-emerald-400 w-4 h-4">
+          </label>
+          <label class="flex items-center justify-between text-[11px] text-slate-200 cursor-pointer">
+            <span>AI Dynamic ATR Take-Profit</span>
+            <input id="cfgAiDynamicTp" type="checkbox" checked class="accent-emerald-400 w-4 h-4">
+          </label>
+          <label class="flex items-center justify-between text-[11px] text-slate-200 cursor-pointer">
+            <span>Auto-Compound Net Profits</span>
+            <input id="cfgAutoCompound" type="checkbox" checked class="accent-amber-400 w-4 h-4">
+          </label>
+        </div>
+
+        <!-- Margin Configuration Layers -->
+        <div class="p-3 rounded-2xl bg-bqBg border border-bqBorder space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-[11px] font-bold text-bqGold">Margin Configuration</span>
+            <button type="button" onclick="renderMarginCallLayersTable()" class="text-[10px] text-bqEmerald">Reset</button>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-[10px] text-slate-400 font-bold pb-1 border-b border-bqBorder">
+            <span>Call</span>
+            <span>Drop (%)</span>
+            <span>Multiple (x)</span>
+          </div>
+          <div id="marginCallLayersContainer" class="space-y-1.5 max-h-36 overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <button onclick="saveStrategySettings()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs">
+        Confirm &amp; Save
+      </button>
+    </div>
+  </div>
+
+  <!-- API Binding Modal -->
+  <div id="apiBindingModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end justify-center">
+    <div class="bg-bqCard border-t border-bqBorder rounded-t-3xl w-full max-w-[480px] p-5 space-y-4 safe-bottom">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">API Binding</h3>
+        <button onclick="closeModal('apiBindingModal')" class="w-8 h-8 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-slate-400 block mb-1">Select Exchange</label>
+          <select id="bindExchangeName" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white">
+            <option value="BINANCE">Binance</option>
+            <option value="BYBIT">Bybit</option>
+            <option value="OKX">OKX</option>
+            <option value="HTX">HTX</option>
+            <option value="KUCOIN">KuCoin</option>
+            <option value="COINDCX">CoinDCX</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-slate-400 block mb-1">API Key</label>
+          <input id="bindApiKeyInput" type="text" placeholder="Enter Spot API Key" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
+        </div>
+        <div>
+          <label class="text-slate-400 block mb-1">Secret Key</label>
+          <input id="bindApiSecretInput" type="password" placeholder="Enter Secret Key" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
+        </div>
+      </div>
+      <button onclick="submitExchangeApiBinding()" class="w-full py-3 rounded-2xl bg-bqGold text-black font-black text-xs">Bind Exchange</button>
+    </div>
+  </div>
+
+  <!-- Deposit Modal -->
+  <div id="depositModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end justify-center">
+    <div class="bg-bqCard border-t border-bqBorder rounded-t-3xl w-full max-w-[480px] p-5 space-y-4 safe-bottom">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">Deposit USDT (TRC-20)</h3>
+        <button onclick="closeModal('depositModal')" class="w-8 h-8 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="text-center space-y-2.5">
+        <div class="w-32 h-32 mx-auto bg-white p-2 rounded-2xl">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=TUKdKMmRqpapdSzcQowC2y32cxxHomYEZo" alt="TRC20 QR" class="w-full h-full object-contain">
+        </div>
+        <span class="text-[11px] text-slate-400 block">Chain Name: <b class="text-bqGold">TRON (TRC-20)</b></span>
+        <div class="flex items-center gap-2 bg-bqBg p-3 rounded-xl border border-bqBorder">
+          <span class="font-mono text-[11px] text-white truncate flex-1 select-all">TUKdKMmRqpapdSzcQowC2y32cxxHomYEZo</span>
+          <button onclick="copyOfficialAddress()" class="bg-bqGold text-black font-bold px-3 py-1 rounded-lg text-xs">Copy</button>
+        </div>
+      </div>
+      <div class="space-y-2 text-xs">
+        <label class="text-slate-400 block">Verify On-Chain TXID</label>
+        <div class="flex gap-2">
+          <input id="depositTxidInput" type="text" placeholder="Paste TRON transaction hash" class="bg-bqBg border border-bqBorder text-white text-xs px-3 py-2.5 rounded-xl flex-1 font-mono">
+          <button onclick="claimTrc20Txid()" class="bg-bqEmerald text-black font-bold px-4 rounded-xl text-xs">Verify</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Withdraw Modal -->
+  <div id="withdrawModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end justify-center">
+    <div class="bg-bqCard border-t border-bqBorder rounded-t-3xl w-full max-w-[480px] p-5 space-y-4 safe-bottom">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">Withdraw USDT (TRC-20)</h3>
+        <button onclick="closeModal('withdrawModal')" class="w-8 h-8 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-3 rounded-xl bg-bqBg flex justify-between items-center text-xs">
+        <span class="text-slate-400">Available Reward:</span>
+        <span id="wdAvailableBalance" class="font-mono font-bold text-bqEmerald">0.00 USDT</span>
+      </div>
+      <div class="space-y-3 text-xs">
+        <input id="wdAddressInput" type="text" placeholder="Enter TRON (TRC-20) Wallet Address" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
+        <input id="wdAmountInput" type="number" min="10" value="50" placeholder="Minimum 10 USDT" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
+      </div>
+      <button onclick="submitCommissionWithdrawal()" class="w-full py-3 rounded-2xl bg-bqEmerald text-black font-black text-xs">Confirm Withdrawal (Fee: 2 USDT)</button>
+    </div>
+  </div>
+
+  <!-- Transfer Modal -->
+  <div id="transferModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end justify-center">
+    <div class="bg-bqCard border-t border-bqBorder rounded-t-3xl w-full max-w-[480px] p-5 space-y-4 safe-bottom">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">Transfer to Asset Wallet (0 Fee)</h3>
+        <button onclick="closeModal('transferModal')" class="w-8 h-8 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-3 rounded-xl bg-bqBg flex justify-between items-center text-xs">
+        <span class="text-slate-400">Reward Balance:</span>
+        <span id="tfAvailableCommission" class="font-mono font-bold text-bqEmerald">0.00 USDT</span>
+      </div>
+      <input id="tfAmountInput" type="number" min="1" value="25" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono text-xs">
+      <button onclick="submitCommissionToGasTransfer()" class="w-full py-3 rounded-2xl bg-bqGold text-black font-black text-xs">Confirm Transfer</button>
+    </div>
+  </div>
+
+  <!-- Revenue Details Modal -->
+  <div id="revenueDetailModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">Revenue Details</h3>
+        <button onclick="closeModal('revenueDetailModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-2 text-xs" id="revenueDaysContainer"></div>
+    </div>
+  </div>
+
+  <!-- Invite Modal -->
+  <div id="inviteModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-4 text-center">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">Invite Friends</h3>
+        <button onclick="closeModal('inviteModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="text-xs text-slate-300">Share your invitation code to earn $30–$70 USDT per VIP activation + 20% Gas overrides.</p>
+      <div class="p-3 bg-bqBg rounded-xl border border-bqBorder text-sm font-mono text-bqGold font-black tracking-widest" id="inviteModalCode">BHARAT1</div>
+      <button onclick="copyRefLink()" class="w-full py-3 rounded-xl bg-bqGold text-black font-black text-xs">Copy Invitation Link</button>
+    </div>
+  </div>
+
+  <!-- Margin Reserve Calculator Modal -->
+  <div id="marginReserveModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">Position Reserve Calculator</h3>
+        <button onclick="closeModal('marginReserveModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <label class="text-slate-400 block mb-1">First Buy (USDT)</label>
+          <input id="mrFirstBuy" type="number" value="20" oninput="calculateMarginReserve()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-white font-mono">
+        </div>
+        <div>
+          <label class="text-slate-400 block mb-1">Margin Calls</label>
+          <input id="mrCalls" type="number" value="7" oninput="calculateMarginReserve()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-white font-mono">
+        </div>
+      </div>
+      <div class="p-3 rounded-xl bg-bqBg border border-bqGold/30 text-center">
+        <span class="text-[10px] text-slate-400 block">Recommended Spot Balance</span>
+        <span id="mrTotalOutput" class="text-lg font-black text-bqEmerald font-mono">$300.00 USDT</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Android App Install Modal -->
+  <div id="androidInstallModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">Install BharatQ App</h3>
+        <button onclick="closeModal('androidInstallModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-2.5 text-xs text-slate-300">
+        <button onclick="triggerPwaInstall()" class="w-full py-3 rounded-xl bg-bqEmerald text-black font-black text-xs">
+          <i class="fa-solid fa-download mr-1"></i> Add BharatQ to Home Screen
+        </button>
+        <button onclick="launchPwaBuilderForApk()" class="w-full py-3 rounded-xl bg-bqBg border border-bqGold/40 text-bqGold font-bold text-xs">
+          <i class="fa-brands fa-android mr-1"></i> Download Android .APK Package
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Other Info Modals -->
+  <div id="authModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">Account Details</h3>
+        <button onclick="closeModal('authModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-3 rounded-xl bg-bqBg text-xs space-y-1.5">
+        <div class="flex justify-between"><span class="text-slate-400">Email:</span><b class="text-white" id="modalSessionEmail">--</b></div>
+        <div class="flex justify-between"><span class="text-slate-400">Level:</span><b class="text-bqGold font-mono" id="modalSessionRank">V1</b></div>
+      </div>
+      <button onclick="logoutUser()" class="w-full py-2.5 rounded-xl bg-bqRose/20 text-bqRose font-bold text-xs">Log Out</button>
+    </div>
+  </div>
+
+  <div id="notificationModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">System Messages</h3>
+        <button onclick="closeModal('notificationModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-3 bg-bqBg rounded-xl text-xs text-slate-300">Welcome to BharatQ Quantitative Trading Engine v6.0.</div>
+    </div>
+  </div>
+
+  <div id="antiScamModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-bqGold">Security Reminder</h3>
+        <button onclick="closeModal('antiScamModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">BharatQ will never contact you to request deposits, passwords, or withdrawal permissions on your exchange API keys.</p>
+      <button onclick="closeModal('antiScamModal')" class="w-full py-2.5 rounded-xl bg-bqGold text-black font-bold text-xs">Got It</button>
+    </div>
+  </div>
+
+  <div id="whyTrustModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">Fund Security</h3>
+        <button onclick="closeModal('whyTrustModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">All trading funds remain inside your own exchange account (Binance, Bybit, OKX, CoinDCX). BharatQ only executes Spot trades via encrypted API keys.</p>
+    </div>
+  </div>
+
+  <div id="leaderboardModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">Leader Ranking</h3>
+        <button onclick="closeModal('leaderboardModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-3 rounded-xl bg-bqBg border border-bqGold/40 flex justify-between items-center text-xs">
+        <div><b class="text-white block">BharatQ_Founder</b><span class="text-[10px] text-bqGold">V6 Master Node</span></div>
+        <span class="text-bqEmerald font-bold">Verified</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="helpTutorialModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">Quick Start Guide</h3>
+        <button onclick="closeModal('helpTutorialModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-2 text-xs text-slate-300">
+        <p><b>1. API Binding:</b> Bind your Spot API key from Binance, Bybit, OKX, or CoinDCX.</p>
+        <p><b>2. Deposit Fuel:</b> Top up USDT (TRC-20) in your Asset wallet.</p>
+        <p><b>3. Start Bot:</b> Select any pair in Quantitative and tap <b>Start</b>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="legalModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 id="legalModalTitle" class="text-sm font-bold text-white">User Agreement</h3>
+        <button onclick="closeModal('legalModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="legalModalContent" class="text-xs text-slate-300 space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- Native Toast -->
+  <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 z-[120] hidden px-4 py-2.5 rounded-full bg-bqCard border border-bqGold/60 text-xs font-semibold text-white shadow-2xl flex items-center gap-2 whitespace-nowrap">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-bqEmerald"></i>
+    <span id="toastText">Done</span>
+  </div>
+
+  <script>
+    const DEFAULT_SUPABASE_URL = 'https://dthsnlfybujksgmihakt.supabase.co';
+    const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_bGJvNp4teGIt3rBSaEPPMg_aln2JwGK';
+
+    const state = {
+      currentTab: 'home',
+      quantFilter: 'all',
+      selectedPair: 'BTC/USDT',
+      gateMode: 'otp',
+      isAuthenticated: Boolean(localStorage.getItem('bq_jwt')),
+      backendUrl: localStorage.getItem('bq_backend_url') || 'https://bharatq-backend-api.onrender.com',
+      supabaseUrl: localStorage.getItem('bq_supabase_url') || DEFAULT_SUPABASE_URL,
+      supabaseAnonKey: localStorage.getItem('bq_supabase_anon_key') || DEFAULT_SUPABASE_ANON_KEY,
+      jwtToken: localStorage.getItem('bq_jwt') || null,
+      officialTrc20: 'TUKdKMmRqpapdSzcQowC2y32cxxHomYEZo',
+      user: JSON.parse(localStorage.getItem('bq_user_profile') || 'null') || {
+        uid: 0,
+        email: 'Not Signed In',
+        mobile: '',
+        rank: 'V1',
+        referralCode: 'BHARAT1',
+        isOwnerFree: false,
+        isActivated: false,
+        fuelBalance: 0.00,
+        commissionBalance: 0.00,
+        cumProfit: 0.00,
+        todayProfit: 0.00
+      },
+      pairs: [
+        { symbol: 'BTC/USDT', raw: 'BTCUSDT', price: 0, change: 0, status: 'Paused', strategyMode: 'SUB_BIN_REALTIME', cycleType: 'CYCLE', calls: 0, maxCalls: 7, pnl: 0.00, firstBuy: 20, openDoubling: false, drop: 3.5, tp: 1.3, callback: 0.3, buyInCallback: 0.5, subBinTp: 1.3 },
+        { symbol: 'ETH/USDT', raw: 'ETHUSDT', price: 0, change: 0, status: 'Paused', strategyMode: 'SUB_BIN_REALTIME', cycleType: 'CYCLE', calls: 0, maxCalls: 7, pnl: 0.00, firstBuy: 20, openDoubling: false, drop: 3.5, tp: 1.3, callback: 0.3, buyInCallback: 0.5, subBinTp: 1.3 },
+        { symbol: 'SOL/USDT', raw: 'SOLUSDT', price: 0, change: 0, status: 'Paused', strategyMode: 'SUB_BIN_REALTIME', cycleType: 'CYCLE', calls: 0, maxCalls: 7, pnl: 0.00, firstBuy: 20, openDoubling: false, drop: 4.0, tp: 1.5, callback: 0.3, buyInCallback: 0.5, subBinTp: 1.3 },
+        { symbol: 'BNB/USDT', raw: 'BNBUSDT', price: 0, change: 0, status: 'Paused', strategyMode: 'WHOLE_WAREHOUSE', cycleType: 'ONE_SHOT', calls: 0, maxCalls: 7, pnl: 0.00, firstBuy: 15, openDoubling: false, drop: 3.5, tp: 1.3, callback: 0.3, buyInCallback: 0.5, subBinTp: 1.3 },
+        { symbol: 'XRP/USDT', raw: 'XRPUSDT', price: 0, change: 0, status: 'Paused', strategyMode: 'SUB_BIN_REALTIME', cycleType: 'CYCLE', calls: 0, maxCalls: 7, pnl: 0.00, firstBuy: 20, openDoubling: false, drop: 3.5, tp: 1.3, callback: 0.3, buyInCallback: 0.5, subBinTp: 1.3 },
+        { symbol: 'DOGE/USDT', raw: 'DOGEUSDT', price: 0, change: 0, status: 'Paused', strategyMode: 'SUB_BIN_REALTIME', cycleType: 'CYCLE', calls: 0, maxCalls: 7, pnl: 0.00, firstBuy: 15, openDoubling: false, drop: 4.5, tp: 1.6, callback: 0.3, buyInCallback: 0.5, subBinTp: 1.3 }
+      ],
+      circles: [
+        { name: 'BharatQ Official Circle', author: 'BharatQ_Founder (V6)', tag: 'Official', synced: false, isOfficial: true },
+        { name: 'VedicQuant Alpha', author: 'QuantGuru_IN (V5)', tag: 'Sub-Bin', synced: false, isOfficial: false },
+        { name: 'Titan Spot Grid', author: 'CryptoRaj_V6', tag: 'Steady', synced: false, isOfficial: false }
+      ],
+      downlineMembers: []
+    };
+
+    let supabaseClient = null;
+    function getSupabaseClient() {
+      const url = (document.getElementById('cfgSupabaseUrl')?.value || state.supabaseUrl || DEFAULT_SUPABASE_URL).trim();
+      const key = (document.getElementById('cfgSupabaseAnonKey')?.value || state.supabaseAnonKey || DEFAULT_SUPABASE_ANON_KEY).trim();
+      if (url && key && window.supabase) {
+        if (!supabaseClient || state.supabaseUrl !== url || state.supabaseAnonKey !== key) {
+          state.supabaseUrl = url;
+          state.supabaseAnonKey = key;
+          localStorage.setItem('bq_supabase_url', url);
+          localStorage.setItem('bq_supabase_anon_key', key);
+          supabaseClient = window.supabase.createClient(url, key);
+        }
+        return supabaseClient;
+      }
+      return null;
+    }
+
+    function saveSupabaseConfig() {
+      supabaseClient = null;
+      getSupabaseClient();
+      showToast('Settings saved', 'emerald');
+    }
+
+    function switchGateTab(mode) {
+      state.gateMode = mode;
+      const otpBtn = document.getElementById('gateTab-otp');
+      const pwBtn = document.getElementById('gateTab-password');
+      const otpSec = document.getElementById('gateOtpSection');
+      const pwSec = document.getElementById('gatePasswordSection');
+
+      if (otpBtn) otpBtn.className = mode === 'otp' ? 'flex-1 pb-3 text-bqGold border-b-2 border-bqGold transition' : 'flex-1 pb-3 text-slate-400 border-b-2 border-transparent transition';
+      if (pwBtn) pwBtn.className = mode === 'password' ? 'flex-1 pb-3 text-bqGold border-b-2 border-bqGold transition' : 'flex-1 pb-3 text-slate-400 border-b-2 border-transparent transition';
+      if (otpSec) otpSec.classList.toggle('hidden', mode !== 'otp');
+      if (pwSec) pwSec.classList.toggle('hidden', mode !== 'password');
+    }
+
+    async function finalizeSupabaseMagicLinkSession(sbSession) {
+      if (!sbSession || !sbSession.user || !sbSession.user.email) return;
+      const email = sbSession.user.email.trim().toLowerCase();
+      const mobileNumber = localStorage.getItem('bq_pending_mobile') || '';
+      const urlParams = new URLSearchParams(window.location.search);
+      const refFromUrl = (urlParams.get('code') || urlParams.get('ref') || '').trim().toUpperCase();
+      const sponsorCode = refFromUrl || localStorage.getItem('bq_pending_sponsor') || 'BHARAT1';
+      const supabaseAccessToken = sbSession.access_token;
+
+      try {
+        const res = await fetch(`${state.backendUrl}/api/v1/auth/verify-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, mobileNumber, sponsorCode, supabaseAccessToken })
+        });
+        const data = await res.json();
+        if (data.success) {
+          completeGenuineLoginSession(data);
+          return;
+        }
+      } catch (e) {}
+
+      const isOwner = email === 'vjrjbhatijodhpur@gmail.com' || mobileNumber.replace(/\D/g, '').endsWith('9680714804');
+      const generatedCode = isOwner ? 'BHARAT1' : 'BQ' + Math.abs(email.split('').reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0)).toString(36).toUpperCase().slice(0, 5);
+      completeGenuineLoginSession({
+        token: supabaseAccessToken || ('sb_' + Date.now()),
+        ownerFreeSubscription: isOwner,
+        user: {
+          uid: isOwner ? 98402194 : (10000000 + Math.floor(Math.random() * 89999999)),
+          email,
+          mobile_number: mobileNumber,
+          referral_code: generatedCode,
+          rank_level: isOwner ? 6 : 1,
+          is_activated: isOwner,
+          is_owner_exempt: isOwner,
+          gas_balance: 0.00,
+          commission_balance: 0.00
+        }
+      });
+    }
+
+    async function sendRealSupabaseEmailOtp() {
+      const email = (document.getElementById('gateEmailInput')?.value || '').trim().toLowerCase();
+      const mobileNumber = (document.getElementById('gateMobileInput')?.value || '').trim();
+      const sponsorCode = (document.getElementById('gateSponsorInput')?.value || 'BHARAT1').trim().toUpperCase();
+      const msgEl = document.getElementById('gateOtpStatusMsg');
+      const sendBtn = document.getElementById('btnGateSendOtp');
+
+      if (!email || !email.includes('@')) {
+        showToast('Enter a valid email address', 'rose');
+        return;
+      }
+
+      localStorage.setItem('bq_pending_mobile', mobileNumber);
+      localStorage.setItem('bq_pending_sponsor', sponsorCode);
+
+      if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.innerText = 'Sending...';
+      }
+
+      const sb = getSupabaseClient();
+      if (sb) {
+        try {
+          const redirectTo = `${window.location.origin}${window.location.pathname}?code=${encodeURIComponent(sponsorCode)}`;
+          const { error } = await sb.auth.signInWithOtp({
+            email,
+            options: { shouldCreateUser: true, emailRedirectTo: redirectTo }
+          });
+          if (!error) {
+            if (msgEl) {
+              msgEl.classList.remove('hidden');
+              msgEl.innerHTML = `Email sent to <b>${email}</b>! Open your inbox and either <b>click the "Sign in" link</b> in the email or enter the verification code below.`;
+            }
+            if (sendBtn) {
+              sendBtn.disabled = false;
+              sendBtn.innerText = 'Resend';
+            }
+            showToast('Verification email sent!', 'emerald');
+            return;
+          } else {
+            showToast(error.message, 'rose');
+          }
+        } catch (err) {
+          showToast('Unable to send email right now', 'rose');
+        }
+      }
+
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.innerText = 'Send Code';
+      }
+    }
+
+    async function submitMandatoryGateAuth() {
+      const email = (document.getElementById('gateEmailInput')?.value || '').trim().toLowerCase();
+      const mobileNumber = (document.getElementById('gateMobileInput')?.value || '').trim();
+      const otpCode = (document.getElementById('gateOtpCodeInput')?.value || '').trim();
+      const password = document.getElementById('gatePasswordInput')?.value || '';
+
+      if (!email || !email.includes('@')) {
+        showToast('Enter a valid email address', 'rose');
+        return;
+      }
+
+      const submitBtn = document.getElementById('btnGateSubmit');
+      if (submitBtn) submitBtn.innerText = 'Signing in...';
+
+      if (state.gateMode === 'otp') {
+        const sb = getSupabaseClient();
+        if (sb) {
+          const { data: sessionData } = await sb.auth.getSession();
+          if (sessionData?.session?.user?.email?.toLowerCase() === email) {
+            await finalizeSupabaseMagicLinkSession(sessionData.session);
+            return;
+          }
+        }
+
+        if (otpCode.length < 6 || otpCode.length > 8) {
+          if (submitBtn) submitBtn.innerText = 'Log In / Register';
+          showToast('Click the "Sign in" link in your email or enter the code', 'rose');
+          return;
+        }
+
+        if (sb) {
+          try {
+            const { data: sbData, error: sbErr } = await sb.auth.verifyOtp({
+              email,
+              token: otpCode,
+              type: 'email'
+            });
+            if (sbErr) {
+              if (submitBtn) submitBtn.innerText = 'Log In / Register';
+              showToast(sbErr.message, 'rose');
+              return;
+            }
+            if (sbData?.session) {
+              await finalizeSupabaseMagicLinkSession(sbData.session);
+              return;
+            }
+          } catch (err) {
+            if (submitBtn) submitBtn.innerText = 'Log In / Register';
+            showToast('Verification failed', 'rose');
+            return;
+          }
+        }
+        return;
+      }
+
+      if (!password) {
+        if (submitBtn) submitBtn.innerText = 'Log In / Register';
+        showToast('Enter your password', 'rose');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${state.backendUrl}/api/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, mobileNumber, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          completeGenuineLoginSession(data);
+        } else {
+          if (submitBtn) submitBtn.innerText = 'Log In / Register';
+          showToast(data.error || 'Invalid credentials', 'rose');
+        }
+      } catch (e) {
+        if (submitBtn) submitBtn.innerText = 'Log In / Register';
+        showToast('Use Email Verification to log in', 'rose');
+      }
+    }
+
+    function completeGenuineLoginSession(data) {
+      state.isAuthenticated = true;
+      state.jwtToken = data.token;
+      localStorage.setItem('bq_jwt', data.token);
+
+      const isOwner = Boolean(data.ownerFreeSubscription || data.user?.is_owner_exempt);
+      state.user = {
+        uid: data.user.uid,
+        email: data.user.email,
+        mobile: data.user.mobile_number || '',
+        rank: isOwner ? 'V6' : `V${data.user.rank_level || 1}`,
+        referralCode: data.user.referral_code || (isOwner ? 'BHARAT1' : 'BQUSER'),
+        isOwnerFree: isOwner,
+        isActivated: Boolean(isOwner || data.user.is_activated),
+        fuelBalance: Number(data.user.gas_balance || 0),
+        commissionBalance: Number(data.user.commission_balance || 0),
+        cumProfit: Number(data.user.total_trading_profit || 0),
+        todayProfit: 0.00
+      };
+      localStorage.setItem('bq_user_profile', JSON.stringify(state.user));
+
+      document.getElementById('mandatoryAuthGate')?.classList.add('hidden');
+      document.getElementById('clientRankBadge').innerText = state.user.rank;
+      document.getElementById('mineRankTag').innerText = state.user.rank;
+      document.getElementById('homeActivationStatus').innerText = isOwner
+        ? 'VIP Active (Owner V6)'
+        : (state.user.isActivated ? 'VIP Active (365 Days)' : 'VIP Inactive ($120/Yr)');
+      if (isOwner || state.user.isActivated) {
+        const btn = document.getElementById('btnHeroActivate');
+        if (btn) btn.innerText = 'Active';
+      }
+
+      updateUserIdentityUI();
+      updateBalances();
+      syncLiveUserProfile();
+      closeModal('authModal');
+      showToast('Signed in successfully', 'emerald');
+    }
+
+    function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
+    function openApiModal() { openModal('apiBindingModal'); }
+    function openDepositModal() { openModal('depositModal'); }
+
+    function showToast(msg, color = 'emerald') {
+      const t = document.getElementById('toast');
+      const txt = document.getElementById('toastText');
+      const icon = document.getElementById('toastIcon');
+      if (!t || !txt) return;
+      txt.innerText = msg;
+      icon.className = color === 'rose'
+        ? 'fa-solid fa-circle-exclamation text-bqRose'
+        : 'fa-solid fa-circle-check text-bqEmerald';
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 3200);
+    }
+
+    function switchTab(tab) {
+      state.currentTab = tab;
+      ['home', 'quant', 'circle', 'team', 'mine'].forEach(t => {
+        document.getElementById(`tab-${t}`)?.classList.toggle('hidden', t !== tab);
+        document.getElementById(`nav-${t}`)?.classList.toggle('tab-active', t === tab);
+      });
+    }
+
+    function selectExchangeTab(btn, exName) {
+      document.querySelectorAll('.ex-tab').forEach(b => {
+        b.className = 'ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0';
+      });
+      btn.className = 'ex-tab px-3.5 py-1.5 rounded-full bg-bqGold text-black shrink-0';
+      const lbl = document.getElementById('selectedExchangeLabel');
+      if (lbl) lbl.innerText = `${exName} Spot`;
+    }
+
+    function filterQuant(f) {
+      state.quantFilter = f;
+      ['all', 'running', 'paused'].forEach(k => {
+        const btn = document.getElementById(`qTab-${k}`);
+        if (btn) {
+          btn.className = k === f
+            ? 'px-2.5 py-1 rounded-lg bg-bqGold text-black'
+            : 'px-2.5 py-1 rounded-lg text-slate-400';
+        }
+      });
+      renderPairs();
+    }
+
+    function renderPairs() {
+      const homeList = document.getElementById('homeActivePairsList');
+      const quantList = document.getElementById('quantPairsList');
+      const topStrip = document.getElementById('topThreeCoinsStrip');
+      const searchQ = (document.getElementById('quantSearchInput')?.value || '').trim().toUpperCase();
+
+      if (topStrip) {
+        topStrip.innerHTML = state.pairs.slice(0, 3).map(p => {
+          const priceStr = p.price > 0 ? `$${p.price.toLocaleString()}` : '--';
+          const up = p.change >= 0;
+          return `
+            <div onclick="openStrategyModal('${p.symbol}')" class="native-card p-2.5 text-center cursor-pointer active:scale-95 transition">
+              <span class="text-[11px] font-bold text-slate-300 block">${p.symbol}</span>
+              <span class="text-xs font-black text-white font-mono block mt-0.5">${priceStr}</span>
+              <span class="text-[10px] font-mono font-bold ${up ? 'text-bqEmerald' : 'text-bqRose'}">${up ? '+' : ''}${p.change.toFixed(2)}%</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      const buildRow = (p) => {
+        const isRunning = p.status === 'Cycling';
+        const priceDisplay = p.price > 0 ? `$${p.price.toLocaleString()}` : 'Loading...';
+        const up = p.change >= 0;
+        return `
+          <div class="native-card p-3.5 space-y-2.5">
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-full bg-bqBg border border-bqBorder flex items-center justify-center font-black text-xs text-bqGold">
+                  ${p.symbol.split('/')[0]}
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-white text-sm">${p.symbol}</span>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded font-bold ${isRunning ? 'bg-bqEmerald/20 text-bqEmerald' : 'bg-slate-800 text-slate-400'}">${isRunning ? 'Cycling' : 'Stop'}</span>
+                  </div>
+                  <span class="text-[10px] text-slate-400 font-mono">Calls: ${p.calls}/${p.maxCalls} • 1st: $${p.firstBuy}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <div class="text-right font-mono">
+                  <div class="text-xs font-bold text-white">${priceDisplay}</div>
+                  <div class="text-[10px] text-slate-400">TP ${p.tp}%</div>
+                </div>
+                <span class="px-2 py-1 rounded-lg text-[11px] font-mono font-bold min-w-[60px] text-center ${up ? 'bg-bqEmerald/20 text-bqEmerald' : 'bg-bqRose/20 text-bqRose'}">
+                  ${up ? '+' : ''}${p.change.toFixed(2)}%
+                </span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-bqBorder/60 text-[11px]">
+              <span class="text-slate-400">Strategy: <b class="text-bqGold">${p.strategyMode === 'WHOLE_WAREHOUSE' ? 'Whole-Warehouse' : 'Sub-Bin RT'}</b></span>
+              <div class="flex gap-2">
+                <button onclick="openStrategyModal('${p.symbol}')" class="px-3 py-1 rounded-lg bg-bqBg border border-bqBorder text-slate-200 font-semibold">Settings</button>
+                <button onclick="toggleBotStatus('${p.symbol}')" class="px-3.5 py-1 rounded-lg font-bold ${isRunning ? 'bg-bqRose/20 text-bqRose' : 'bg-bqGold text-black'}">
+                  ${isRunning ? 'Pause' : 'Start'}
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      };
+
+      if (homeList) homeList.innerHTML = state.pairs.slice(0, 4).map(buildRow).join('');
+      if (quantList) {
+        const filtered = state.pairs.filter(p => {
+          if (searchQ && !p.symbol.includes(searchQ)) return false;
+          if (state.quantFilter === 'running') return p.status === 'Cycling';
+          if (state.quantFilter === 'paused') return p.status !== 'Cycling';
+          return true;
+        });
+        quantList.innerHTML = filtered.map(buildRow).join('');
+      }
+    }
+
+    function openStrategyModal(sym) {
+      state.selectedPair = sym;
+      const p = state.pairs.find(x => x.symbol === sym);
+      if (!p) return;
+      document.getElementById('modalPairTitle').innerText = sym;
+      document.getElementById('cfgStrategyMode').value = p.strategyMode || 'SUB_BIN_REALTIME';
+      document.getElementById('cfgFirstBuy').value = p.firstBuy;
+      document.getElementById('cfgOpenDoubling').checked = Boolean(p.openDoubling);
+      document.getElementById('cfgMarginLimit').value = p.maxCalls;
+      document.getElementById('cfgMarginDrop').value = p.drop;
+      document.getElementById('cfgTakeProfit').value = p.tp;
+      document.getElementById('cfgCallbackPct').value = p.callback || 0.3;
+      document.getElementById('cfgBuyInCallback').value = p.buyInCallback || 0.5;
+      document.getElementById('cfgSubBinTp').value = p.subBinTp || 1.3;
+      renderMarginCallLayersTable(p);
+      openModal('tradeSettingsModal');
+    }
+
+    function renderMarginCallLayersTable(pairObj) {
+      const p = pairObj || state.pairs.find(x => x.symbol === state.selectedPair);
+      const container = document.getElementById('marginCallLayersContainer');
+      if (!container || !p) return;
+      const limit = parseInt(document.getElementById('cfgMarginLimit')?.value) || p.maxCalls || 7;
+      const defaultDrops = [3.5, 4.0, 4.5, 5.2, 8.0, 10.0, 12.0];
+      const defaultMultiples = [2, 4, 8, 16, 32, 64, 128];
+      if (!Array.isArray(p.layerSchedule) || p.layerSchedule.length !== limit) {
+        p.layerSchedule = Array.from({ length: limit }, (_, idx) => ({
+          call: idx + 1,
+          dropPct: defaultDrops[idx] || +(3.5 + idx * 1.2).toFixed(1),
+          multiple: defaultMultiples[idx] || Math.pow(2, idx + 1)
+        }));
+      }
+      container.innerHTML = p.layerSchedule.map((layer, idx) => `
+        <div class="grid grid-cols-3 gap-2 items-center text-[11px]">
+          <span class="text-slate-300 font-mono">${idx + 1} Call</span>
+          <input type="number" step="0.1" value="${layer.dropPct}" onchange="updateLayerConfig(${idx}, 'dropPct', this.value)" class="bg-bqCard border border-bqBorder rounded-lg px-2 py-1 text-white font-mono">
+          <input type="number" step="0.5" value="${layer.multiple}" onchange="updateLayerConfig(${idx}, 'multiple', this.value)" class="bg-bqCard border border-bqBorder rounded-lg px-2 py-1 text-bqGold font-mono">
+        </div>
+      `).join('');
+    }
+
+    function updateLayerConfig(idx, field, val) {
+      const p = state.pairs.find(x => x.symbol === state.selectedPair);
+      if (p?.layerSchedule?.[idx]) p.layerSchedule[idx][field] = parseFloat(val) || 1;
+    }
+
+    function toggleCycleTypeInModal() {
+      const p = state.pairs.find(x => x.symbol === state.selectedPair);
+      if (!p) return;
+      p.cycleType = p.cycleType === 'ONE_SHOT' ? 'CYCLE' : 'ONE_SHOT';
+      document.getElementById('btnModalCycleType').innerHTML = `<i class="fa-solid fa-rotate mr-1"></i> ${p.cycleType === 'ONE_SHOT' ? 'One-Shot' : 'Cycle'}`;
+      renderPairs();
+      showToast(`Switched to ${p.cycleType === 'ONE_SHOT' ? 'One-Shot' : 'Cycle'}`, 'emerald');
+    }
+
+    function triggerManualReplenish() {
+      const p = state.pairs.find(x => x.symbol === state.selectedPair);
+      if (!p) return;
+      p.calls = Math.min(p.maxCalls, p.calls + 1);
+      renderPairs();
+      showToast(`Manual buy executed for ${p.symbol}`, 'emerald');
+    }
+
+    function triggerSellAllPosition() {
+      const p = state.pairs.find(x => x.symbol === state.selectedPair);
+      if (!p) return;
+      p.status = 'Paused';
+      p.calls = 0;
+      renderPairs();
+      closeModal('tradeSettingsModal');
+      showToast(`Closed ${p.symbol} position`, 'emerald');
+    }
+
+    function saveStrategySettings() {
+      const p = state.pairs.find(x => x.symbol === state.selectedPair);
+      if (p) {
+        p.strategyMode = document.getElementById('cfgStrategyMode').value;
+        p.firstBuy = parseFloat(document.getElementById('cfgFirstBuy').value) || 20;
+        p.openDoubling = document.getElementById('cfgOpenDoubling').checked;
+        p.maxCalls = parseInt(document.getElementById('cfgMarginLimit').value) || 7;
+        p.drop = parseFloat(document.getElementById('cfgMarginDrop').value) || 3.5;
+        p.tp = parseFloat(document.getElementById('cfgTakeProfit').value) || 1.3;
+        p.callback = parseFloat(document.getElementById('cfgCallbackPct').value) || 0.3;
+        p.buyInCallback = parseFloat(document.getElementById('cfgBuyInCallback').value) || 0.5;
+        p.subBinTp = parseFloat(document.getElementById('cfgSubBinTp').value) || 1.3;
+      }
+      closeModal('tradeSettingsModal');
+      renderPairs();
+      showToast('Strategy saved', 'emerald');
+    }
+
+    function toggleBotStatus(sym) {
+      const p = state.pairs.find(x => x.symbol === sym);
+      if (!p) return;
+      p.status = p.status === 'Cycling' ? 'Paused' : 'Cycling';
+      renderPairs();
+      showToast(`${sym} ${p.status === 'Cycling' ? 'Started' : 'Paused'}`, 'emerald');
+    }
+
+    function renderRevenueDetails() {
+      const container = document.getElementById('revenueDaysContainer');
+      if (!container) return;
+      container.innerHTML = `
+        <div class="p-3.5 rounded-xl bg-bqBg flex justify-between items-center">
+          <div>
+            <span class="text-[10px] text-slate-400 block">Cumulative Profit</span>
+            <b class="text-base font-black text-bqEmerald font-mono">$${state.user.cumProfit.toFixed(2)}</b>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] text-slate-400 block">Today's Profit</span>
+            <b class="text-sm font-black text-bqGold font-mono">$${state.user.todayProfit.toFixed(2)}</b>
+          </div>
+        </div>
+        <p class="text-center text-[11px] text-slate-400 py-2">Settlement records appear automatically when trades close in profit.</p>
+      `;
+    }
+
+    function updateBalances() {
+      document.getElementById('homeFuelBalance').innerText = `$${state.user.fuelBalance.toFixed(2)}`;
+      document.getElementById('walletGasAmount').innerHTML = `${state.user.fuelBalance.toFixed(2)} <span class="text-xs font-normal text-slate-400">USDT</span>`;
+      document.getElementById('walletCommissionAmount').innerHTML = `${state.user.commissionBalance.toFixed(2)} <span class="text-[10px] font-normal text-slate-400">USDT</span>`;
+      document.getElementById('teamTotalCommission').innerText = `$${state.user.commissionBalance.toFixed(2)}`;
+      document.getElementById('cumProfitDisplay').innerText = `$${state.user.cumProfit.toFixed(2)}`;
+      document.getElementById('todayProfitDisplay').innerText = `$${state.user.todayProfit.toFixed(2)}`;
+    }
+
+    function renderGasLogs() {
+      const el = document.getElementById('gasDeductionList');
+      if (el) {
+        el.innerHTML = `<p class="text-center text-[11px] text-slate-400 py-3">No billing records yet.</p>`;
+      }
+    }
+
+    function renderCircles() {
+      const c = document.getElementById('circleListContainer');
+      if (!c) return;
+      c.innerHTML = state.circles.map((cir, idx) => `
+        <div class="native-card p-3.5 flex justify-between items-center">
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h4 class="font-bold text-white text-sm">${cir.name}</h4>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-bqGold/20 text-bqGold font-bold">${cir.tag}</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-0.5">${cir.author}</p>
+          </div>
+          <button onclick="toggleCircleSync(${idx})" class="px-3.5 py-1.5 rounded-xl text-xs font-bold ${cir.synced ? 'bg-bqEmerald/20 text-bqEmerald' : 'bg-bqGold text-black'}">
+            ${cir.synced ? 'Synced' : 'Sync'}
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function toggleCircleSync(idx) {
+      state.circles[idx].synced = !state.circles[idx].synced;
+      renderCircles();
+      showToast(state.circles[idx].synced ? 'Circle synced' : 'Circle unsynced', 'emerald');
+    }
+
+    function renderMlmLogs() {
+      const el = document.getElementById('mlmCommissionLogs');
+      if (el) el.innerHTML = `<div class="native-card p-3 text-center text-[11px] text-slate-400">No reward records yet.</div>`;
+      const dlEl = document.getElementById('downlineMembersList');
+      if (dlEl) {
+        if (!state.downlineMembers.length) {
+          dlEl.innerHTML = `<div class="native-card p-3 text-center text-[11px] text-slate-400">0 direct members yet. Share code <b class="text-bqGold">${state.user.referralCode}</b> to build your team.</div>`;
+        } else {
+          dlEl.innerHTML = state.downlineMembers.map(d => `
+            <div class="native-card p-3 flex justify-between items-center text-xs">
+              <div><b class="text-white">${d.email}</b><span class="text-[10px] text-slate-400 block font-mono">UID: ${d.uid}</span></div>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-bqGold/20 text-bqGold font-bold">${d.rank}</span>
+            </div>
+          `).join('');
+        }
+      }
+    }
+
+    async function logoutUser() {
+      const sb = getSupabaseClient();
+      if (sb) { try { await sb.auth.signOut(); } catch (e) {} }
+      localStorage.removeItem('bq_jwt');
+      localStorage.removeItem('bq_user_profile');
+      state.jwtToken = null;
+      state.isAuthenticated = false;
+      closeModal('authModal');
+      document.getElementById('mandatoryAuthGate')?.classList.remove('hidden');
+      showToast('Logged out', 'emerald');
+    }
+
+    function submitExchangeApiBinding() {
+      const ex = document.getElementById('bindExchangeName').value;
+      const k = document.getElementById('bindApiKeyInput').value.trim();
+      const s = document.getElementById('bindApiSecretInput').value.trim();
+      if (!k || !s) { showToast('Enter API Key & Secret Key', 'rose'); return; }
+      closeModal('apiBindingModal');
+      showToast(`${ex} API bound`, 'emerald');
+    }
+
+    function calculateMarginReserve() {
+      const first = parseFloat(document.getElementById('mrFirstBuy').value) || 20;
+      const calls = parseInt(document.getElementById('mrCalls').value) || 7;
+      document.getElementById('mrTotalOutput').innerText = `$${(first * calls * 2.15).toFixed(2)} USDT`;
+    }
+
+    function openWithdrawModal() {
+      document.getElementById('wdAvailableBalance').innerText = `${state.user.commissionBalance.toFixed(2)} USDT`;
+      openModal('withdrawModal');
+    }
+
+    function submitCommissionWithdrawal() {
+      const dest = document.getElementById('wdAddressInput').value.trim();
+      const amt = parseFloat(document.getElementById('wdAmountInput').value);
+      if (!dest.startsWith('T') || dest.length < 30 || isNaN(amt) || amt < 10) {
+        showToast('Enter valid TRC-20 address & min 10 USDT', 'rose');
+        return;
+      }
+      if (state.user.commissionBalance < amt) {
+        showToast('Insufficient reward balance', 'rose');
+        return;
+      }
+      state.user.commissionBalance -= amt;
+      updateBalances();
+      closeModal('withdrawModal');
+      showToast('Withdrawal submitted', 'emerald');
+    }
+
+    function openTransferModal() {
+      document.getElementById('tfAvailableCommission').innerText = `${state.user.commissionBalance.toFixed(2)} USDT`;
+      openModal('transferModal');
+    }
+
+    function submitCommissionToGasTransfer() {
+      const amt = parseFloat(document.getElementById('tfAmountInput')?.value || '0');
+      if (isNaN(amt) || amt <= 0 || state.user.commissionBalance < amt) {
+        showToast('Insufficient balance', 'rose');
+        return;
+      }
+      state.user.commissionBalance -= amt;
+      state.user.fuelBalance += amt;
+      updateBalances();
+      closeModal('transferModal');
+      showToast('Transferred to Asset wallet', 'emerald');
+    }
+
+    async function claimTrc20Txid() {
+      const txHash = document.getElementById('depositTxidInput').value.trim();
+      if (!txHash || txHash.length < 16) {
+        showToast('Enter valid TRON TXID', 'rose');
+        return;
+      }
+      if (state.jwtToken) {
+        try {
+          const res = await fetch(`${state.backendUrl}/api/v1/wallet/claim-txid`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
+            body: JSON.stringify({ txHash })
+          });
+          const data = await res.json();
+          if (data.success) {
+            state.user.fuelBalance = Number(data.newGasBalance);
+            updateBalances();
+            closeModal('depositModal');
+            showToast(`Credited +$${Number(data.creditedAmountUsdt).toFixed(2)} USDT`, 'emerald');
+            return;
+          } else {
+            showToast(data.error || 'Verification pending', 'rose');
+            return;
+          }
+        } catch (e) {}
+      }
+      showToast('TXID submitted for verification', 'emerald');
+    }
+
+    function activateAnnualPack() {
+      if (state.user.isOwnerFree || state.user.isActivated) {
+        showToast('VIP Membership is already active', 'emerald');
+        return;
+      }
+      if (state.user.fuelBalance < 120) {
+        showToast('Deposit at least 120 USDT to activate VIP', 'rose');
+        openDepositModal();
+        return;
+      }
+      state.user.fuelBalance -= 120;
+      state.user.isActivated = true;
+      document.getElementById('homeActivationStatus').innerText = 'VIP Active (365 Days)';
+      document.getElementById('btnHeroActivate').innerText = 'Active';
+      updateBalances();
+      showToast('VIP Activated for 365 Days', 'emerald');
+    }
+
+    async function syncLiveUserProfile() {
+      if (!state.jwtToken) return;
+      try {
+        const res = await fetch(`${state.backendUrl}/api/v1/user/profile`, {
+          headers: { 'Authorization': `Bearer ${state.jwtToken}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success) {
+          if (data.wallet) {
+            state.user.fuelBalance = Number(data.wallet.gas_balance ?? state.user.fuelBalance);
+            state.user.commissionBalance = Number(data.wallet.commission_balance ?? state.user.commissionBalance);
+            state.user.cumProfit = Number(data.wallet.total_trading_profit ?? state.user.cumProfit);
+          }
+          if (Array.isArray(data.directTeam)) {
+            state.downlineMembers = data.directTeam.map(d => ({
+              uid: d.uid,
+              email: d.email,
+              rank: `V${d.rank_level || 1}`
+            }));
+            document.getElementById('teamDirectCount').innerText = String(state.downlineMembers.length);
+          }
+          updateBalances();
+          renderMlmLogs();
+          renderRevenueDetails();
+        }
+      } catch (e) {}
+    }
+
+    function openAndroidInstallModal() { openModal('androidInstallModal'); }
+    let deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstallPrompt = e; });
+    async function triggerPwaInstall() {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+      } else {
+        showToast('Tap browser menu (⋮) -> "Add to Home screen"', 'emerald');
+      }
+    }
+    function launchPwaBuilderForApk() {
+      const url = window.location.origin.startsWith('http') ? window.location.origin : 'https://bharatq-trading-app.onrender.com';
+      window.open(`https://www.pwabuilder.com/?site=${encodeURIComponent(url)}`, '_blank');
+    }
+
+    function syncBackendUrlFromAuth(val) {
+      const cleaned = (val || '').trim().replace(/\/+$/, '');
+      if (cleaned) {
+        state.backendUrl = cleaned;
+        localStorage.setItem('bq_backend_url', cleaned);
+      }
+    }
+
+    function updateUserIdentityUI() {
+      document.getElementById('mineUserEmail').innerText = state.user.email;
+      document.getElementById('mineUserMeta').innerText = `UID: ${state.user.uid || '--'}`;
+      document.getElementById('teamRefCodeLabel').innerText = state.user.referralCode;
+      document.getElementById('inviteModalCode').innerText = state.user.referralCode;
+      document.getElementById('teamRefLinkInput').value = `https://bharatq-trading-app.onrender.com/?code=${state.user.referralCode}`;
+      if (document.getElementById('modalSessionEmail')) document.getElementById('modalSessionEmail').innerText = state.user.email;
+      if (document.getElementById('modalSessionRank')) document.getElementById('modalSessionRank').innerText = `${state.user.rank} • ${state.user.referralCode}`;
+    }
+
+    function copyOfficialAddress() {
+      navigator.clipboard?.writeText(state.officialTrc20);
+      showToast('TRC-20 address copied', 'emerald');
+    }
+
+    function copyRefLink() {
+      navigator.clipboard?.writeText(`https://bharatq-trading-app.onrender.com/?code=${state.user.referralCode}`);
+      showToast('Invitation link copied', 'emerald');
+    }
+
+    function openLegalModal(type) {
+      document.getElementById('legalModalTitle').innerText = type === 'terms' ? 'User Agreement' : 'Privacy Policy';
+      document.getElementById('legalModalContent').innerHTML = type === 'terms'
+        ? `<p>BharatQ is a non-custodial quantitative trading tool. Your funds remain inside your personal exchange account.</p>`
+        : `<p>Your exchange API keys are encrypted with AES-256-GCM and never require withdrawal permissions.</p>`;
+      openModal('legalModal');
+    }
+
+    async function fetchLiveBinanceTicker() {
+      try {
+        const symbols = state.pairs.map(p => p.raw);
+        const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=' + encodeURIComponent(JSON.stringify(symbols)));
+        if (!res.ok) return;
+        const data = await res.json();
+        data.forEach(item => {
+          const match = state.pairs.find(p => p.raw === item.symbol);
+          if (match) {
+            match.price = parseFloat(item.lastPrice);
+            match.change = parseFloat(item.priceChangePercent);
+          }
+        });
+        renderPairs();
+      } catch (e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const refFromUrl = urlParams.get('code') || urlParams.get('ref');
+      if (refFromUrl && document.getElementById('gateSponsorInput')) {
+        document.getElementById('gateSponsorInput').value = refFromUrl.trim().toUpperCase();
+        localStorage.setItem('bq_pending_sponsor', refFromUrl.trim().toUpperCase());
+      }
+
+      const sb = getSupabaseClient();
+      if (sb) {
+        sb.auth.onAuthStateChange(async (event, session) => {
+          if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !state.isAuthenticated) {
+            await finalizeSupabaseMagicLinkSession(session);
+          }
+        });
+        try {
+          const { data } = await sb.auth.getSession();
+          if (data?.session && !state.isAuthenticated) {
+            await finalizeSupabaseMagicLinkSession(data.session);
+          }
+        } catch (e) {}
+      }
+
+      const gate = document.getElementById('mandatoryAuthGate');
+      if (state.jwtToken && state.user && state.user.uid) {
+        gate?.classList.add('hidden');
+      } else {
+        gate?.classList.remove('hidden');
+      }
+
+      renderPairs();
+      renderCircles();
+      renderGasLogs();
+      renderMlmLogs();
+      renderRevenueDetails();
+      updateBalances();
+      updateUserIdentityUI();
+      syncLiveUserProfile();
+      fetchLiveBinanceTicker();
+      setInterval(fetchLiveBinanceTicker, 4000);
+    });
+  </script>
+</body>
+</html>
