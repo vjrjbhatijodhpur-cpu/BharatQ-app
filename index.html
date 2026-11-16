@@ -259,14 +259,14 @@
           <div class="flex justify-between items-start">
             <div class="space-y-1">
               <div class="flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-bqEmerald live-dot"></span>
-                <span class="text-[11px] font-bold text-bqGold uppercase tracking-wider" id="homeRoleLabel">Quantitative Cloud Engine</span>
+                <span id="homeStatusDot" class="w-2 h-2 rounded-full bg-bqRose live-dot"></span>
+                <span class="text-[11px] font-bold text-bqGold uppercase tracking-wider" id="homeRoleLabel">Royal Q-Style Quantitative Engine</span>
               </div>
-              <h2 class="text-lg font-black text-white leading-snug" id="homeActivationStatus">VIP Inactive ($120/Yr)</h2>
-              <p class="text-[11px] text-slate-300" id="homeExchangeSubtext">Exchange Spot API: Not Bound</p>
+              <h2 class="text-lg font-black text-white leading-snug" id="homeActivationStatus">Unactivated ($120/Yr Required)</h2>
+              <p class="text-[11px] text-slate-300" id="homeExchangeSubtext">Bot Status: Locked until 120 USDT VIP Activation</p>
             </div>
             <button onclick="activateAnnualPack()" id="btnHeroActivate" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs shadow">
-              Activate
+              Activate $120
             </button>
           </div>
 
@@ -513,7 +513,14 @@
         </div>
 
         <div class="space-y-2">
-          <h3 class="text-xs font-bold text-white px-0.5">Direct Team Members (Real Registered Accounts)</h3>
+          <div class="flex items-center justify-between px-0.5">
+            <h3 class="text-xs font-bold text-white" id="teamListHeaderTitle">Network Members (Direct &amp; Downline)</h3>
+            <div class="flex gap-1.5 text-[10px] font-bold">
+              <button type="button" id="btnTeamFilterAll" onclick="setTeamViewFilter('ALL')" class="px-2.5 py-1 rounded-lg bg-bqGold text-black">All (<span id="teamAllCountBadge">0</span>)</button>
+              <button type="button" id="btnTeamFilterDirect" onclick="setTeamViewFilter('DIRECT')" class="px-2.5 py-1 rounded-lg bg-bqCard text-slate-400">Direct (<span id="teamDirectFilterBadge">0</span>)</button>
+              <button type="button" id="btnTeamFilterDownline" onclick="setTeamViewFilter('DOWNLINE')" class="px-2.5 py-1 rounded-lg bg-bqCard text-slate-400">Downline (<span id="teamDownlineFilterBadge">0</span>)</button>
+            </div>
+          </div>
           <div id="downlineMembersList" class="space-y-2"></div>
         </div>
 
@@ -535,13 +542,24 @@
             <div>
               <div class="flex items-center gap-2">
                 <h3 class="font-bold text-white text-sm" id="mineUserEmail">Not Signed In</h3>
-                <span class="text-[10px] bg-bqGold text-black font-black px-2 py-0.5 rounded-full" id="mineRankTag">V1</span>
+                <span class="text-[10px] bg-slate-700 text-slate-200 font-black px-2 py-0.5 rounded-full" id="mineRankTag">Unactivated</span>
               </div>
               <p class="text-[11px] text-slate-400 font-mono mt-0.5" id="mineUserMeta">UID: --</p>
             </div>
           </div>
           <button onclick="openModal('authModal')" class="text-slate-400 hover:text-bqGold p-2">
             <i class="fa-solid fa-chevron-right text-xs"></i>
+          </button>
+        </div>
+
+        <!-- Royal Q-Style VIP Activation Status Card -->
+        <div id="mineVipStatusBanner" class="native-card p-3.5 border border-bqRose/40 flex items-center justify-between gap-2">
+          <div>
+            <span class="text-[10px] uppercase font-bold text-bqRose block">VIP Bot License Status</span>
+            <b id="mineVipLicenseLabel" class="text-xs text-white">Unactivated — Recharge 120 USDT to Activate</b>
+          </div>
+          <button id="btnMineActivateVip" onclick="activateAnnualPack()" class="px-3 py-1.5 rounded-xl bg-bqGold text-black font-black text-[11px] shrink-0">
+            Activate ($120)
           </button>
         </div>
 
@@ -1075,13 +1093,50 @@
   </div>
 
   <!-- Legal Modal -->
-  <div id="legalModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
+  <!-- Royal Q-Style $120 VIP Activation Gate Modal -->
+  <div id="vipActivationGateModal" class="fixed inset-0 z-[90] bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqGold/50 rounded-3xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
-        <h3 id="legalModalTitle" class="text-sm font-bold text-white">User Agreement</h3>
-        <button onclick="closeModal('legalModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-xl bg-bqGold/20 text-bqGold flex items-center justify-center text-xs"><i class="fa-solid fa-crown"></i></span>
+          <h3 class="text-sm font-black text-white">Activate BharatQ VIP ($120/Yr)</h3>
+        </div>
+        <button onclick="closeModal('vipActivationGateModal')" class="w-7 h-7 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark text-xs"></i></button>
       </div>
-      <div id="legalModalContent" class="text-xs text-slate-300 space-y-2"></div>
+
+      <div class="p-3.5 rounded-2xl bg-bqBg border border-bqBorder space-y-2 text-xs">
+        <div class="flex justify-between">
+          <span class="text-slate-400">Account Status:</span>
+          <span class="text-bqRose font-bold">Unactivated (Bot Locked)</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Annual Bot License Fee:</span>
+          <span class="text-bqGold font-mono font-black">120.00 USDT / Year</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Your Fuel Gas Balance:</span>
+          <span id="vipModalCurrentGas" class="text-white font-mono font-bold">$0.00 USDT</span>
+        </div>
+        <div class="flex justify-between border-t border-bqBorder pt-2">
+          <span class="text-slate-400">Recommended Top-Up (VIP + Fuel):</span>
+          <span class="text-bqEmerald font-mono font-bold">140.00 USDT (TRC-20)</span>
+        </div>
+      </div>
+
+      <ul class="space-y-1.5 text-[11px] text-slate-300">
+        <li><i class="fa-solid fa-check text-bqEmerald mr-1.5"></i> Unlocks 24/7 automated trading on all 400+ Binance/Exchange pairs</li>
+        <li><i class="fa-solid fa-check text-bqEmerald mr-1.5"></i> Unlocks $30–$70 USDT direct referral bonuses &amp; V1–V6 team gas rewards</li>
+        <li><i class="fa-solid fa-check text-bqEmerald mr-1.5"></i> 100% Non-Custodial — funds stay in your own exchange Spot wallet</li>
+      </ul>
+
+      <div class="flex gap-2">
+        <button onclick="closeModal('vipActivationGateModal'); openDepositModal();" class="flex-1 py-3 rounded-2xl bg-bqBg border border-bqGold/50 text-bqGold font-black text-xs">
+          1. Recharge USDT
+        </button>
+        <button onclick="confirmActivateFromModal()" class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs shadow-lg">
+          2. Activate ($120)
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1200,6 +1255,8 @@
       pairMap: {},
       circles: [],
       downlineMembers: [],
+      fullDownlineMembers: [],
+      teamViewFilter: 'ALL',
       ledgerLogs: [],
       platformStats: null
     };
@@ -1438,15 +1495,62 @@
 
     function applyRoleAndRealStatusLabels() {
       const isOwner = Boolean(state.user.isOwnerFree);
-      document.getElementById('clientRankBadge').innerText = isOwner ? 'V6 Owner' : state.user.rank;
-      document.getElementById('mineRankTag').innerText = isOwner ? 'V6 Owner' : state.user.rank;
-      document.getElementById('homeRoleLabel').innerText = isOwner ? 'V6 Owner Master Console' : 'Quantitative Cloud Engine';
+      const isActive = Boolean(isOwner || state.user.isActivated);
+
+      const topBadge = document.getElementById('clientRankBadge');
+      const mineBadge = document.getElementById('mineRankTag');
+      if (topBadge) {
+        topBadge.innerText = isOwner ? 'V6 Owner' : (isActive ? state.user.rank : 'Unactivated');
+        topBadge.className = isActive
+          ? 'text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-bqGold/20 text-bqGold border border-bqGold/30'
+          : 'text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-bqRose/20 text-bqRose border border-bqRose/30';
+      }
+      if (mineBadge) {
+        mineBadge.innerText = isOwner ? 'V6 Owner' : (isActive ? state.user.rank : 'Unactivated');
+        mineBadge.className = isActive
+          ? 'text-[10px] bg-bqGold text-black font-black px-2 py-0.5 rounded-full'
+          : 'text-[10px] bg-bqRose/20 text-bqRose border border-bqRose/40 font-black px-2 py-0.5 rounded-full';
+      }
+
+      const statusDot = document.getElementById('homeStatusDot');
+      if (statusDot) {
+        statusDot.className = isActive
+          ? 'w-2 h-2 rounded-full bg-bqEmerald live-dot'
+          : 'w-2 h-2 rounded-full bg-bqRose live-dot';
+      }
+
+      document.getElementById('homeRoleLabel').innerText = isOwner
+        ? 'V6 Owner Master Console'
+        : (isActive ? 'VIP Active • Quantitative Engine' : 'Unactivated Account • Bot Locked');
+
       document.getElementById('homeActivationStatus').innerText = isOwner
         ? 'VIP Active (Owner V6 Lifetime)'
-        : (state.user.isActivated ? 'VIP Active (365 Days)' : 'VIP Inactive ($120/Yr)');
+        : (isActive ? 'VIP Active (365 Days)' : 'Unactivated ($120/Yr Required)');
 
       const heroBtn = document.getElementById('btnHeroActivate');
-      if (heroBtn) heroBtn.innerText = (isOwner || state.user.isActivated) ? 'Active' : 'Activate';
+      if (heroBtn) {
+        heroBtn.innerText = isActive ? 'Active' : 'Activate $120';
+        heroBtn.className = isActive
+          ? 'px-3.5 py-2 rounded-xl bg-bqEmerald/20 border border-bqEmerald/40 text-bqEmerald font-black text-xs'
+          : 'px-3.5 py-2 rounded-xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs shadow';
+      }
+
+      const mineVipBanner = document.getElementById('mineVipStatusBanner');
+      const mineVipLabel = document.getElementById('mineVipLicenseLabel');
+      const btnMineVip = document.getElementById('btnMineActivateVip');
+      if (mineVipBanner && mineVipLabel && btnMineVip) {
+        if (isActive) {
+          mineVipBanner.className = 'native-card p-3.5 border border-bqEmerald/40 flex items-center justify-between gap-2';
+          mineVipLabel.innerText = isOwner ? 'Lifetime Free V6 Owner VIP Active' : 'VIP License Active (365 Days) — Bot Unlocked';
+          btnMineVip.innerText = 'Active';
+          btnMineVip.className = 'px-3 py-1.5 rounded-xl bg-bqEmerald/20 text-bqEmerald font-black text-[11px] shrink-0';
+        } else {
+          mineVipBanner.className = 'native-card p-3.5 border border-bqRose/40 flex items-center justify-between gap-2';
+          mineVipLabel.innerText = 'Unactivated — Recharge 120 USDT to Activate';
+          btnMineVip.innerText = 'Activate ($120)';
+          btnMineVip.className = 'px-3 py-1.5 rounded-xl bg-bqGold text-black font-black text-[11px] shrink-0';
+        }
+      }
 
       const createCircleBtn = document.getElementById('btnCreateCircle');
       if (createCircleBtn) createCircleBtn.classList.toggle('hidden', !isOwner && state.user.rank !== 'V5' && state.user.rank !== 'V6');
@@ -1823,76 +1927,141 @@
       }
 
       const buildRow = (p) => {
-        const isRunning = p.status === 'Cycling';
+        const isUserVipActive = Boolean(state.user.isOwnerFree || state.user.isActivated);
+        const isRunning = isUserVipActive && p.status === 'Cycling';
         const priceDisplay = formatLiveTokenPrice(p.price);
         const up = p.change >= 0;
         const badgeText = p.base.length > 5 ? p.base.slice(0, 5) : p.base;
+        const modeShort = p.strategyMode === 'SUB_BIN_REALTIME' ? 'Sub-Bin RT' : (p.strategyMode === 'SUB_BIN' ? 'Sub-Bin' : 'Whole');
         return `
-          <div class="native-card p-3.5 space-y-2.5">
-            <div class="flex justify-between items-center">
-              <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-full bg-bqBg border border-bqBorder flex items-center justify-center font-black text-[10px] text-bqGold">
-                  ${badgeText}
-                </div>
-                <div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="font-bold text-white text-sm">${p.symbol}</span>
-                    <span class="text-[9px] px-1.5 py-0.5 rounded font-bold ${isRunning ? 'bg-bqEmerald/20 text-bqEmerald' : 'bg-slate-800 text-slate-400'}">${isRunning ? 'Cycling' : 'Stop'}</span>
-                  </div>
-                  <span class="text-[10px] text-slate-400 font-mono">Calls: ${p.calls}/${p.maxCalls} • 1st: $${p.firstBuy}</span>
-                </div>
+          <div class="native-card p-3 flex items-center justify-between gap-2">
+            <div onclick="openStrategyModal('${p.symbol}')" class="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer">
+              <div class="w-9 h-9 rounded-full bg-bqCardLight border border-bqBorder flex items-center justify-center font-black text-[10px] text-bqGold shrink-0">
+                ${badgeText}
               </div>
-              <div class="flex items-center gap-2.5">
-                <div class="text-right font-mono">
-                  <div class="text-xs font-bold text-white">${priceDisplay}</div>
-                  <div class="text-[10px] text-slate-400">TP ${p.tp}%</div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-bold text-white text-xs truncate">${p.symbol}</span>
+                  <span class="text-[9px] px-1.5 py-0.2 rounded ${!isUserVipActive ? 'bg-bqRose/20 text-bqRose' : (isRunning ? 'bg-bqEmerald/20 text-bqEmerald' : 'bg-slate-800 text-slate-400')} font-semibold">
+                    ${!isUserVipActive ? 'Unactivated' : (isRunning ? 'Cycling' : 'Paused')}
+                  </span>
                 </div>
-                <span class="px-2 py-1 rounded-lg text-[11px] font-mono font-bold min-w-[60px] text-center ${up ? 'bg-bqEmerald/20 text-bqEmerald' : 'bg-bqRose/20 text-bqRose'}">
-                  ${up ? '+' : ''}${p.change.toFixed(2)}%
-                </span>
+                <div class="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5 font-mono">
+                  <span>${priceDisplay}</span>
+                  <span class="${up ? 'text-bqEmerald' : 'text-bqRose'} font-bold">${up ? '+' : ''}${p.change.toFixed(2)}%</span>
+                  <span>• ${modeShort}</span>
+                </div>
               </div>
             </div>
-            <div class="flex items-center justify-between pt-2 border-t border-bqBorder/60 text-[11px]">
-              <span class="text-slate-400">Strategy: <b class="text-bqGold">${p.strategyMode === 'WHOLE_WAREHOUSE' ? 'Whole-Warehouse' : 'Sub-Bin RT'}</b></span>
-              <div class="flex gap-2">
-                <button onclick="openStrategyModal('${p.symbol}')" class="px-3 py-1 rounded-lg bg-bqBg border border-bqBorder text-slate-200 font-semibold">Settings</button>
-                <button onclick="toggleBotStatus('${p.symbol}')" class="px-3.5 py-1 rounded-lg font-bold ${isRunning ? 'bg-bqRose/20 text-bqRose' : 'bg-bqGold text-black'}">
-                  ${isRunning ? 'Pause' : 'Start'}
-                </button>
-              </div>
+
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="openStrategyModal('${p.symbol}')" class="px-2.5 py-1.5 rounded-xl bg-bqBg border border-bqBorder text-slate-300 text-[11px] font-semibold">
+                Settings
+              </button>
+              <button onclick="toggleBotStatus('${p.symbol}')" class="px-3 py-1.5 rounded-xl text-[11px] font-bold ${!isUserVipActive ? 'bg-slate-800 text-slate-400 border border-bqBorder' : (isRunning ? 'bg-bqRose/20 text-bqRose' : 'bg-bqGold text-black')}">
+                ${!isUserVipActive ? '<i class="fa-solid fa-lock text-[9px] mr-1"></i>Activate' : (isRunning ? 'Stop' : 'Start')}
+              </button>
             </div>
           </div>
         `;
       };
 
-      if (homeList) homeList.innerHTML = state.pairs.slice(0, 6).map(buildRow).join('');
+      if (homeList) {
+        const runningFirst = [...state.pairs].sort((a, b) => (b.status === 'Cycling' ? 1 : 0) - (a.status === 'Cycling' ? 1 : 0));
+        homeList.innerHTML = runningFirst.slice(0, 8).map(buildRow).join('');
+      }
+
+      const filtered = state.pairs.filter(p => {
+        if (searchQ) {
+          const matchesQuery = p.base.includes(searchQ) || p.symbol.includes(searchQ) || p.raw.includes(searchQ);
+          if (!matchesQuery) return false;
+        }
+        if (state.quickCategory !== 'ALL' && p.category !== state.quickCategory) return false;
+        if (state.quantFilter === 'running') return p.status === 'Cycling';
+        if (state.quantFilter === 'gainers') return p.change > 0;
+        return true;
+      });
+
       if (quantList) {
-        let filtered = state.pairs.filter(p => {
-          if (searchQ && !p.symbol.includes(searchQ) && !p.raw.includes(searchQ)) return false;
-          if (state.quickCategory !== 'ALL' && p.category !== state.quickCategory) return false;
-          if (state.quantFilter === 'running') return p.status === 'Cycling';
-          if (state.quantFilter === 'gainers') return p.change > 0;
+        if (filtered.length === 0) {
+          quantList.innerHTML = `<div class="native-card p-6 text-center text-xs text-slate-400">No coins matching "${searchQ}" found.</div>`;
+        } else {
+          quantList.innerHTML = filtered.slice(0, state.visibleLimit).map(buildRow).join('');
+        }
+      }
+
+      if (loadMoreBtn) {
+        loadMoreBtn.classList.toggle('hidden', filtered.length <= state.visibleLimit);
+        loadMoreBtn.innerText = `Load More (${filtered.length - state.visibleLimit} more pairs available)`;
+      }
+    }
+
+    function setTeamViewFilter(mode) {
+      state.teamViewFilter = mode;
+      ['ALL', 'DIRECT', 'DOWNLINE'].forEach(m => {
+        const key = m === 'ALL' ? 'All' : (m === 'DIRECT' ? 'Direct' : 'Downline');
+        const btn = document.getElementById(`btnTeamFilter${key}`);
+        if (btn) {
+          btn.className = m === mode
+            ? 'px-2.5 py-1 rounded-lg bg-bqGold text-black'
+            : 'px-2.5 py-1 rounded-lg bg-bqCard text-slate-400';
+        }
+      });
+      renderMlmLogs();
+    }
+
+    function renderMlmLogs() {
+      const el = document.getElementById('mlmCommissionLogs');
+      if (el) {
+        if (!state.ledgerLogs.length) {
+          el.innerHTML = `<div class="native-card p-3 text-center text-[11px] text-slate-400">0 real commission records yet.</div>`;
+        } else {
+          el.innerHTML = state.ledgerLogs.map(l => `
+            <div class="native-card p-3 flex justify-between items-center text-xs">
+              <div>
+                <b class="text-white block">${l.event_type} (${l.reference_id || ''})</b>
+                <span class="text-[10px] text-slate-400 font-mono">From: ${l.debit_account}</span>
+              </div>
+              <span class="font-mono font-bold text-bqEmerald">+$${Number(l.amount_usdt).toFixed(4)}</span>
+            </div>
+          `).join('');
+        }
+      }
+
+      const dlEl = document.getElementById('downlineMembersList');
+      if (dlEl) {
+        const allList = state.fullDownlineMembers.length ? state.fullDownlineMembers : state.downlineMembers;
+        const visibleList = allList.filter(m => {
+          if (state.teamViewFilter === 'DIRECT') return (m.genLevel || 1) === 1;
+          if (state.teamViewFilter === 'DOWNLINE') return (m.genLevel || 1) > 1;
           return true;
         });
 
-        if (state.quantFilter === 'gainers') {
-          filtered = [...filtered].sort((a, b) => b.change - a.change);
-        }
-
-        if (!filtered.length) {
-          quantList.innerHTML = `<div class="native-card p-6 text-center text-xs text-slate-400">No matching coin or token found for "<b class="text-white">${searchQ}</b>".</div>`;
-          loadMoreBtn?.classList.add('hidden');
+        if (!visibleList.length) {
+          dlEl.innerHTML = `<div class="native-card p-3 text-center text-[11px] text-slate-400">0 registered members in this view yet. Share your code <b class="text-bqGold">${state.user.referralCode}</b> to invite real users.</div>`;
         } else {
-          const slice = filtered.slice(0, state.visibleLimit);
-          quantList.innerHTML = slice.map(buildRow).join('');
-          if (loadMoreBtn) {
-            if (filtered.length > state.visibleLimit) {
-              loadMoreBtn.classList.remove('hidden');
-              loadMoreBtn.innerText = `Show More (${filtered.length - state.visibleLimit} more listed coins)`;
-            } else {
-              loadMoreBtn.classList.add('hidden');
-            }
-          }
+          dlEl.innerHTML = visibleList.map(d => {
+            const gen = d.genLevel || 1;
+            const invitedByTag = gen === 1
+              ? `<span class="text-bqGold">Direct Invite (${state.user.referralCode})</span>`
+              : `<span>Gen L${gen} • Via <b class="text-slate-200">${d.sponsorEmail || d.sponsorCode || 'Downline'}</b></span>`;
+            return `
+              <div class="native-card p-3 flex justify-between items-center text-xs">
+                <div class="space-y-0.5">
+                  <div class="flex items-center gap-1.5">
+                    <b class="text-white">${d.email}</b>
+                    <span class="text-[9px] px-1.5 py-0.2 rounded ${gen === 1 ? 'bg-bqGold/20 text-bqGold' : 'bg-blue-500/20 text-blue-300'} font-mono">L${gen}</span>
+                  </div>
+                  <span class="text-[10px] text-slate-400 font-mono block">UID: ${d.uid} • ${d.isActivated ? '<span class="text-bqEmerald">VIP Active</span>' : 'Free Member'}</span>
+                  <span class="text-[10px] text-slate-400 block">${invitedByTag}</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] px-2 py-0.5 rounded bg-bqGold/20 text-bqGold font-bold block">${d.rank}</span>
+                  <span class="text-[9px] text-slate-500 font-mono block mt-1">${d.joinedAt ? new Date(d.joinedAt).toLocaleDateString() : ''}</span>
+                </div>
+              </div>
+            `;
+          }).join('');
         }
       }
     }
@@ -1929,6 +2098,10 @@
     }
 
     function openStrategyModal(sym) {
+      if (!state.user.isOwnerFree && !state.user.isActivated) {
+        openVipActivationGateModal();
+        return;
+      }
       state.selectedPair = sym;
       const p = state.pairs.find(x => x.symbol === sym);
       if (!p) return;
@@ -1987,6 +2160,12 @@
     async function triggerManualReplenish() {
       const p = state.pairs.find(x => x.symbol === state.selectedPair);
       if (!p) return;
+      if (!state.user.isOwnerFree && !state.user.isActivated) {
+        closeModal('tradeSettingsModal');
+        showToast('Activate $120/Yr VIP License first to trade!', 'rose');
+        activateAnnualPack();
+        return;
+      }
       if (Object.keys(state.boundExchanges).length === 0) {
         showToast('Bind your exchange API first to place real orders', 'rose');
         return;
@@ -2034,6 +2213,12 @@
     }
 
     function saveStrategySettings() {
+      if (!state.user.isOwnerFree && !state.user.isActivated) {
+        closeModal('tradeSettingsModal');
+        showToast('Activate $120/Yr VIP License first to use the bot!', 'rose');
+        activateAnnualPack();
+        return;
+      }
       const p = state.pairs.find(x => x.symbol === state.selectedPair);
       if (p) {
         p.strategyMode = document.getElementById('cfgStrategyMode').value;
@@ -2055,6 +2240,10 @@
     function toggleBotStatus(sym) {
       const p = state.pairs.find(x => x.symbol === sym);
       if (!p) return;
+      if (!state.user.isOwnerFree && !state.user.isActivated) {
+        openVipActivationGateModal();
+        return;
+      }
       if (p.status !== 'Cycling' && Object.keys(state.boundExchanges).length === 0) {
         showToast('Please bind your Binance / Exchange API first!', 'rose');
         openApiModal('BINANCE');
@@ -2346,15 +2535,28 @@
             state.user.fuelBalance = Number(data.newGasBalance);
             updateBalances();
             closeModal('depositModal');
-            showToast(`Verified On-Chain: +$${Number(data.creditedAmountUsdt).toFixed(2)} USDT`, 'emerald');
+            showToast(data.message || `Credited +$${Number(data.creditedAmountUsdt).toFixed(2)} USDT!`, 'emerald');
             return;
           } else {
-            showToast(data.error || 'Transaction not confirmed on TronGrid', 'rose');
+            showToast(data.error || 'Could not verify TXID', 'rose');
             return;
           }
-        } catch (e) {}
+        } catch (e) {
+          showToast('Unable to reach server for TXID verification', 'rose');
+          return;
+        }
       }
-      showToast('Unable to verify TXID right now', 'rose');
+    }
+
+    function openVipActivationGateModal() {
+      const gasEl = document.getElementById('vipModalCurrentGas');
+      if (gasEl) gasEl.innerText = `$${Number(state.user.fuelBalance || 0).toFixed(2)} USDT`;
+      openModal('vipActivationGateModal');
+    }
+
+    async function confirmActivateFromModal() {
+      closeModal('vipActivationGateModal');
+      await activateAnnualPack();
     }
 
     async function activateAnnualPack() {
@@ -2363,8 +2565,8 @@
         return;
       }
       if (state.user.fuelBalance < 120) {
-        showToast('Deposit at least 120 USDT to activate VIP', 'rose');
-        openDepositModal();
+        openVipActivationGateModal();
+        showToast('Recharge at least 120 USDT (TRC-20) to activate your bot', 'rose');
         return;
       }
       if (state.jwtToken) {
@@ -2379,7 +2581,8 @@
             state.user.isActivated = true;
             applyRoleAndRealStatusLabels();
             updateBalances();
-            showToast('VIP Activated for 365 Days', 'emerald');
+            renderPairs();
+            showToast('VIP Activated for 365 Days! Bot Unlocked.', 'emerald');
             return;
           } else {
             showToast(data.error || 'Activation failed', 'rose');
@@ -2431,12 +2634,32 @@
               uid: d.uid,
               email: d.email,
               rank: `V${d.rank_level || 1}`,
-              isActivated: Boolean(d.is_activated)
+              isActivated: Boolean(d.is_activated),
+              genLevel: 1,
+              joinedAt: d.created_at
             }));
-            document.getElementById('teamDirectCount').innerText = String(state.downlineMembers.length);
-            document.getElementById('teamActiveVipCount').innerText = String(state.downlineMembers.filter(m => m.isActivated).length);
-            document.getElementById('teamRankTierDisplay').innerText = state.user.rank;
           }
+          if (Array.isArray(data.fullDownlineTeam)) {
+            state.fullDownlineMembers = data.fullDownlineTeam.map(d => ({
+              uid: d.uid,
+              email: d.email,
+              rank: `V${d.rank_level || 1}`,
+              isActivated: Boolean(d.is_activated),
+              genLevel: Number(d.gen_level || 1),
+              sponsorEmail: d.sponsor_email || '',
+              sponsorCode: d.sponsor_code || '',
+              joinedAt: d.created_at
+            }));
+          }
+          const combinedTeam = state.fullDownlineMembers.length ? state.fullDownlineMembers : state.downlineMembers;
+          const directOnlyCount = combinedTeam.filter(m => (m.genLevel || 1) === 1).length;
+          const downlineOnlyCount = combinedTeam.filter(m => (m.genLevel || 1) > 1).length;
+          document.getElementById('teamDirectCount').innerText = String(directOnlyCount);
+          document.getElementById('teamActiveVipCount').innerText = String(combinedTeam.filter(m => m.isActivated).length);
+          document.getElementById('teamRankTierDisplay').innerText = state.user.rank;
+          if (document.getElementById('teamAllCountBadge')) document.getElementById('teamAllCountBadge').innerText = String(combinedTeam.length);
+          if (document.getElementById('teamDirectFilterBadge')) document.getElementById('teamDirectFilterBadge').innerText = String(directOnlyCount);
+          if (document.getElementById('teamDownlineFilterBadge')) document.getElementById('teamDownlineFilterBadge').innerText = String(downlineOnlyCount);
           if (Array.isArray(data.commissionLogs)) {
             state.ledgerLogs = data.commissionLogs;
           }
