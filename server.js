@@ -347,6 +347,49 @@ async function verifyExchangeCredentialsLive(exchangeName, apiKey, apiSecret) {
       const data = await res.json();
       if (data.retCode !== 0) {
         return {
+          valid: false,
+          error: `Bybit (${data.retCode}): ${data.retMsg || 'API check failed'}`,
+          fixHint: `Ensure Spot trading is enabled on Bybit and whitelist IP: ${serverIp || 'your server IP'}.`,
+          serverIp
+        };
+      }
+      return { valid: true, spotUsdtBalance: null, canTrade: true, serverIp };
+    } catch (netErr) {
+      return { valid: false, error: `Network error reaching Bybit: ${netErr.message}`, serverIp };
+    }
+  }
+
+  return { valid: true, spotUsdtBalance: null, canTrade: true, serverIp };
+}
+
+// Execute a real Spot market order on user's bound Binance account
+async function executeBinanceSpotOrder(uid, rawSymbol, side, quoteOrderQtyUsdt) {
+  try {
+    const keyRes = await pool.query(
+      "SELECT * FROM exchange_api_keys WHERE uid = $1 AND exchange_name = 'BINANCE' AND is_valid = TRUE LIMIT 1",
+      [uid]
+    );
+    if (!keyRes.rows.length) {
+      return { executedOnExchange: false, reason: 'NO_BOUND_BINANCE_KEY' };
+    }
+    const row = keyRes.rows[0];
+    const apiSecret = decryptApiSecret(row.encrypted_secret, row.iv_hex, row.auth_tag_hex);
+    const ts = Date.now();
+    const qtyRounded = Number(quoteOrderQtyUsdt).toFixed(2);
+    const qs = `symbol=${rawSymbol}&side=${side}&type=MARKET&quoteOrderQty=${qtyRounded}&timestamp=${ts}`;
+    const sig = crypto.createHmac('sha256', apiSecret).update(qs).digest('hex');
+
+    const binanceRes = await fetch(`https://api.binance.com/api/v3/order?${qs}&signature=${sig}`, {
+      method: 'POST',
+      headers: { 'X-MBX-APIKEY': row.api_key }
+    });
+    const orderData = await binanceRes.json();
+    return { executedOnExchange: binanceRes.ok, details: orderData };
+  } catch (err) {
+    return { executedOnExchange: false, error: err.message };
+  }
+}
+
 // Auto-evaluate V1–V6 rank upgrades based on Royal Q rules (Direct VIPs + Total Team VIPs + 3 Separate Lower-Rank Legs)
 async function evaluateRoyalQRankUpgrade(client, sponsorUid) {
   if (!sponsorUid) return;
