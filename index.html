@@ -290,11 +290,12 @@
 
         <div class="native-card p-3.5">
           <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
-            <button onclick="openApiModal()" class="flex flex-col items-center gap-1.5 group">
-              <div class="w-10 h-10 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-base group-active:scale-95 transition">
+            <button onclick="openApiModal('BINANCE')" class="flex flex-col items-center gap-1.5 group relative">
+              <div id="homeApiIconWrap" class="w-10 h-10 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-base group-active:scale-95 transition">
                 <i class="fa-solid fa-link"></i>
               </div>
               <span class="text-[11px] font-medium text-slate-200">API Bind</span>
+              <span id="homeApiActiveDot" class="hidden w-2 h-2 rounded-full bg-bqEmerald absolute top-0.5 right-4"></span>
             </button>
 
             <button onclick="openModal('revenueDetailModal')" class="flex flex-col items-center gap-1.5 group">
@@ -393,7 +394,6 @@
       <!-- TAB 2: QUANTITATIVE (ALL BINANCE & GLOBAL EXCHANGE COINS/TOKENS + LIVE SEARCH)  -->
       <!-- =============================================================================== -->
       <section id="tab-quant" class="hidden space-y-3">
-        <!-- Exchange Selector Strip -->
         <div class="flex items-center justify-between gap-1.5 overflow-x-auto pb-1 text-xs font-bold">
           <button onclick="selectExchangeTab(this, 'Binance')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqGold text-black shrink-0">Binance</button>
           <button onclick="selectExchangeTab(this, 'Bybit')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0">Bybit</button>
@@ -403,7 +403,6 @@
           <button onclick="selectExchangeTab(this, 'HTX')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0">HTX</button>
         </div>
 
-        <!-- Live Search & Status Filter Bar -->
         <div class="flex gap-2">
           <div class="relative flex-1">
             <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
@@ -419,7 +418,6 @@
           </div>
         </div>
 
-        <!-- Category Quick Filter Pills -->
         <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-[10px] font-bold">
           <button onclick="setQuickCategory('ALL')" id="cat-ALL" class="cat-pill px-2.5 py-1 rounded-lg bg-bqGold/20 text-bqGold border border-bqGold/40 shrink-0">All Listed</button>
           <button onclick="setQuickCategory('MAJOR')" id="cat-MAJOR" class="cat-pill px-2.5 py-1 rounded-lg bg-bqCard text-slate-400 border border-bqBorder shrink-0">Layer 1 / Major</button>
@@ -428,13 +426,12 @@
           <button onclick="setQuickCategory('DEFI')" id="cat-DEFI" class="cat-pill px-2.5 py-1 rounded-lg bg-bqCard text-slate-400 border border-bqBorder shrink-0">DeFi &amp; Gaming</button>
         </div>
 
-        <!-- Live Binance Feed Counter -->
         <div class="flex items-center justify-between px-1 text-[11px] text-slate-400">
           <span class="flex items-center gap-1.5">
             <span class="w-2 h-2 rounded-full bg-bqEmerald live-dot"></span>
             <span id="selectedExchangeLabel" class="text-slate-200 font-semibold">Binance Spot</span> • <span id="totalLoadedCoinsCount" class="text-bqEmerald font-mono font-bold">Loading...</span>
           </span>
-          <span class="text-bqGold font-mono text-[10px]">All Pairs Tradeable</span>
+          <button onclick="openApiModal(state.selectedExchange.toUpperCase())" id="quantApiStatusChip" class="text-bqGold font-mono text-[10px] underline">Bind API</button>
         </div>
 
         <div id="quantPairsList" class="space-y-2.5"></div>
@@ -548,11 +545,11 @@
         </div>
 
         <div class="native-card divide-y divide-bqBorder/70 overflow-hidden text-xs">
-          <button onclick="openApiModal()" class="w-full px-4 py-3.5 flex items-center justify-between active:bg-bqCardLight transition text-left">
+          <button onclick="openApiModal('BINANCE')" class="w-full px-4 py-3.5 flex items-center justify-between active:bg-bqCardLight transition text-left">
             <span class="flex items-center gap-3 font-semibold text-slate-200">
               <i class="fa-solid fa-key text-blue-400 w-4 text-center"></i> API Binding
             </span>
-            <span class="text-[11px] text-slate-400 flex items-center gap-1.5">10+ Exchanges <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
+            <span id="mineApiBindingBadge" class="text-[11px] text-slate-400 flex items-center gap-1.5">Unbound <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
           </button>
 
           <button onclick="switchTab('team')" class="w-full px-4 py-3.5 flex items-center justify-between active:bg-bqCardLight transition text-left">
@@ -628,8 +625,100 @@
   </div>
 
   <!-- ===================================================================================== -->
-  <!-- NATIVE BOTTOM-SHEET & CENTER MODALS                                                   -->
+  <!-- ROYAL Q 4-PHASE API BINDING BOTTOM SHEET (IP GROUP + HMAC TEST + EMAIL CODE + RISK)    -->
   <!-- ===================================================================================== -->
+  <div id="apiBindingModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-end justify-center">
+    <div class="bg-bqCard border-t border-bqBorder rounded-t-3xl w-full max-w-[480px] p-5 space-y-3.5 max-h-[92dvh] overflow-y-auto safe-bottom">
+      <div class="w-10 h-1 bg-slate-700 rounded-full mx-auto"></div>
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <div>
+          <h3 class="text-sm font-black text-white">API Binding</h3>
+          <span class="text-[10px] text-slate-400">Spot Trading Only • Non-Custodial Security</span>
+        </div>
+        <button onclick="closeModal('apiBindingModal')" class="w-8 h-8 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Exchange Cards Row (Active = Colored, Unbound = Grey) -->
+      <div class="grid grid-cols-4 gap-2 text-center text-[11px]" id="exchangeCardGrid">
+        <button type="button" onclick="selectBindingExchange('BINANCE')" id="exCard-BINANCE" class="p-2.5 rounded-xl bg-bqBg border border-bqGold text-white font-bold flex flex-col items-center gap-1">
+          <span class="text-bqGold font-black">Binance</span>
+          <span id="exStatus-BINANCE" class="text-[9px] text-slate-400">Unbound</span>
+        </button>
+        <button type="button" onclick="selectBindingExchange('BYBIT')" id="exCard-BYBIT" class="p-2.5 rounded-xl bg-bqBg border border-bqBorder text-slate-400 font-bold flex flex-col items-center gap-1">
+          <span>Bybit</span>
+          <span id="exStatus-BYBIT" class="text-[9px] text-slate-500">Unbound</span>
+        </button>
+        <button type="button" onclick="selectBindingExchange('OKX')" id="exCard-OKX" class="p-2.5 rounded-xl bg-bqBg border border-bqBorder text-slate-400 font-bold flex flex-col items-center gap-1">
+          <span>OKX</span>
+          <span id="exStatus-OKX" class="text-[9px] text-slate-500">Unbound</span>
+        </button>
+        <button type="button" onclick="selectBindingExchange('COINDCX')" id="exCard-COINDCX" class="p-2.5 rounded-xl bg-bqBg border border-bqBorder text-slate-400 font-bold flex flex-col items-center gap-1">
+          <span>CoinDCX</span>
+          <span id="exStatus-COINDCX" class="text-[9px] text-slate-500">Unbound</span>
+        </button>
+      </div>
+
+      <!-- PHASE 1: ROYAL Q IP ADDRESS GROUP WHITELIST -->
+      <div class="p-3.5 rounded-2xl bg-bqBg border border-bqGold/35 space-y-2 text-xs">
+        <div class="flex justify-between items-center">
+          <span class="font-bold text-bqGold"><i class="fa-solid fa-server mr-1"></i> IP Address Group Binding</span>
+          <span id="ipFetchBadge" class="text-[10px] text-bqEmerald font-mono">Cloud Verified</span>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          For security, copy this IP group and paste it into <b class="text-slate-200">"Restrict access to trusted IPs only"</b> on Binance API Management:
+        </p>
+        <div class="flex items-center gap-2 bg-bqCard p-2.5 rounded-xl border border-bqBorder">
+          <code id="botWhitelistIps" class="text-[11px] font-mono text-bqEmerald flex-1 break-all select-all">Loading server IPs...</code>
+          <button type="button" onclick="copyBotWhitelistIps()" class="px-3 py-1.5 rounded-lg bg-bqGold text-black font-black text-[11px] shrink-0">
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <!-- PHASE 2 & 3: API KEY & SECRET KEY -->
+      <div class="space-y-2.5 text-xs">
+        <input type="hidden" id="bindExchangeName" value="BINANCE">
+        <div>
+          <label class="text-slate-400 block mb-1">API Key</label>
+          <input id="bindApiKeyInput" type="text" placeholder="Paste your Binance HMAC API Key" class="w-full bg-bqBg border border-bqBorder focus:border-bqGold rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
+        </div>
+        <div>
+          <label class="text-slate-400 block mb-1">Secret Key</label>
+          <input id="bindApiSecretInput" type="password" placeholder="Paste your Binance Secret Key" class="w-full bg-bqBg border border-bqBorder focus:border-bqGold rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
+        </div>
+
+        <!-- PHASE 4: EMAIL VERIFICATION CODE FOR API BINDING -->
+        <div>
+          <label class="text-slate-400 block mb-1">Verification Code (<span id="bindEmailHint" class="text-slate-300 font-mono">email</span>)</label>
+          <div class="flex gap-2">
+            <input id="bindVerifyCodeInput" type="text" inputmode="numeric" maxlength="8" placeholder="Enter verification code" class="flex-1 bg-bqBg border border-bqBorder focus:border-bqGold rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
+            <button type="button" id="btnSendBindCode" onclick="sendApiBindingVerificationCode()" class="px-3.5 rounded-xl bg-bqGold/15 border border-bqGold/40 text-bqGold font-bold text-xs whitespace-nowrap">
+              Send Code
+            </button>
+          </div>
+          <p id="bindVerifyStatusText" class="text-[10px] text-bqEmerald mt-1 hidden"></p>
+        </div>
+
+        <!-- RISK NOTICE CHECKBOX (Exact Royal Q Step 3) -->
+        <label class="flex items-start gap-2.5 pt-1 text-[11px] text-slate-300 cursor-pointer">
+          <input id="bindRiskCheckbox" type="checkbox" checked class="mt-0.5 accent-amber-400 w-4 h-4 shrink-0">
+          <span>I have carefully read the <b class="text-bqGold">Risk Notice</b>, disabled Withdrawal permissions on Binance, and whitelisted the IP group above.</span>
+        </label>
+      </div>
+
+      <!-- Live Diagnostics Result Box -->
+      <div id="apiBindResultBox" class="hidden p-3 rounded-xl bg-bqBg border text-xs space-y-1"></div>
+
+      <div class="flex gap-2 pt-1">
+        <button type="button" id="btnSubmitApiBind" onclick="submitExchangeApiBinding()" class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs shadow-lg">
+          Bind
+        </button>
+        <button type="button" id="btnUnbindApi" onclick="unbindCurrentExchange()" class="hidden px-4 py-3 rounded-2xl bg-bqRose/20 border border-bqRose/40 text-bqRose font-bold text-xs">
+          Unbind
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Royal Q Trade Settings Bottom Sheet -->
   <div id="tradeSettingsModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end justify-center">
@@ -744,38 +833,6 @@
       <button onclick="saveStrategySettings()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs">
         Confirm &amp; Save
       </button>
-    </div>
-  </div>
-
-  <!-- API Binding Modal -->
-  <div id="apiBindingModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end justify-center">
-    <div class="bg-bqCard border-t border-bqBorder rounded-t-3xl w-full max-w-[480px] p-5 space-y-4 safe-bottom">
-      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
-        <h3 class="text-sm font-bold text-white">API Binding</h3>
-        <button onclick="closeModal('apiBindingModal')" class="w-8 h-8 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="text-slate-400 block mb-1">Select Exchange</label>
-          <select id="bindExchangeName" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white">
-            <option value="BINANCE">Binance</option>
-            <option value="BYBIT">Bybit</option>
-            <option value="OKX">OKX</option>
-            <option value="HTX">HTX</option>
-            <option value="KUCOIN">KuCoin</option>
-            <option value="COINDCX">CoinDCX</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-slate-400 block mb-1">API Key</label>
-          <input id="bindApiKeyInput" type="text" placeholder="Enter Spot API Key" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
-        </div>
-        <div>
-          <label class="text-slate-400 block mb-1">Secret Key</label>
-          <input id="bindApiSecretInput" type="password" placeholder="Enter Secret Key" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
-        </div>
-      </div>
-      <button onclick="submitExchangeApiBinding()" class="w-full py-3 rounded-2xl bg-bqGold text-black font-black text-xs">Bind Exchange</button>
     </div>
   </div>
 
@@ -969,9 +1026,9 @@
         <button onclick="closeModal('helpTutorialModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="space-y-2 text-xs text-slate-300">
-        <p><b>1. API Binding:</b> Bind your Spot API key from Binance, Bybit, OKX, or CoinDCX.</p>
-        <p><b>2. Search Any Coin:</b> Open Quantitative and search any listed coin or token (BTC, ETH, SOL, PEPE, SUI, DOGE, SHIB, TON, etc.).</p>
-        <p><b>3. Start 24/7 Bot:</b> Tap <b>Start</b> on any pair to begin automated DCA &amp; Sub-Bin trading.</p>
+        <p><b>1. Copy IP Group:</b> Open API Binding and copy the IP Address Group shown at the top.</p>
+        <p><b>2. Configure Binance API:</b> On Binance API Management, create a System-generated (HMAC) key, check <b>Enable Spot &amp; Margin Trading</b>, and paste the IP Group into <b>Restrict access to trusted IPs only</b>.</p>
+        <p><b>3. Bind &amp; Start Bot:</b> Paste your API Key &amp; Secret Key in BharatQ, enter the verification code, and tap <b>Bind</b>.</p>
       </div>
     </div>
   </div>
@@ -1069,6 +1126,8 @@
       supabaseAnonKey: localStorage.getItem('bq_supabase_anon_key') || DEFAULT_SUPABASE_ANON_KEY,
       jwtToken: localStorage.getItem('bq_jwt') || null,
       officialTrc20: 'TUKdKMmRqpapdSzcQowC2y32cxxHomYEZo',
+      boundExchanges: JSON.parse(localStorage.getItem('bq_bound_exchanges') || '{}'),
+      serverIpGroup: 'Loading server IPs...',
       user: JSON.parse(localStorage.getItem('bq_user_profile') || 'null') || {
         uid: 0,
         email: 'Not Signed In',
@@ -1366,8 +1425,226 @@
 
     function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
-    function openApiModal() { openModal('apiBindingModal'); }
     function openDepositModal() { openModal('depositModal'); }
+
+    // =====================================================================================
+    // ROYAL Q 4-PHASE API BINDING LOGIC (IP GROUP + HMAC TEST + EMAIL CODE + ACTIVE STATUS)
+    // =====================================================================================
+    async function loadServerWhitelistIps() {
+      const ipEl = document.getElementById('botWhitelistIps');
+      try {
+        const res = await fetch(`${state.backendUrl}/api/v1/exchange/whitelist-ips`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ipGroupString) {
+            state.serverIpGroup = data.ipGroupString;
+            if (ipEl) ipEl.innerText = data.ipGroupString;
+            return;
+          }
+        }
+      } catch (e) {}
+      state.serverIpGroup = '35.160.120.126 44.233.151.27 34.211.200.85';
+      if (ipEl) ipEl.innerText = state.serverIpGroup;
+    }
+
+    function copyBotWhitelistIps() {
+      const txt = document.getElementById('botWhitelistIps')?.innerText || state.serverIpGroup;
+      navigator.clipboard?.writeText(txt);
+      showToast('IP Address Group copied! Paste in Binance IP restriction.', 'emerald');
+    }
+
+    function selectBindingExchange(exName) {
+      const cleanEx = exName.toUpperCase();
+      document.getElementById('bindExchangeName').value = cleanEx;
+      ['BINANCE', 'BYBIT', 'OKX', 'COINDCX'].forEach(ex => {
+        const card = document.getElementById(`exCard-${ex}`);
+        if (!card) return;
+        const isSelected = ex === cleanEx;
+        const isBound = Boolean(state.boundExchanges[ex]);
+        card.className = isSelected
+          ? 'p-2.5 rounded-xl bg-bqBg border-2 border-bqGold text-white font-bold flex flex-col items-center gap-1'
+          : `p-2.5 rounded-xl bg-bqBg border ${isBound ? 'border-bqEmerald/50 text-white' : 'border-bqBorder text-slate-400'} font-bold flex flex-col items-center gap-1`;
+      });
+
+      const existing = state.boundExchanges[cleanEx];
+      const unbindBtn = document.getElementById('btnUnbindApi');
+      const resultBox = document.getElementById('apiBindResultBox');
+      if (existing) {
+        document.getElementById('bindApiKeyInput').value = existing.maskedKey || '';
+        document.getElementById('bindApiSecretInput').value = '';
+        if (unbindBtn) unbindBtn.classList.remove('hidden');
+        if (resultBox) {
+          resultBox.classList.remove('hidden');
+          resultBox.className = 'p-3 rounded-xl bg-bqEmerald/10 border border-bqEmerald/40 text-xs text-bqEmerald space-y-1';
+          resultBox.innerHTML = `<b>● ${cleanEx} API Bound &amp; Active</b><span class="block text-[11px] text-slate-300">Spot Balance Verified: ${existing.spotUsdt || 'Ready'} • Permissions: Spot Enabled</span>`;
+        }
+      } else {
+        document.getElementById('bindApiKeyInput').value = '';
+        document.getElementById('bindApiSecretInput').value = '';
+        if (unbindBtn) unbindBtn.classList.add('hidden');
+        if (resultBox) resultBox.classList.add('hidden');
+      }
+    }
+
+    function updateBoundExchangeBadges() {
+      const exchanges = ['BINANCE', 'BYBIT', 'OKX', 'COINDCX'];
+      let activeList = [];
+      exchanges.forEach(ex => {
+        const st = document.getElementById(`exStatus-${ex}`);
+        const bound = Boolean(state.boundExchanges[ex]);
+        if (bound) activeList.push(ex);
+        if (st) {
+          st.innerText = bound ? '● Active' : 'Unbound';
+          st.className = bound ? 'text-[9px] text-bqEmerald font-bold' : 'text-[9px] text-slate-500';
+        }
+      });
+
+      const mineBadge = document.getElementById('mineApiBindingBadge');
+      const homeIcon = document.getElementById('homeApiIconWrap');
+      const homeDot = document.getElementById('homeApiActiveDot');
+      const quantChip = document.getElementById('quantApiStatusChip');
+
+      if (activeList.length > 0) {
+        if (mineBadge) mineBadge.innerHTML = `<span class="text-bqEmerald font-bold">${activeList.join(', ')} Active</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>`;
+        if (homeIcon) homeIcon.className = 'w-10 h-10 rounded-2xl bg-bqGold/20 text-bqGold border border-bqGold/50 flex items-center justify-center text-base group-active:scale-95 transition';
+        if (homeDot) homeDot.classList.remove('hidden');
+        if (quantChip) {
+          quantChip.innerText = `● ${activeList[0]} Bound`;
+          quantChip.className = 'text-bqEmerald font-mono text-[10px] font-bold';
+        }
+      } else {
+        if (mineBadge) mineBadge.innerHTML = `Unbound <i class="fa-solid fa-chevron-right text-[10px]"></i>`;
+        if (homeIcon) homeIcon.className = 'w-10 h-10 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-base group-active:scale-95 transition';
+        if (homeDot) homeDot.classList.add('hidden');
+        if (quantChip) {
+          quantChip.innerText = 'Bind API';
+          quantChip.className = 'text-bqGold font-mono text-[10px] underline';
+        }
+      }
+    }
+
+    function openApiModal(exchangeName = 'BINANCE') {
+      document.getElementById('bindEmailHint').innerText = state.user.email || 'your email';
+      loadServerWhitelistIps();
+      selectBindingExchange(exchangeName);
+      openModal('apiBindingModal');
+    }
+
+    async function sendApiBindingVerificationCode() {
+      const email = state.user.email;
+      const btn = document.getElementById('btnSendBindCode');
+      const statusTxt = document.getElementById('bindVerifyStatusText');
+      if (!email || !email.includes('@')) {
+        showToast('Please sign in with your email first', 'rose');
+        return;
+      }
+      if (btn) { btn.disabled = true; btn.innerText = 'Sending...'; }
+
+      try {
+        const sb = getSupabaseClient();
+        if (sb) {
+          const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+          if (!error) {
+            if (statusTxt) {
+              statusTxt.classList.remove('hidden');
+              statusTxt.innerText = `Verification code sent to ${email}!`;
+            }
+            if (btn) { btn.disabled = false; btn.innerText = 'Sent'; }
+            showToast('Verification code sent to your email', 'emerald');
+            return;
+          }
+        }
+        const res = await fetch(`${state.backendUrl}/api/v1/auth/send-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (data.success && statusTxt) {
+          statusTxt.classList.remove('hidden');
+          statusTxt.innerText = `Verification code sent to ${email}!`;
+        }
+      } catch (e) {}
+      if (btn) { btn.disabled = false; btn.innerText = 'Send Code'; }
+    }
+
+    async function submitExchangeApiBinding() {
+      const ex = (document.getElementById('bindExchangeName')?.value || 'BINANCE').toUpperCase();
+      const apiKey = (document.getElementById('bindApiKeyInput')?.value || '').trim();
+      const apiSecret = (document.getElementById('bindApiSecretInput')?.value || '').trim();
+      const verifyCode = (document.getElementById('bindVerifyCodeInput')?.value || '').trim();
+      const riskChecked = document.getElementById('bindRiskCheckbox')?.checked;
+      const resultBox = document.getElementById('apiBindResultBox');
+      const bindBtn = document.getElementById('btnSubmitApiBind');
+
+      if (!apiKey || apiKey.length < 10) {
+        showToast('Please enter a valid API Key', 'rose');
+        return;
+      }
+      if (!apiSecret || apiSecret.length < 10) {
+        showToast('Please enter a valid Secret Key', 'rose');
+        return;
+      }
+      if (!riskChecked) {
+        showToast('Please check the Risk Notice box first', 'rose');
+        return;
+      }
+
+      if (bindBtn) { bindBtn.disabled = true; bindBtn.innerText = 'Verifying with Exchange...'; }
+
+      try {
+        const res = await fetch(`${state.backendUrl}/api/v1/exchange/bind`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(state.jwtToken ? { 'Authorization': `Bearer ${state.jwtToken}` } : {})
+          },
+          body: JSON.stringify({
+            exchangeName: ex,
+            apiKey,
+            apiSecret,
+            verificationCode: verifyCode
+          })
+        });
+        const data = await res.json();
+
+        if (bindBtn) { bindBtn.disabled = false; bindBtn.innerText = 'Bind'; }
+
+        if (data.success) {
+          state.boundExchanges[ex] = {
+            boundAt: Date.now(),
+            maskedKey: apiKey.slice(0, 6) + '••••••' + apiKey.slice(-4),
+            spotUsdt: data.spotUsdtBalance != null ? `$${Number(data.spotUsdtBalance).toFixed(2)} USDT` : 'Verified'
+          };
+          localStorage.setItem('bq_bound_exchanges', JSON.stringify(state.boundExchanges));
+          updateBoundExchangeBadges();
+          selectBindingExchange(ex);
+          showToast(`${ex} API Bound & Active!`, 'emerald');
+          return;
+        } else {
+          if (resultBox) {
+            resultBox.classList.remove('hidden');
+            resultBox.className = 'p-3 rounded-xl bg-bqRose/15 border border-bqRose/40 text-xs text-bqRose space-y-1';
+            resultBox.innerHTML = `<b>Connection Failed: ${data.error || 'Rejected by Exchange'}</b>` +
+              (data.fixHint ? `<span class="block text-[11px] text-slate-200 mt-1">${data.fixHint}</span>` : '');
+          }
+          showToast(data.error || 'Exchange rejected API key', 'rose');
+          return;
+        }
+      } catch (err) {
+        if (bindBtn) { bindBtn.disabled = false; bindBtn.innerText = 'Bind'; }
+        showToast('Could not reach BharatQ backend server', 'rose');
+      }
+    }
+
+    function unbindCurrentExchange() {
+      const ex = (document.getElementById('bindExchangeName')?.value || 'BINANCE').toUpperCase();
+      delete state.boundExchanges[ex];
+      localStorage.setItem('bq_bound_exchanges', JSON.stringify(state.boundExchanges));
+      updateBoundExchangeBadges();
+      selectBindingExchange(ex);
+      showToast(`${ex} Unbound`, 'emerald');
+    }
 
     function showToast(msg, color = 'emerald') {
       const t = document.getElementById('toast');
@@ -1695,6 +1972,11 @@
     function toggleBotStatus(sym) {
       const p = state.pairs.find(x => x.symbol === sym);
       if (!p) return;
+      if (p.status !== 'Cycling' && Object.keys(state.boundExchanges).length === 0) {
+        showToast('Please bind your Binance / Exchange API first!', 'rose');
+        openApiModal('BINANCE');
+        return;
+      }
       p.status = p.status === 'Cycling' ? 'Paused' : 'Cycling';
       renderPairs();
       syncBotStrategyToBackend(p);
@@ -1786,24 +2068,6 @@
       closeModal('authModal');
       document.getElementById('mandatoryAuthGate')?.classList.remove('hidden');
       showToast('Logged out', 'emerald');
-    }
-
-    async function submitExchangeApiBinding() {
-      const ex = document.getElementById('bindExchangeName').value;
-      const k = document.getElementById('bindApiKeyInput').value.trim();
-      const s = document.getElementById('bindApiSecretInput').value.trim();
-      if (!k || !s) { showToast('Enter API Key & Secret Key', 'rose'); return; }
-      if (state.jwtToken) {
-        try {
-          await fetch(`${state.backendUrl}/api/v1/exchange/bind`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
-            body: JSON.stringify({ exchangeName: ex, apiKey: k, apiSecret: s })
-          });
-        } catch (e) {}
-      }
-      closeModal('apiBindingModal');
-      showToast(`${ex} API bound`, 'emerald');
     }
 
     function calculateMarginReserve() {
@@ -1913,6 +2177,17 @@
             state.user.commissionBalance = Number(data.wallet.commission_balance ?? state.user.commissionBalance);
             state.user.cumProfit = Number(data.wallet.total_trading_profit ?? state.user.cumProfit);
           }
+          if (Array.isArray(data.boundExchanges)) {
+            data.boundExchanges.forEach(b => {
+              state.boundExchanges[b.exchange_name] = {
+                boundAt: Date.now(),
+                maskedKey: (b.api_key || '').slice(0, 6) + '••••••',
+                spotUsdt: 'Verified'
+              };
+            });
+            localStorage.setItem('bq_bound_exchanges', JSON.stringify(state.boundExchanges));
+            updateBoundExchangeBadges();
+          }
           if (Array.isArray(data.directTeam)) {
             state.downlineMembers = data.directTeam.map(d => ({
               uid: d.uid,
@@ -1981,7 +2256,6 @@
       openModal('legalModal');
     }
 
-    // Fetch ALL USDT Spot Coins & Tokens Listed on Binance & Global Exchanges (400+ Pairs)
     const EXCLUDED_LEVERAGED_SUFFIXES = ['UPUSDT', 'DOWNUSDT', 'BEARUSDT', 'BULLUSDT', 'USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'BUSDUSDT', 'USDPUSDT', 'EURUSDT', 'TRYUSDT', 'BRLUSDT', 'ARSUSDT', 'AEURUSDT', 'EURIUSDT'];
 
     async function fetchAllExchangeCoinsLive() {
@@ -2052,6 +2326,7 @@
         gate?.classList.remove('hidden');
       }
 
+      updateBoundExchangeBadges();
       renderPairs();
       renderCircles();
       renderGasLogs();
