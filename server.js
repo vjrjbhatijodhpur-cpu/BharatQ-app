@@ -44,6 +44,40 @@ let dcaCyclesProcessed = 0;
 let cachedServerPublicIp = '';
 const liveMarketPrices = {};
 const priceRollingHistory = {};
+const binanceSymbolRulesCache = {};
+
+// Fetch and cache Binance exchangeInfo precision rules (stepSize & minNotional)
+async function getBinanceSymbolPrecisionRules(rawSymbol) {
+  const clean = String(rawSymbol || '').toUpperCase();
+  if (binanceSymbolRulesCache[clean]) return binanceSymbolRulesCache[clean];
+  try {
+    const res = await fetch(`https://api.binance.com/api/v3/exchangeInfo?symbol=${clean}`);
+    if (res.ok) {
+      const data = await res.json();
+      const symInfo = (data.symbols || [])[0];
+      if (symInfo && Array.isArray(symInfo.filters)) {
+        const lotFilter = symInfo.filters.find(f => f.filterType === 'LOT_SIZE');
+        const notionalFilter = symInfo.filters.find(f => f.filterType === 'NOTIONAL' || f.filterType === 'MIN_NOTIONAL');
+        const rules = {
+          stepSize: lotFilter ? parseFloat(lotFilter.stepSize) : 0.00001,
+          minQty: lotFilter ? parseFloat(lotFilter.minQty) : 0.00001,
+          minNotional: notionalFilter ? parseFloat(notionalFilter.minNotional || '10') : 10,
+          quotePrecision: symInfo.quoteAssetPrecision || 2
+        };
+        binanceSymbolRulesCache[clean] = rules;
+        return rules;
+      }
+    }
+  } catch (e) {}
+  return { stepSize: 0.00001, minQty: 0.00001, minNotional: 10, quotePrecision: 2 };
+}
+
+function roundToStepSize(value, stepSize) {
+  if (!stepSize || stepSize <= 0) return Number(value.toFixed(6));
+  const decimals = (String(stepSize).split('.')[1] || '').length;
+  const floored = Math.floor(value / stepSize) * stepSize;
+  return Number(floored.toFixed(decimals));
+}
 
 // Detect live Render server outbound IP for Exchange API IP Whitelisting
 async function detectOutboundServerIp() {
@@ -362,7 +396,7 @@ async function verifyExchangeCredentialsLive(exchangeName, apiKey, apiSecret) {
   return { valid: true, spotUsdtBalance: null, canTrade: true, serverIp };
 }
 
-// Execute a real Spot market order on user's bound Binance account
+// Execute a real Spot market order on user's bound Binance account with LOT_SIZE & MIN_NOTIONAL precision
 async function executeBinanceSpotOrder(uid, rawSymbol, side, quoteOrderQtyUsdt) {
   try {
     const keyRes = await pool.query(
@@ -374,9 +408,29 @@ async function executeBinanceSpotOrder(uid, rawSymbol, side, quoteOrderQtyUsdt) 
     }
     const row = keyRes.rows[0];
     const apiSecret = decryptApiSecret(row.encrypted_secret, row.iv_hex, row.auth_tag_hex);
-    const ts = Date.now();
-    const qtyRounded = Number(quoteOrderQtyUsdt).toFixed(2);
-    const qs = `symbol=${rawSymbol}&side=${side}&type=MARKET&quoteOrderQty=${qtyRounded}&timestamp=${ts}`;
+    const rules = await getBinanceSymbolPrecisionRules(rawSymbol);
+    const safeUsdt = Math.max(rules.minNotional, Number(quoteOrderQtyUsdt));
+
+    let serverTime = Date.now();
+    try {
+      const tRes = await fetch('https://api.binance.com/api/v3/time');
+      if (tRes.ok) {
+        const tData = await tRes.json();
+        if (tData.serverTime) serverTime = tData.serverTime;
+      }
+    } catch (e) {}
+
+    let orderParam = `quoteOrderQty=${safeUsdt.toFixed(Math.min(rules.quotePrecision, 2))}`;
+    if (side === 'SELL') {
+      const curPrice = await getOrFetchLiveSymbolPrice(rawSymbol);
+      if (curPrice > 0) {
+        const rawBaseQty = safeUsdt / curPrice;
+        const roundedQty = Math.max(rules.minQty, roundToStepSize(rawBaseQty, rules.stepSize));
+        orderParam = `quantity=${roundedQty}`;
+      }
+    }
+
+    const qs = `symbol=${rawSymbol}&side=${side}&type=MARKET&${orderParam}&timestamp=${serverTime}&recvWindow=10000`;
     const sig = crypto.createHmac('sha256', apiSecret).update(qs).digest('hex');
 
     const binanceRes = await fetch(`https://api.binance.com/api/v3/order?${qs}&signature=${sig}`, {
@@ -1645,11 +1699,55 @@ async function evaluateActiveDcaBots() {
   } catch (err) {}
 }
 
+// Daily Global V6 Dividend Pool Auto-Distributor (Splits 5% accrued gas pool equally among all V6 leaders)
+async function distributeDailyGlobalV6Pool() {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const poolsRes = await client.query(
+      'SELECT pool_date, accrued_usdt FROM global_dividend_pool WHERE distributed = FALSE AND pool_date < CURRENT_DATE AND accrued_usdt > 0 FOR UPDATE'
+    );
+    if (!poolsRes.rows.length) {
+      await client.query('COMMIT');
+      return;
+    }
+
+    const v6Res = await client.query('SELECT uid FROM users WHERE rank_level = 6 OR is_owner_exempt = TRUE');
+    if (!v6Res.rows.length) {
+      await client.query('COMMIT');
+      return;
+    }
+
+    for (const row of poolsRes.rows) {
+      const totalPool = Number(row.accrued_usdt);
+      const perV6Share = totalPool / v6Res.rows.length;
+      for (const leader of v6Res.rows) {
+        await client.query(
+          'UPDATE user_wallets SET commission_balance = commission_balance + $1, updated_at = NOW() WHERE uid = $2',
+          [perV6Share, leader.uid]
+        );
+        await client.query(
+          'INSERT INTO ledger_journal (debit_account, credit_account, amount_usdt, event_type, reference_id) VALUES ($1, $2, $3, $4, $5)',
+          ['GLOBAL_V6_POOL', `SPONSOR_${leader.uid}_V6_POOL`, perV6Share, 'GLOBAL_V6_DIVIDEND', String(row.pool_date).slice(0, 10)]
+        );
+      }
+      await client.query('UPDATE global_dividend_pool SET distributed = TRUE WHERE pool_date = $1', [row.pool_date]);
+    }
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+  } finally {
+    client.release();
+  }
+}
+
 startBinanceAllMarketStream();
 setInterval(evaluateActiveDcaBots, 3000);
+setInterval(distributeDailyGlobalV6Pool, 60 * 60 * 1000);
 
 app.listen(PORT, async () => {
   await initDatabaseSchema();
   await detectOutboundServerIp();
+  await distributeDailyGlobalV6Pool();
   console.log(`BharatQ Real Production Engine running on port ${PORT} (Outbound IP: ${cachedServerPublicIp})`);
 });
