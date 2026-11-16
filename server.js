@@ -45,6 +45,7 @@ let cachedServerPublicIp = '';
 const liveMarketPrices = {};
 const priceRollingHistory = {};
 
+// Detect live Render server outbound IP for Exchange API IP Whitelisting
 async function detectOutboundServerIp() {
   if (cachedServerPublicIp) return cachedServerPublicIp;
   try {
@@ -60,6 +61,7 @@ async function detectOutboundServerIp() {
   return '';
 }
 
+// Compute live RSI and volatility for AI Dip Filter & Dynamic Take Profit
 function computeLiveRsiAndVolatility(rawSym) {
   const arr = priceRollingHistory[rawSym] || [];
   if (arr.length < 4) return { rsi: 45.0, volatilityPct: 0.8 };
@@ -80,6 +82,7 @@ function computeLiveRsiAndVolatility(rawSym) {
   return { rsi, volatilityPct };
 }
 
+// Fetch live Spot price for any listed symbol on Binance
 async function getOrFetchLiveSymbolPrice(rawSym) {
   if (liveMarketPrices[rawSym] && liveMarketPrices[rawSym] > 0) {
     return liveMarketPrices[rawSym];
@@ -98,6 +101,7 @@ async function getOrFetchLiveSymbolPrice(rawSym) {
   return 0;
 }
 
+// Initialize & verify PostgreSQL schema on server startup
 async function initDatabaseSchema() {
   const autoSql = `
     CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -250,6 +254,7 @@ function isOwnerIdentity(email = '', mobile = '') {
   return cleanEmail === OWNER_EMAIL || cleanMobile.endsWith(OWNER_MOBILE);
 }
 
+// AES-256-GCM encryption for Exchange API Secret Keys
 function encryptApiSecret(plainSecret) {
   const key = Buffer.from(KMS_MASTER_KEY_HEX, 'hex');
   const iv = crypto.randomBytes(16);
@@ -269,6 +274,7 @@ function decryptApiSecret(encryptedSecret, ivHex, authTagHex) {
   return decrypted;
 }
 
+// Real HMAC-SHA256 verification against Binance / Bybit Spot API
 async function verifyExchangeCredentialsLive(exchangeName, apiKey, apiSecret) {
   const ex = String(exchangeName || 'BINANCE').toUpperCase();
   const serverIp = await detectOutboundServerIp();
@@ -356,6 +362,7 @@ async function verifyExchangeCredentialsLive(exchangeName, apiKey, apiSecret) {
   return { valid: true, spotUsdtBalance: null, canTrade: true, serverIp };
 }
 
+// Execute live Spot Market BUY/SELL order on bound Binance account
 async function executeBinanceSpotOrder(uid, symbol, side, quoteOrderQtyUsdt) {
   try {
     const keyRes = await pool.query(
@@ -382,6 +389,7 @@ async function executeBinanceSpotOrder(uid, symbol, side, quoteOrderQtyUsdt) {
   }
 }
 
+// Auto-evaluate V1–V6 rank upgrades based on active VIP directs
 async function evaluateRoyalQRankUpgrade(client, sponsorUid) {
   if (!sponsorUid) return;
   try {
@@ -409,6 +417,7 @@ async function evaluateRoyalQRankUpgrade(client, sponsorUid) {
   } catch (e) {}
 }
 
+// Differential V1–V6 commission & Peer Award distribution + Owner Net Retention
 async function distributeDifferentialMlm(client, sourceUid, eventType, totalPoolUsdt) {
   let currentUid = sourceUid;
   let highestRankPaid = 0;
@@ -515,6 +524,7 @@ function requireAuth(req, res, next) {
   }
 }
 
+// Health & Engine Status Endpoint
 app.get('/api/v1/health', async (req, res) => {
   try {
     const dbCheck = await pool.query('SELECT NOW() AS server_time');
@@ -534,6 +544,7 @@ app.get('/api/v1/health', async (req, res) => {
   }
 });
 
+// Live Outbound IP Group Endpoint for Binance IP Restriction
 app.get('/api/v1/exchange/whitelist-ips', async (req, res) => {
   const liveIp = await detectOutboundServerIp();
   res.json({
@@ -544,6 +555,7 @@ app.get('/api/v1/exchange/whitelist-ips', async (req, res) => {
   });
 });
 
+// Real Verified Leader Ranking Endpoint
 app.get('/api/v1/leaderboard', async (req, res) => {
   try {
     const q = await pool.query(`
@@ -562,6 +574,7 @@ app.get('/api/v1/leaderboard', async (req, res) => {
   }
 });
 
+// Create Strategy Circle (V5 & V6 Leaders Only)
 app.post('/api/v1/circles', requireAuth, async (req, res) => {
   try {
     const uRes = await pool.query('SELECT uid, email, rank_level, is_owner_exempt FROM users WHERE uid = $1 LIMIT 1', [req.user.uid]);
@@ -581,6 +594,7 @@ app.post('/api/v1/circles', requireAuth, async (req, res) => {
   }
 });
 
+// Full User Profile, Real Wallets, Direct Team & 15-Level Downline Tree
 app.get('/api/v1/user/profile', requireAuth, async (req, res) => {
   try {
     const uRes = await pool.query('SELECT uid, email, mobile_number, referral_code, sponsor_uid, rank_level, is_activated, is_owner_exempt FROM users WHERE uid = $1 LIMIT 1', [req.user.uid]);
@@ -593,6 +607,25 @@ app.get('/api/v1/user/profile', requireAuth, async (req, res) => {
     );
     const directsRes = await pool.query(
       'SELECT uid, email, referral_code, rank_level, is_activated, created_at FROM users WHERE sponsor_uid = $1 ORDER BY created_at DESC LIMIT 100',
+      [req.user.uid]
+    );
+    const fullDownlineRes = await pool.query(
+      `WITH RECURSIVE downline_tree AS (
+         SELECT u.uid, u.email, u.referral_code, u.rank_level, u.is_activated, u.sponsor_uid, u.created_at, 1 AS gen_level
+         FROM users u
+         WHERE u.sponsor_uid = $1
+         UNION ALL
+         SELECT child.uid, child.email, child.referral_code, child.rank_level, child.is_activated, child.sponsor_uid, child.created_at, dt.gen_level + 1
+         FROM users child
+         INNER JOIN downline_tree dt ON child.sponsor_uid = dt.uid
+         WHERE dt.gen_level < 15
+       )
+       SELECT dt.uid, dt.email, dt.referral_code, dt.rank_level, dt.is_activated, dt.gen_level, dt.created_at,
+              sp.email AS sponsor_email, sp.referral_code AS sponsor_code
+       FROM downline_tree dt
+       LEFT JOIN users sp ON dt.sponsor_uid = sp.uid
+       ORDER BY dt.gen_level ASC, dt.created_at DESC
+       LIMIT 300`,
       [req.user.uid]
     );
     const circlesRes = await pool.query('SELECT * FROM strategy_circles ORDER BY created_at DESC LIMIT 20');
@@ -615,6 +648,7 @@ app.get('/api/v1/user/profile', requireAuth, async (req, res) => {
       boundExchanges: keysRes.rows,
       commissionLogs: logsRes.rows,
       directTeam: directsRes.rows,
+      fullDownlineTeam: fullDownlineRes.rows,
       circles: circlesRes.rows,
       platformStats
     });
@@ -632,6 +666,7 @@ async function resolveSponsorUid(sponsorCode, isOwner) {
   return ownerSp.rows.length ? ownerSp.rows[0].uid : null;
 }
 
+// Register Endpoint
 app.post('/api/v1/auth/register', async (req, res) => {
   try {
     const { email, mobileNumber, password, sponsorCode } = req.body;
@@ -682,6 +717,7 @@ app.post('/api/v1/auth/register', async (req, res) => {
   }
 });
 
+// Password Login Endpoint
 app.post('/api/v1/auth/login', async (req, res) => {
   try {
     const { email, mobileNumber, password } = req.body;
@@ -738,6 +774,7 @@ app.post('/api/v1/auth/login', async (req, res) => {
   }
 });
 
+// Send OTP Endpoint
 app.post('/api/v1/auth/send-otp', async (req, res) => {
   try {
     const { email, mobileNumber } = req.body;
@@ -789,6 +826,7 @@ app.post('/api/v1/auth/send-otp', async (req, res) => {
   }
 });
 
+// Verify OTP / Supabase Magic-Link Session Endpoint
 app.post('/api/v1/auth/verify-otp', async (req, res) => {
   try {
     const { email, mobileNumber, otpCode, sponsorCode, supabaseAccessToken } = req.body;
@@ -880,6 +918,7 @@ app.post('/api/v1/auth/verify-otp', async (req, res) => {
   }
 });
 
+// Royal Q-Style Exchange API Binding Endpoint (Live HMAC-SHA256 Check + AES-256-GCM Storage)
 app.post('/api/v1/exchange/bind', async (req, res) => {
   try {
     const { exchangeName, apiKey, apiSecret } = req.body;
@@ -936,8 +975,14 @@ app.post('/api/v1/exchange/bind', async (req, res) => {
   }
 });
 
+// Save & Start Quantitative Strategy (Strictly Requires $120 VIP Activation or Owner Exemption)
 app.post('/api/v1/bot/strategy', requireAuth, async (req, res) => {
   try {
+    const uCheck = await pool.query('SELECT is_activated, is_owner_exempt FROM users WHERE uid = $1 LIMIT 1', [req.user.uid]);
+    const uRow = uCheck.rows[0];
+    if (!uRow || (!uRow.is_activated && !uRow.is_owner_exempt)) {
+      return res.status(403).json({ success: false, error: 'VIP License ($120/year) required before starting the bot.' });
+    }
     const {
       symbol,
       status,
@@ -1025,8 +1070,14 @@ app.post('/api/v1/bot/strategy', requireAuth, async (req, res) => {
   }
 });
 
+// Manual Buy / Sell Position Action (Strictly Requires $120 VIP Activation or Owner Exemption)
 app.post('/api/v1/bot/manual-action', requireAuth, async (req, res) => {
   try {
+    const uCheck = await pool.query('SELECT is_activated, is_owner_exempt FROM users WHERE uid = $1 LIMIT 1', [req.user.uid]);
+    const uRow = uCheck.rows[0];
+    if (!uRow || (!uRow.is_activated && !uRow.is_owner_exempt)) {
+      return res.status(403).json({ success: false, error: 'VIP License ($120/year) required to execute bot orders.' });
+    }
     const { symbol, action, extraUsdt } = req.body;
     const rawSym = String(symbol || 'BTCUSDT').replace('/', '').toUpperCase();
     const curPrice = (await getOrFetchLiveSymbolPrice(rawSym)) || 1;
@@ -1073,6 +1124,7 @@ app.post('/api/v1/bot/manual-action', requireAuth, async (req, res) => {
   }
 });
 
+// $120 Annual VIP Activation Endpoint
 app.post('/api/v1/user/activate', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -1122,6 +1174,7 @@ app.post('/api/v1/user/activate', requireAuth, async (req, res) => {
   }
 });
 
+// Real On-Chain TRON TRC-20 USDT Deposit Claim via TronGrid
 app.post('/api/v1/wallet/claim-txid', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -1172,11 +1225,18 @@ app.post('/api/v1/wallet/claim-txid', requireAuth, async (req, res) => {
       [creditedAmountUsdt, req.user.uid]
     );
 
+    const uCheck = await client.query('SELECT is_activated, is_owner_exempt FROM users WHERE uid = $1', [req.user.uid]);
+    const isCurrentlyActive = Boolean(uCheck.rows[0]?.is_activated || uCheck.rows[0]?.is_owner_exempt);
+
     await client.query('COMMIT');
     res.json({
       success: true,
       creditedAmountUsdt,
-      newGasBalance: upd.rows[0]?.gas_balance || creditedAmountUsdt
+      newGasBalance: upd.rows[0]?.gas_balance || creditedAmountUsdt,
+      isActivated: isCurrentlyActive,
+      message: isCurrentlyActive
+        ? `Credited +$${creditedAmountUsdt.toFixed(2)} USDT to Fuel Gas Wallet.`
+        : `Credited +$${creditedAmountUsdt.toFixed(2)} USDT. Tap "Activate ($120)" to unlock your VIP bot!`
     });
   } catch (err) {
     await client.query('ROLLBACK');
@@ -1186,6 +1246,7 @@ app.post('/api/v1/wallet/claim-txid', requireAuth, async (req, res) => {
   }
 });
 
+// Real USDT TRC-20 Withdrawal Endpoint
 app.post('/api/v1/wallet/withdraw', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -1257,6 +1318,7 @@ app.post('/api/v1/wallet/withdraw', requireAuth, async (req, res) => {
   }
 });
 
+// Zero-Fee Reward-to-Fuel Transfer Endpoint
 app.post('/api/v1/wallet/transfer', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -1289,6 +1351,7 @@ app.post('/api/v1/wallet/transfer', requireAuth, async (req, res) => {
   }
 });
 
+// Live Binance WebSocket Ticker Stream for All USDT Spot Pairs
 function startBinanceAllMarketStream() {
   const wsUrl = 'wss://stream.binance.com:9443/ws/!ticker@arr';
   try {
@@ -1316,10 +1379,16 @@ function startBinanceAllMarketStream() {
   } catch (e) {}
 }
 
+// 24/7 Cloud Quantitative DCA Engine (Strictly Runs Only for $120 VIP Active Users & V6 Owner)
 async function evaluateActiveDcaBots() {
   dcaCyclesProcessed += 1;
   try {
-    const activeBots = await pool.query("SELECT * FROM bot_strategies WHERE status IN ('CYCLING', 'Cycling')");
+    const activeBots = await pool.query(`
+      SELECT b.* FROM bot_strategies b
+      INNER JOIN users u ON b.uid = u.uid
+      WHERE b.status IN ('CYCLING', 'Cycling')
+        AND (u.is_activated = TRUE OR u.is_owner_exempt = TRUE)
+    `);
     for (const bot of activeBots.rows) {
       const rawSym = String(bot.symbol).replace('/', '').toUpperCase();
       const currentPrice = await getOrFetchLiveSymbolPrice(rawSym);
