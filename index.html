@@ -9,8 +9,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BharatQ">
   <title>BharatQ — Quantitative AI Trading</title>
-  <link id="dynamicFavicon" rel="icon" type="image/svg+xml" href="">
-  <link id="dynamicAppleIcon" rel="apple-touch-icon" href="">
   <link id="dynamicManifest" rel="manifest" href="manifest.json">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -96,7 +94,7 @@
 <body>
 
   <!-- ===================================================================================== -->
-  <!-- FULL-SCREEN NATIVE ROYAL Q STYLE LOGIN & SUPABASE EMAIL OTP / MAGIC-LINK GATE         -->
+  <!-- FULL-SCREEN NATIVE LOGIN & SUPABASE EMAIL OTP / MAGIC-LINK GATE                       -->
   <!-- ===================================================================================== -->
   <div id="mandatoryAuthGate" class="fixed inset-0 z-[100] bg-[#060B18] flex flex-col justify-between max-w-[480px] mx-auto overflow-y-auto safe-top safe-bottom">
     <div class="px-6 pt-6 pb-8 flex-1 flex flex-col justify-between">
@@ -136,7 +134,7 @@
           </div>
           <div>
             <h1 class="text-2xl font-black text-white tracking-tight">Welcome to Bharat<span class="text-bqGold">Q</span></h1>
-            <p class="text-xs text-slate-400 mt-1">24/7 Intelligent Quantitative Trading System</p>
+            <p class="text-xs text-slate-400 mt-1">24/7 Quantitative Spot Trading Platform</p>
           </div>
         </div>
 
@@ -215,7 +213,7 @@
   </div>
 
   <!-- ===================================================================================== -->
-  <!-- MAIN NATIVE MOBILE APP SHELL (100dvh SCREEN-FIT)                                      -->
+  <!-- MAIN NATIVE MOBILE APP SHELL (100dvh SCREEN-FIT, 100% REAL VALUES ONLY)               -->
   <!-- ===================================================================================== -->
   <div class="app-shell">
 
@@ -244,7 +242,7 @@
         </button>
         <button onclick="openModal('notificationModal')" class="w-8 h-8 rounded-full bg-bqCard border border-bqBorder text-slate-300 flex items-center justify-center relative">
           <i class="fa-regular fa-bell text-xs"></i>
-          <span class="w-2 h-2 rounded-full bg-bqRose absolute top-1.5 right-1.5"></span>
+          <span id="notifDot" class="hidden w-2 h-2 rounded-full bg-bqRose absolute top-1.5 right-1.5"></span>
         </button>
       </div>
     </header>
@@ -253,7 +251,7 @@
     <main class="app-scroll px-4 pt-3 space-y-4">
 
       <!-- =============================================================================== -->
-      <!-- TAB 1: HOME (ROYAL Q NATIVE DASHBOARD)                                          -->
+      <!-- TAB 1: HOME (100% REAL LIVE STATS & REAL SPOT BALANCES)                         -->
       <!-- =============================================================================== -->
       <section id="tab-home" class="space-y-4">
 
@@ -262,10 +260,10 @@
             <div class="space-y-1">
               <div class="flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-bqEmerald live-dot"></span>
-                <span class="text-[11px] font-bold text-bqGold uppercase tracking-wider">Quantitative Cloud Engine</span>
+                <span class="text-[11px] font-bold text-bqGold uppercase tracking-wider" id="homeRoleLabel">Quantitative Cloud Engine</span>
               </div>
               <h2 class="text-lg font-black text-white leading-snug" id="homeActivationStatus">VIP Inactive ($120/Yr)</h2>
-              <p class="text-[11px] text-slate-300">All 400+ Exchange Spot Pairs • 24/7 AI DCA</p>
+              <p class="text-[11px] text-slate-300" id="homeExchangeSubtext">Exchange Spot API: Not Bound</p>
             </div>
             <button onclick="activateAnnualPack()" id="btnHeroActivate" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs shadow">
               Activate
@@ -278,11 +276,11 @@
               <b id="todayProfitDisplay" class="text-xs font-black text-bqEmerald font-mono">$0.00</b>
             </div>
             <div class="bg-bqBg/60 rounded-xl p-2">
-              <span class="text-[10px] text-slate-400 block">Cumulative</span>
+              <span class="text-[10px] text-slate-400 block">Cumulative Profit</span>
               <b id="cumProfitDisplay" class="text-xs font-black text-white font-mono">$0.00</b>
             </div>
             <div class="bg-bqBg/60 rounded-xl p-2">
-              <span class="text-[10px] text-slate-400 block">Fuel Gas</span>
+              <span class="text-[10px] text-slate-400 block">Fuel Gas Balance</span>
               <b id="homeFuelBalance" class="text-xs font-black text-bqGold font-mono">$0.00</b>
             </div>
           </div>
@@ -333,7 +331,7 @@
               <span class="text-[11px] font-medium text-slate-200">Risk Calc</span>
             </button>
 
-            <button onclick="openModal('leaderboardModal')" class="flex flex-col items-center gap-1.5 group">
+            <button onclick="openLeaderboardReal()" class="flex flex-col items-center gap-1.5 group">
               <div class="w-10 h-10 rounded-2xl bg-yellow-500/15 text-yellow-400 flex items-center justify-center text-base group-active:scale-95 transition">
                 <i class="fa-solid fa-trophy"></i>
               </div>
@@ -353,7 +351,7 @@
           <div class="flex items-center gap-2 overflow-hidden">
             <i class="fa-solid fa-volume-high text-bqGold text-xs shrink-0"></i>
             <p class="text-[11px] text-slate-300 truncate">
-              <span class="text-bqGold font-bold">Security Notice:</span> BharatQ never asks for your withdrawal permissions or OTP.
+              <span class="text-bqGold font-bold">Security Notice:</span> BharatQ never asks for withdrawal permissions or OTPs.
             </p>
           </div>
           <i class="fa-solid fa-chevron-right text-[10px] text-slate-500 shrink-0"></i>
@@ -363,17 +361,17 @@
           <div class="native-card p-2.5 text-center">
             <span class="text-[11px] font-bold text-slate-300 block">BTC/USDT</span>
             <span class="text-xs font-black text-white font-mono block mt-0.5">--</span>
-            <span class="text-[10px] text-bqEmerald font-mono">0.00%</span>
+            <span class="text-[10px] text-slate-400 font-mono">0.00%</span>
           </div>
           <div class="native-card p-2.5 text-center">
             <span class="text-[11px] font-bold text-slate-300 block">ETH/USDT</span>
             <span class="text-xs font-black text-white font-mono block mt-0.5">--</span>
-            <span class="text-[10px] text-bqEmerald font-mono">0.00%</span>
+            <span class="text-[10px] text-slate-400 font-mono">0.00%</span>
           </div>
           <div class="native-card p-2.5 text-center">
             <span class="text-[11px] font-bold text-slate-300 block">SOL/USDT</span>
             <span class="text-xs font-black text-white font-mono block mt-0.5">--</span>
-            <span class="text-[10px] text-bqEmerald font-mono">0.00%</span>
+            <span class="text-[10px] text-slate-400 font-mono">0.00%</span>
           </div>
         </div>
 
@@ -381,7 +379,7 @@
           <div class="flex items-center justify-between px-0.5">
             <div class="flex items-center gap-3 text-xs font-bold">
               <span class="text-white border-b-2 border-bqGold pb-1">Hot Quantitative Pairs</span>
-              <span onclick="switchTab('quant')" class="text-slate-400 pb-1 cursor-pointer">All Coins (<span id="homeTotalCoinsBadge">400+</span>)</span>
+              <span onclick="switchTab('quant')" class="text-slate-400 pb-1 cursor-pointer">All Listed (<span id="homeTotalCoinsBadge">0</span>)</span>
             </div>
             <button onclick="switchTab('quant')" class="text-[11px] text-bqGold font-semibold">Search All &rsaquo;</button>
           </div>
@@ -391,7 +389,7 @@
       </section>
 
       <!-- =============================================================================== -->
-      <!-- TAB 2: QUANTITATIVE (ALL BINANCE & GLOBAL EXCHANGE COINS/TOKENS + LIVE SEARCH)  -->
+      <!-- TAB 2: QUANTITATIVE (ALL REAL EXCHANGE COINS/TOKENS + LIVE BINANCE SPOT API)    -->
       <!-- =============================================================================== -->
       <section id="tab-quant" class="hidden space-y-3">
         <div class="flex items-center justify-between gap-1.5 overflow-x-auto pb-1 text-xs font-bold">
@@ -406,7 +404,7 @@
         <div class="flex gap-2">
           <div class="relative flex-1">
             <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-            <input id="quantSearchInput" type="text" oninput="handleCoinSearch()" placeholder="Search any coin (BTC, PEPE, SUI, SHIB, TON...)" class="w-full bg-bqCard border border-bqBorder rounded-xl pl-9 pr-8 py-2 text-xs text-white focus:outline-none focus:border-bqGold">
+            <input id="quantSearchInput" type="text" oninput="handleCoinSearch()" placeholder="Search any listed coin (BTC, PEPE, SUI, SHIB...)" class="w-full bg-bqCard border border-bqBorder rounded-xl pl-9 pr-8 py-2 text-xs text-white focus:outline-none focus:border-bqGold">
             <button id="clearSearchBtn" onclick="clearCoinSearch()" class="hidden absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs">
               <i class="fa-solid fa-circle-xmark"></i>
             </button>
@@ -429,7 +427,7 @@
         <div class="flex items-center justify-between px-1 text-[11px] text-slate-400">
           <span class="flex items-center gap-1.5">
             <span class="w-2 h-2 rounded-full bg-bqEmerald live-dot"></span>
-            <span id="selectedExchangeLabel" class="text-slate-200 font-semibold">Binance Spot</span> • <span id="totalLoadedCoinsCount" class="text-bqEmerald font-mono font-bold">Loading...</span>
+            <span id="selectedExchangeLabel" class="text-slate-200 font-semibold">Binance Spot</span> • <span id="totalLoadedCoinsCount" class="text-bqEmerald font-mono font-bold">Loading live feed...</span>
           </span>
           <button onclick="openApiModal(state.selectedExchange.toUpperCase())" id="quantApiStatusChip" class="text-bqGold font-mono text-[10px] underline">Bind API</button>
         </div>
@@ -442,31 +440,31 @@
       </section>
 
       <!-- =============================================================================== -->
-      <!-- TAB 3: CIRCLE (COPY-TRADE CIRCLES)                                              -->
+      <!-- TAB 3: CIRCLE (100% REAL DATABASE CIRCLES ONLY — ZERO HARDCODED FAKES)          -->
       <!-- =============================================================================== -->
       <section id="tab-circle" class="hidden space-y-3.5">
         <div class="gold-banner rounded-2xl p-4 flex items-center justify-between">
           <div>
             <h2 class="text-base font-black text-white">Strategy Circles</h2>
-            <p class="text-[11px] text-slate-300 mt-0.5">Auto-sync parameters from verified V5/V6 traders</p>
+            <p class="text-[11px] text-slate-300 mt-0.5">Live verified circles from real V5/V6 platform leaders</p>
           </div>
-          <div class="w-10 h-10 rounded-2xl bg-bqGold/20 text-bqGold flex items-center justify-center text-lg">
-            <i class="fa-solid fa-compass"></i>
-          </div>
+          <button id="btnCreateCircle" onclick="openModal('createCircleModal')" class="hidden px-3 py-2 rounded-xl bg-bqGold text-black font-black text-xs">
+            + Create Circle
+          </button>
         </div>
         <div class="space-y-2.5" id="circleListContainer"></div>
       </section>
 
       <!-- =============================================================================== -->
-      <!-- TAB 4: TEAM / AFFILIATE NETWORK                                                 -->
+      <!-- TAB 4: TEAM / AFFILIATE NETWORK (100% REAL DATABASE TREE & REAL LEDGER LOGS)    -->
       <!-- =============================================================================== -->
       <section id="tab-team" class="hidden space-y-3.5">
         <div class="gold-banner rounded-2xl p-4 space-y-3">
           <div class="flex justify-between items-start">
             <div>
-              <span class="text-[10px] uppercase font-bold text-bqGold tracking-wider">Cumulative Affiliate Reward</span>
+              <span class="text-[10px] uppercase font-bold text-bqGold tracking-wider" id="teamWalletHeading">Cumulative Reward Balance</span>
               <h2 class="text-2xl font-black text-white font-mono mt-0.5" id="teamTotalCommission">$0.00</h2>
-              <p class="text-[11px] text-slate-300 mt-0.5">Direct ($30–$70) + Team Gas Share + 10% Peer Bonus</p>
+              <p class="text-[11px] text-slate-300 mt-0.5" id="teamPlanSubtext">Direct ($30–$70) + Team Gas Share + 10% Peer Bonus</p>
             </div>
             <span id="teamRefCodeLabel" class="text-[11px] font-mono font-extrabold bg-bqGold text-black px-2.5 py-1 rounded-lg">BHARAT1</span>
           </div>
@@ -479,32 +477,54 @@
 
         <div class="grid grid-cols-3 gap-2 text-center">
           <div class="native-card p-3">
-            <span class="text-[10px] text-slate-400 block">Direct Activated</span>
+            <span class="text-[10px] text-slate-400 block">Direct Team</span>
             <b id="teamDirectCount" class="text-base font-black text-white font-mono">0</b>
           </div>
           <div class="native-card p-3">
-            <span class="text-[10px] text-slate-400 block">Team Size</span>
-            <b id="teamTotalCount" class="text-base font-black text-bqEmerald font-mono">0</b>
+            <span class="text-[10px] text-slate-400 block">Active VIPs</span>
+            <b id="teamActiveVipCount" class="text-base font-black text-bqEmerald font-mono">0</b>
           </div>
           <div class="native-card p-3">
-            <span class="text-[10px] text-slate-400 block">Peer Award</span>
-            <b class="text-base font-black text-bqGold font-mono">10%</b>
+            <span class="text-[10px] text-slate-400 block">Your Tier</span>
+            <b id="teamRankTierDisplay" class="text-base font-black text-bqGold font-mono">V1</b>
+          </div>
+        </div>
+
+        <!-- Real Platform Overview Card (Shown only to V6 Owner from Real DB Totals) -->
+        <div id="ownerPlatformStatsCard" class="hidden native-card p-3.5 border border-bqGold/40 space-y-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-bqGold"><i class="fa-solid fa-crown mr-1"></i> Real Platform Network Summary (Live DB)</span>
+            <span class="text-[10px] text-bqEmerald font-mono">Verified</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center text-[11px]">
+            <div class="bg-bqBg p-2 rounded-xl">
+              <span class="text-[10px] text-slate-400 block">Total Users</span>
+              <b id="ownerRealTotalUsers" class="text-white font-mono">0</b>
+            </div>
+            <div class="bg-bqBg p-2 rounded-xl">
+              <span class="text-[10px] text-slate-400 block">Active VIPs</span>
+              <b id="ownerRealActiveVips" class="text-bqEmerald font-mono">0</b>
+            </div>
+            <div class="bg-bqBg p-2 rounded-xl">
+              <span class="text-[10px] text-slate-400 block">Total Gas Pool</span>
+              <b id="ownerRealTotalGasPool" class="text-bqGold font-mono">$0.00</b>
+            </div>
           </div>
         </div>
 
         <div class="space-y-2">
-          <h3 class="text-xs font-bold text-white px-0.5">Direct Team Members</h3>
+          <h3 class="text-xs font-bold text-white px-0.5">Direct Team Members (Real Registered Accounts)</h3>
           <div id="downlineMembersList" class="space-y-2"></div>
         </div>
 
         <div class="space-y-2">
-          <h3 class="text-xs font-bold text-white px-0.5">Reward Distribution History</h3>
+          <h3 class="text-xs font-bold text-white px-0.5">Real Ledger Reward &amp; Settlement History</h3>
           <div id="mlmCommissionLogs" class="space-y-2"></div>
         </div>
       </section>
 
       <!-- =============================================================================== -->
-      <!-- TAB 5: MINE / ASSETS (ROYAL Q PERSONAL CENTER)                                  -->
+      <!-- TAB 5: MINE / ASSETS (100% REAL BALANCES, REAL SPOT USDT & REAL LEDGER RECORDS)  -->
       <!-- =============================================================================== -->
       <section id="tab-mine" class="hidden space-y-3.5">
         <div class="native-card p-4 flex items-center justify-between">
@@ -528,13 +548,18 @@
         <div class="gold-banner rounded-2xl p-4 space-y-3">
           <div class="flex justify-between items-center">
             <div>
-              <span class="text-[11px] text-slate-400 block">Asset (Fuel Gas Wallet)</span>
+              <span class="text-[11px] text-slate-400 block">Fuel Gas Wallet (Real DB)</span>
               <div class="text-2xl font-black text-white font-mono mt-0.5" id="walletGasAmount">0.00 <span class="text-xs font-normal text-slate-400">USDT</span></div>
             </div>
             <div class="text-right">
-              <span class="text-[11px] text-slate-400 block">Reward Wallet</span>
+              <span class="text-[11px] text-slate-400 block" id="mineRewardLabel">Reward Wallet (Real DB)</span>
               <div class="text-lg font-black text-bqEmerald font-mono mt-0.5" id="walletCommissionAmount">0.00 <span class="text-[10px] font-normal text-slate-400">USDT</span></div>
             </div>
+          </div>
+
+          <div id="liveExchangeSpotStrip" class="hidden p-2.5 rounded-xl bg-bqBg/80 border border-bqEmerald/30 flex justify-between items-center text-xs">
+            <span class="text-slate-300"><i class="fa-solid fa-building-columns text-bqEmerald mr-1"></i> Bound Exchange Spot USDT:</span>
+            <b id="mineLiveSpotUsdt" class="font-mono text-bqEmerald font-black">$0.00 USDT</b>
           </div>
 
           <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/10">
@@ -590,8 +615,8 @@
 
         <div class="native-card p-3.5 space-y-2">
           <div class="flex justify-between items-center text-xs">
-            <span class="font-bold text-white">Billing &amp; Fuel Record</span>
-            <span class="text-[10px] text-slate-400">20% Profit Fuel</span>
+            <span class="font-bold text-white">Real Billing &amp; Transaction Ledger</span>
+            <span class="text-[10px] text-slate-400">PostgreSQL Verified</span>
           </div>
           <div id="gasDeductionList" class="space-y-1.5"></div>
         </div>
@@ -625,7 +650,7 @@
   </div>
 
   <!-- ===================================================================================== -->
-  <!-- ROYAL Q 4-PHASE API BINDING BOTTOM SHEET (IP GROUP + HMAC TEST + EMAIL CODE + RISK)    -->
+  <!-- API BINDING BOTTOM SHEET (LIVE SERVER IP GROUP + REAL HMAC-SHA256 EXCHANGE CHECK)     -->
   <!-- ===================================================================================== -->
   <div id="apiBindingModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-end justify-center">
     <div class="bg-bqCard border-t border-bqBorder rounded-t-3xl w-full max-w-[480px] p-5 space-y-3.5 max-h-[92dvh] overflow-y-auto safe-bottom">
@@ -638,7 +663,6 @@
         <button onclick="closeModal('apiBindingModal')" class="w-8 h-8 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <!-- Exchange Cards Row (Active = Colored, Unbound = Grey) -->
       <div class="grid grid-cols-4 gap-2 text-center text-[11px]" id="exchangeCardGrid">
         <button type="button" onclick="selectBindingExchange('BINANCE')" id="exCard-BINANCE" class="p-2.5 rounded-xl bg-bqBg border border-bqGold text-white font-bold flex flex-col items-center gap-1">
           <span class="text-bqGold font-black">Binance</span>
@@ -658,36 +682,33 @@
         </button>
       </div>
 
-      <!-- PHASE 1: ROYAL Q IP ADDRESS GROUP WHITELIST -->
       <div class="p-3.5 rounded-2xl bg-bqBg border border-bqGold/35 space-y-2 text-xs">
         <div class="flex justify-between items-center">
-          <span class="font-bold text-bqGold"><i class="fa-solid fa-server mr-1"></i> IP Address Group Binding</span>
-          <span id="ipFetchBadge" class="text-[10px] text-bqEmerald font-mono">Cloud Verified</span>
+          <span class="font-bold text-bqGold"><i class="fa-solid fa-server mr-1"></i> Live Server Outbound IP Group</span>
+          <span id="ipFetchBadge" class="text-[10px] text-bqEmerald font-mono">Live Node IP</span>
         </div>
         <p class="text-[11px] text-slate-400 leading-relaxed">
-          For security, copy this IP group and paste it into <b class="text-slate-200">"Restrict access to trusted IPs only"</b> on Binance API Management:
+          Copy this IP group and paste it into <b class="text-slate-200">"Restrict access to trusted IPs only"</b> on your exchange API settings:
         </p>
         <div class="flex items-center gap-2 bg-bqCard p-2.5 rounded-xl border border-bqBorder">
-          <code id="botWhitelistIps" class="text-[11px] font-mono text-bqEmerald flex-1 break-all select-all">Loading server IPs...</code>
+          <code id="botWhitelistIps" class="text-[11px] font-mono text-bqEmerald flex-1 break-all select-all">Fetching live server IP...</code>
           <button type="button" onclick="copyBotWhitelistIps()" class="px-3 py-1.5 rounded-lg bg-bqGold text-black font-black text-[11px] shrink-0">
             Copy
           </button>
         </div>
       </div>
 
-      <!-- PHASE 2 & 3: API KEY & SECRET KEY -->
       <div class="space-y-2.5 text-xs">
         <input type="hidden" id="bindExchangeName" value="BINANCE">
         <div>
           <label class="text-slate-400 block mb-1">API Key</label>
-          <input id="bindApiKeyInput" type="text" placeholder="Paste your Binance HMAC API Key" class="w-full bg-bqBg border border-bqBorder focus:border-bqGold rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
+          <input id="bindApiKeyInput" type="text" placeholder="Paste your HMAC API Key" class="w-full bg-bqBg border border-bqBorder focus:border-bqGold rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
         </div>
         <div>
           <label class="text-slate-400 block mb-1">Secret Key</label>
-          <input id="bindApiSecretInput" type="password" placeholder="Paste your Binance Secret Key" class="w-full bg-bqBg border border-bqBorder focus:border-bqGold rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
+          <input id="bindApiSecretInput" type="password" placeholder="Paste your Secret Key" class="w-full bg-bqBg border border-bqBorder focus:border-bqGold rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
         </div>
 
-        <!-- PHASE 4: EMAIL VERIFICATION CODE FOR API BINDING -->
         <div>
           <label class="text-slate-400 block mb-1">Verification Code (<span id="bindEmailHint" class="text-slate-300 font-mono">email</span>)</label>
           <div class="flex gap-2">
@@ -699,14 +720,12 @@
           <p id="bindVerifyStatusText" class="text-[10px] text-bqEmerald mt-1 hidden"></p>
         </div>
 
-        <!-- RISK NOTICE CHECKBOX (Exact Royal Q Step 3) -->
         <label class="flex items-start gap-2.5 pt-1 text-[11px] text-slate-300 cursor-pointer">
           <input id="bindRiskCheckbox" type="checkbox" checked class="mt-0.5 accent-amber-400 w-4 h-4 shrink-0">
-          <span>I have carefully read the <b class="text-bqGold">Risk Notice</b>, disabled Withdrawal permissions on Binance, and whitelisted the IP group above.</span>
+          <span>I have read the <b class="text-bqGold">Risk Notice</b>, disabled Withdrawal permissions on my exchange, and whitelisted the IP group above.</span>
         </label>
       </div>
 
-      <!-- Live Diagnostics Result Box -->
       <div id="apiBindResultBox" class="hidden p-3 rounded-xl bg-bqBg border text-xs space-y-1"></div>
 
       <div class="flex gap-2 pt-1">
@@ -720,7 +739,20 @@
     </div>
   </div>
 
-  <!-- Royal Q Trade Settings Bottom Sheet -->
+  <!-- Create Real Circle Modal (V5/V6 Leaders Only) -->
+  <div id="createCircleModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3.5 text-xs">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <h3 class="text-sm font-bold text-white">Create Official Strategy Circle</h3>
+        <button onclick="closeModal('createCircleModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <input id="newCircleNameInput" type="text" placeholder="Circle Name (e.g., BharatQ Spot Master)" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white">
+      <input id="newCircleDescInput" type="text" placeholder="Strategy description (e.g., Sub-Bin 1.3% TP)" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white">
+      <button onclick="submitCreateRealCircle()" class="w-full py-3 rounded-xl bg-bqGold text-black font-black text-xs">Publish Circle</button>
+    </div>
+  </div>
+
+  <!-- Trade Settings Bottom Sheet -->
   <div id="tradeSettingsModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end justify-center">
     <div class="bg-bqCard border-t border-bqBorder rounded-t-3xl w-full max-w-[480px] p-5 space-y-3.5 max-h-[88dvh] overflow-y-auto safe-bottom">
       <div class="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-1"></div>
@@ -854,9 +886,9 @@
         </div>
       </div>
       <div class="space-y-2 text-xs">
-        <label class="text-slate-400 block">Verify On-Chain TXID</label>
+        <label class="text-slate-400 block">Verify Real On-Chain TXID (TronGrid Verified)</label>
         <div class="flex gap-2">
-          <input id="depositTxidInput" type="text" placeholder="Paste TRON transaction hash" class="bg-bqBg border border-bqBorder text-white text-xs px-3 py-2.5 rounded-xl flex-1 font-mono">
+          <input id="depositTxidInput" type="text" placeholder="Paste 64-character TRON transaction hash" class="bg-bqBg border border-bqBorder text-white text-xs px-3 py-2.5 rounded-xl flex-1 font-mono">
           <button onclick="claimTrc20Txid()" class="bg-bqEmerald text-black font-bold px-4 rounded-xl text-xs">Verify</button>
         </div>
       </div>
@@ -871,14 +903,14 @@
         <button onclick="closeModal('withdrawModal')" class="w-8 h-8 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="p-3 rounded-xl bg-bqBg flex justify-between items-center text-xs">
-        <span class="text-slate-400">Available Reward:</span>
+        <span class="text-slate-400">Available Real Balance:</span>
         <span id="wdAvailableBalance" class="font-mono font-bold text-bqEmerald">0.00 USDT</span>
       </div>
       <div class="space-y-3 text-xs">
-        <input id="wdAddressInput" type="text" placeholder="Enter TRON (TRC-20) Wallet Address" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
-        <input id="wdAmountInput" type="number" min="10" value="50" placeholder="Minimum 10 USDT" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
+        <input id="wdAddressInput" type="text" placeholder="Enter TRON (TRC-20) Wallet Address (T...)" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
+        <input id="wdAmountInput" type="number" min="10" placeholder="Enter amount (Minimum 10 USDT)" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono">
       </div>
-      <button onclick="submitCommissionWithdrawal()" class="w-full py-3 rounded-2xl bg-bqEmerald text-black font-black text-xs">Confirm Withdrawal (Fee: 2 USDT)</button>
+      <button onclick="submitCommissionWithdrawal()" class="w-full py-3 rounded-2xl bg-bqEmerald text-black font-black text-xs">Confirm Withdrawal (Network Fee: 2 USDT)</button>
     </div>
   </div>
 
@@ -886,41 +918,43 @@
   <div id="transferModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end justify-center">
     <div class="bg-bqCard border-t border-bqBorder rounded-t-3xl w-full max-w-[480px] p-5 space-y-4 safe-bottom">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
-        <h3 class="text-sm font-bold text-white">Transfer to Asset Wallet (0 Fee)</h3>
+        <h3 class="text-sm font-bold text-white">Transfer to Fuel Wallet (0 Fee)</h3>
         <button onclick="closeModal('transferModal')" class="w-8 h-8 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="p-3 rounded-xl bg-bqBg flex justify-between items-center text-xs">
-        <span class="text-slate-400">Reward Balance:</span>
+        <span class="text-slate-400">Available Reward Balance:</span>
         <span id="tfAvailableCommission" class="font-mono font-bold text-bqEmerald">0.00 USDT</span>
       </div>
-      <input id="tfAmountInput" type="number" min="1" value="25" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono text-xs">
+      <input id="tfAmountInput" type="number" min="1" placeholder="Enter USDT amount to transfer" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2.5 text-white font-mono text-xs">
       <button onclick="submitCommissionToGasTransfer()" class="w-full py-3 rounded-2xl bg-bqGold text-black font-black text-xs">Confirm Transfer</button>
     </div>
   </div>
 
-  <!-- Other Modals -->
+  <!-- Revenue Details Modal -->
   <div id="revenueDetailModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-4">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
-        <h3 class="text-sm font-bold text-white">Revenue Details</h3>
+        <h3 class="text-sm font-bold text-white">Real Profit &amp; Settlement Details</h3>
         <button onclick="closeModal('revenueDetailModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="space-y-2 text-xs" id="revenueDaysContainer"></div>
     </div>
   </div>
 
+  <!-- Invite Modal -->
   <div id="inviteModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-4 text-center">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
         <h3 class="text-sm font-bold text-white">Invite Friends</h3>
         <button onclick="closeModal('inviteModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <p class="text-xs text-slate-300">Share your invitation code to earn $30–$70 USDT per VIP activation + 20% Gas overrides.</p>
+      <p class="text-xs text-slate-300">Share your invitation code to earn $30–$70 USDT per VIP activation + 20% to 60% of team Gas fees.</p>
       <div class="p-3 bg-bqBg rounded-xl border border-bqBorder text-sm font-mono text-bqGold font-black tracking-widest" id="inviteModalCode">BHARAT1</div>
       <button onclick="copyRefLink()" class="w-full py-3 rounded-xl bg-bqGold text-black font-black text-xs">Copy Invitation Link</button>
     </div>
   </div>
 
+  <!-- Risk Calculator Modal -->
   <div id="marginReserveModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-4">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
@@ -944,6 +978,7 @@
     </div>
   </div>
 
+  <!-- Install App Modal -->
   <div id="androidInstallModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-4">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
@@ -961,30 +996,34 @@
     </div>
   </div>
 
+  <!-- Account Modal -->
   <div id="authModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-4">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
-        <h3 class="text-sm font-bold text-white">Account Details</h3>
+        <h3 class="text-sm font-bold text-white">Verified Account Details</h3>
         <button onclick="closeModal('authModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="p-3 rounded-xl bg-bqBg text-xs space-y-1.5">
         <div class="flex justify-between"><span class="text-slate-400">Email:</span><b class="text-white" id="modalSessionEmail">--</b></div>
-        <div class="flex justify-between"><span class="text-slate-400">Level:</span><b class="text-bqGold font-mono" id="modalSessionRank">V1</b></div>
+        <div class="flex justify-between"><span class="text-slate-400">UID:</span><b class="text-slate-200 font-mono" id="modalSessionUid">--</b></div>
+        <div class="flex justify-between"><span class="text-slate-400">Rank &amp; Code:</span><b class="text-bqGold font-mono" id="modalSessionRank">V1</b></div>
       </div>
       <button onclick="logoutUser()" class="w-full py-2.5 rounded-xl bg-bqRose/20 text-bqRose font-bold text-xs">Log Out</button>
     </div>
   </div>
 
+  <!-- Notification Modal -->
   <div id="notificationModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
-        <h3 class="text-sm font-bold text-white">System Messages</h3>
+        <h3 class="text-sm font-bold text-white">System Status</h3>
         <button onclick="closeModal('notificationModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="p-3 bg-bqBg rounded-xl text-xs text-slate-300">All 400+ Binance &amp; global exchange USDT pairs are active for automated 24/7 bot trading.</div>
+      <div id="notifModalBody" class="p-3 bg-bqBg rounded-xl text-xs text-slate-300">Connected to live Binance Spot market feed.</div>
     </div>
   </div>
 
+  <!-- Security Notice Modal -->
   <div id="antiScamModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
@@ -996,6 +1035,7 @@
     </div>
   </div>
 
+  <!-- Security & Custody Modal -->
   <div id="whyTrustModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
@@ -1006,19 +1046,20 @@
     </div>
   </div>
 
+  <!-- Real Leader Ranking Modal (Fetched from PostgreSQL DB) -->
   <div id="leaderboardModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
-        <h3 class="text-sm font-bold text-white">Leader Ranking</h3>
+        <h3 class="text-sm font-bold text-white">Verified Leader Ranking (Live DB)</h3>
         <button onclick="closeModal('leaderboardModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="p-3 rounded-xl bg-bqBg border border-bqGold/40 flex justify-between items-center text-xs">
-        <div><b class="text-white block">BharatQ_Founder</b><span class="text-[10px] text-bqGold">V6 Master Node</span></div>
-        <span class="text-bqEmerald font-bold">Verified</span>
+      <div id="realLeaderboardContainer" class="space-y-2 text-xs max-h-64 overflow-y-auto">
+        <p class="text-center text-slate-400 py-4">Loading verified leaders...</p>
       </div>
     </div>
   </div>
 
+  <!-- Guide Modal -->
   <div id="helpTutorialModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
@@ -1026,13 +1067,14 @@
         <button onclick="closeModal('helpTutorialModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="space-y-2 text-xs text-slate-300">
-        <p><b>1. Copy IP Group:</b> Open API Binding and copy the IP Address Group shown at the top.</p>
-        <p><b>2. Configure Binance API:</b> On Binance API Management, create a System-generated (HMAC) key, check <b>Enable Spot &amp; Margin Trading</b>, and paste the IP Group into <b>Restrict access to trusted IPs only</b>.</p>
+        <p><b>1. Copy IP Group:</b> Open API Binding and copy the Live Server Outbound IP Group shown at the top.</p>
+        <p><b>2. Configure Exchange API:</b> On Binance API Management, create a System-generated (HMAC) key, check <b>Enable Spot &amp; Margin Trading</b>, and paste the IP Group into <b>Restrict access to trusted IPs only</b>.</p>
         <p><b>3. Bind &amp; Start Bot:</b> Paste your API Key &amp; Secret Key in BharatQ, enter the verification code, and tap <b>Bind</b>.</p>
       </div>
     </div>
   </div>
 
+  <!-- Legal Modal -->
   <div id="legalModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
@@ -1127,28 +1169,39 @@
       jwtToken: localStorage.getItem('bq_jwt') || null,
       officialTrc20: 'TUKdKMmRqpapdSzcQowC2y32cxxHomYEZo',
       boundExchanges: JSON.parse(localStorage.getItem('bq_bound_exchanges') || '{}'),
-      serverIpGroup: 'Loading server IPs...',
-      user: JSON.parse(localStorage.getItem('bq_user_profile') || 'null') || {
-        uid: 0,
-        email: 'Not Signed In',
-        mobile: '',
-        rank: 'V1',
-        referralCode: 'BHARAT1',
-        isOwnerFree: false,
-        isActivated: false,
-        fuelBalance: 0.00,
-        commissionBalance: 0.00,
-        cumProfit: 0.00,
-        todayProfit: 0.00
-      },
+      serverIpGroup: '',
+      user: (() => {
+        // Always start clean at $0.00 and let live PostgreSQL /api/v1/user/profile populate real balances
+        const cached = JSON.parse(localStorage.getItem('bq_user_profile') || 'null');
+        if (!cached) {
+          return {
+            uid: 0,
+            email: 'Not Signed In',
+            mobile: '',
+            rank: 'V1',
+            referralCode: 'BHARAT1',
+            isOwnerFree: false,
+            isActivated: false,
+            fuelBalance: 0.00,
+            commissionBalance: 0.00,
+            cumProfit: 0.00,
+            todayProfit: 0.00
+          };
+        }
+        return {
+          ...cached,
+          fuelBalance: 0.00,
+          commissionBalance: 0.00,
+          cumProfit: 0.00,
+          todayProfit: 0.00
+        };
+      })(),
       pairs: PRIORITY_SEED_PAIRS.map(sym => buildDefaultPairObject(sym)),
       pairMap: {},
-      circles: [
-        { name: 'BharatQ Official Circle', author: 'BharatQ_Founder (V6)', tag: 'Official', synced: false, isOfficial: true },
-        { name: 'VedicQuant Alpha', author: 'QuantGuru_IN (V5)', tag: 'Sub-Bin', synced: false, isOfficial: false },
-        { name: 'Titan Spot Grid', author: 'CryptoRaj_V6', tag: 'Steady', synced: false, isOfficial: false }
-      ],
-      downlineMembers: []
+      circles: [],
+      downlineMembers: [],
+      ledgerLogs: [],
+      platformStats: null
     };
 
     state.pairs.forEach(p => { state.pairMap[p.raw] = p; });
@@ -1212,15 +1265,14 @@
       } catch (e) {}
 
       const isOwner = email === 'vjrjbhatijodhpur@gmail.com' || mobileNumber.replace(/\D/g, '').endsWith('9680714804');
-      const generatedCode = isOwner ? 'BHARAT1' : 'BQ' + Math.abs(email.split('').reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0)).toString(36).toUpperCase().slice(0, 5);
       completeGenuineLoginSession({
-        token: supabaseAccessToken || ('sb_' + Date.now()),
+        token: supabaseAccessToken,
         ownerFreeSubscription: isOwner,
         user: {
-          uid: isOwner ? 98402194 : (10000000 + Math.floor(Math.random() * 89999999)),
+          uid: 0,
           email,
           mobile_number: mobileNumber,
-          referral_code: generatedCode,
+          referral_code: isOwner ? 'BHARAT1' : '',
           rank_level: isOwner ? 6 : 1,
           is_activated: isOwner,
           is_owner_exempt: isOwner,
@@ -1274,7 +1326,7 @@
           if (!error) {
             if (msgEl) {
               msgEl.classList.remove('hidden');
-              msgEl.innerHTML = `Email sent to <b>${email}</b>! Check your inbox (and Spam folder) and enter the 6-digit code or click the Sign-In link.`;
+              msgEl.innerHTML = `Email sent to <b>${email}</b>! Check your inbox and enter the 6-digit code or click the Sign-In link.`;
             }
             resetSendBtn('Resend');
             showToast('Verification email sent!', 'emerald');
@@ -1282,7 +1334,7 @@
           } else {
             if (msgEl) {
               msgEl.classList.remove('hidden');
-              msgEl.innerHTML = `<span class="text-bqRose">Supabase SMTP Notice: ${error.message}</span>`;
+              msgEl.innerHTML = `<span class="text-bqRose">${error.message}</span>`;
             }
             resetSendBtn('Retry');
             showToast(error.message, 'rose');
@@ -1330,7 +1382,7 @@
 
         if (otpCode.length < 6 || otpCode.length > 8) {
           if (submitBtn) submitBtn.innerText = 'Log In / Register';
-          showToast('Click the "Sign in" link in your email or enter the code', 'rose');
+          showToast('Click the "Sign in" link in your email or enter the 6-digit code', 'rose');
           return;
         }
 
@@ -1384,6 +1436,30 @@
       }
     }
 
+    function applyRoleAndRealStatusLabels() {
+      const isOwner = Boolean(state.user.isOwnerFree);
+      document.getElementById('clientRankBadge').innerText = isOwner ? 'V6 Owner' : state.user.rank;
+      document.getElementById('mineRankTag').innerText = isOwner ? 'V6 Owner' : state.user.rank;
+      document.getElementById('homeRoleLabel').innerText = isOwner ? 'V6 Owner Master Console' : 'Quantitative Cloud Engine';
+      document.getElementById('homeActivationStatus').innerText = isOwner
+        ? 'VIP Active (Owner V6 Lifetime)'
+        : (state.user.isActivated ? 'VIP Active (365 Days)' : 'VIP Inactive ($120/Yr)');
+
+      const heroBtn = document.getElementById('btnHeroActivate');
+      if (heroBtn) heroBtn.innerText = (isOwner || state.user.isActivated) ? 'Active' : 'Activate';
+
+      const createCircleBtn = document.getElementById('btnCreateCircle');
+      if (createCircleBtn) createCircleBtn.classList.toggle('hidden', !isOwner && state.user.rank !== 'V5' && state.user.rank !== 'V6');
+
+      if (isOwner) {
+        document.getElementById('teamWalletHeading').innerText = 'Owner Real Earnings Balance (V6 + Net)';
+        document.getElementById('mineRewardLabel').innerText = 'Owner Earnings (Real DB)';
+      } else {
+        document.getElementById('teamWalletHeading').innerText = 'Affiliate Commission Balance (Real DB)';
+        document.getElementById('mineRewardLabel').innerText = 'Reward Wallet (Real DB)';
+      }
+    }
+
     function completeGenuineLoginSession(data) {
       state.isAuthenticated = true;
       state.jwtToken = data.token;
@@ -1406,21 +1482,12 @@
       localStorage.setItem('bq_user_profile', JSON.stringify(state.user));
 
       document.getElementById('mandatoryAuthGate')?.classList.add('hidden');
-      document.getElementById('clientRankBadge').innerText = state.user.rank;
-      document.getElementById('mineRankTag').innerText = state.user.rank;
-      document.getElementById('homeActivationStatus').innerText = isOwner
-        ? 'VIP Active (Owner V6)'
-        : (state.user.isActivated ? 'VIP Active (365 Days)' : 'VIP Inactive ($120/Yr)');
-      if (isOwner || state.user.isActivated) {
-        const btn = document.getElementById('btnHeroActivate');
-        if (btn) btn.innerText = 'Active';
-      }
-
+      applyRoleAndRealStatusLabels();
       updateUserIdentityUI();
       updateBalances();
       syncLiveUserProfile();
       closeModal('authModal');
-      showToast('Signed in successfully', 'emerald');
+      showToast('Signed in with verified account', 'emerald');
     }
 
     function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
@@ -1428,7 +1495,7 @@
     function openDepositModal() { openModal('depositModal'); }
 
     // =====================================================================================
-    // ROYAL Q 4-PHASE API BINDING LOGIC (IP GROUP + HMAC TEST + EMAIL CODE + ACTIVE STATUS)
+    // API BINDING LOGIC (LIVE SERVER IP GROUP + REAL HMAC-SHA256 EXCHANGE CHECK)
     // =====================================================================================
     async function loadServerWhitelistIps() {
       const ipEl = document.getElementById('botWhitelistIps');
@@ -1443,14 +1510,17 @@
           }
         }
       } catch (e) {}
-      state.serverIpGroup = '35.160.120.126 44.233.151.27 34.211.200.85';
-      if (ipEl) ipEl.innerText = state.serverIpGroup;
+      if (ipEl) ipEl.innerText = 'Unable to fetch server IP — check backend connection';
     }
 
     function copyBotWhitelistIps() {
       const txt = document.getElementById('botWhitelistIps')?.innerText || state.serverIpGroup;
+      if (!txt || txt.startsWith('Unable') || txt.startsWith('Fetching')) {
+        showToast('Wait for live server IP to load first', 'rose');
+        return;
+      }
       navigator.clipboard?.writeText(txt);
-      showToast('IP Address Group copied! Paste in Binance IP restriction.', 'emerald');
+      showToast('IP Address Group copied!', 'emerald');
     }
 
     function selectBindingExchange(exName) {
@@ -1476,7 +1546,7 @@
         if (resultBox) {
           resultBox.classList.remove('hidden');
           resultBox.className = 'p-3 rounded-xl bg-bqEmerald/10 border border-bqEmerald/40 text-xs text-bqEmerald space-y-1';
-          resultBox.innerHTML = `<b>● ${cleanEx} API Bound &amp; Active</b><span class="block text-[11px] text-slate-300">Spot Balance Verified: ${existing.spotUsdt || 'Ready'} • Permissions: Spot Enabled</span>`;
+          resultBox.innerHTML = `<b>● ${cleanEx} API Bound &amp; Active</b><span class="block text-[11px] text-slate-300">Live Spot Balance: ${existing.spotUsdt || 'Verified'}</span>`;
         }
       } else {
         document.getElementById('bindApiKeyInput').value = '';
@@ -1489,10 +1559,19 @@
     function updateBoundExchangeBadges() {
       const exchanges = ['BINANCE', 'BYBIT', 'OKX', 'COINDCX'];
       let activeList = [];
+      let totalSpotUsdt = 0;
+      let hasSpotReading = false;
+
       exchanges.forEach(ex => {
         const st = document.getElementById(`exStatus-${ex}`);
-        const bound = Boolean(state.boundExchanges[ex]);
-        if (bound) activeList.push(ex);
+        const bound = state.boundExchanges[ex];
+        if (bound) {
+          activeList.push(ex);
+          if (typeof bound.spotUsdtNum === 'number') {
+            totalSpotUsdt += bound.spotUsdtNum;
+            hasSpotReading = true;
+          }
+        }
         if (st) {
           st.innerText = bound ? '● Active' : 'Unbound';
           st.className = bound ? 'text-[9px] text-bqEmerald font-bold' : 'text-[9px] text-slate-500';
@@ -1502,24 +1581,34 @@
       const mineBadge = document.getElementById('mineApiBindingBadge');
       const homeIcon = document.getElementById('homeApiIconWrap');
       const homeDot = document.getElementById('homeApiActiveDot');
+      const homeSub = document.getElementById('homeExchangeSubtext');
       const quantChip = document.getElementById('quantApiStatusChip');
+      const spotStrip = document.getElementById('liveExchangeSpotStrip');
+      const spotValEl = document.getElementById('mineLiveSpotUsdt');
 
       if (activeList.length > 0) {
         if (mineBadge) mineBadge.innerHTML = `<span class="text-bqEmerald font-bold">${activeList.join(', ')} Active</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>`;
         if (homeIcon) homeIcon.className = 'w-10 h-10 rounded-2xl bg-bqGold/20 text-bqGold border border-bqGold/50 flex items-center justify-center text-base group-active:scale-95 transition';
         if (homeDot) homeDot.classList.remove('hidden');
+        if (homeSub) homeSub.innerText = `Connected: ${activeList.join(', ')}${hasSpotReading ? ` • Spot: $${totalSpotUsdt.toFixed(2)} USDT` : ''}`;
         if (quantChip) {
           quantChip.innerText = `● ${activeList[0]} Bound`;
           quantChip.className = 'text-bqEmerald font-mono text-[10px] font-bold';
+        }
+        if (spotStrip && spotValEl && hasSpotReading) {
+          spotStrip.classList.remove('hidden');
+          spotValEl.innerText = `$${totalSpotUsdt.toFixed(2)} USDT`;
         }
       } else {
         if (mineBadge) mineBadge.innerHTML = `Unbound <i class="fa-solid fa-chevron-right text-[10px]"></i>`;
         if (homeIcon) homeIcon.className = 'w-10 h-10 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-base group-active:scale-95 transition';
         if (homeDot) homeDot.classList.add('hidden');
+        if (homeSub) homeSub.innerText = 'Exchange Spot API: Not Bound';
         if (quantChip) {
           quantChip.innerText = 'Bind API';
           quantChip.className = 'text-bqGold font-mono text-[10px] underline';
         }
+        if (spotStrip) spotStrip.classList.add('hidden');
       }
     }
 
@@ -1554,16 +1643,6 @@
             return;
           }
         }
-        const res = await fetch(`${state.backendUrl}/api/v1/auth/send-otp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        });
-        const data = await res.json();
-        if (data.success && statusTxt) {
-          statusTxt.classList.remove('hidden');
-          statusTxt.innerText = `Verification code sent to ${email}!`;
-        }
       } catch (e) {}
       if (btn) { btn.disabled = false; btn.innerText = 'Send Code'; }
     }
@@ -1572,21 +1651,16 @@
       const ex = (document.getElementById('bindExchangeName')?.value || 'BINANCE').toUpperCase();
       const apiKey = (document.getElementById('bindApiKeyInput')?.value || '').trim();
       const apiSecret = (document.getElementById('bindApiSecretInput')?.value || '').trim();
-      const verifyCode = (document.getElementById('bindVerifyCodeInput')?.value || '').trim();
       const riskChecked = document.getElementById('bindRiskCheckbox')?.checked;
       const resultBox = document.getElementById('apiBindResultBox');
       const bindBtn = document.getElementById('btnSubmitApiBind');
 
-      if (!apiKey || apiKey.length < 10) {
-        showToast('Please enter a valid API Key', 'rose');
-        return;
-      }
-      if (!apiSecret || apiSecret.length < 10) {
-        showToast('Please enter a valid Secret Key', 'rose');
+      if (!apiKey || apiKey.length < 10 || !apiSecret || apiSecret.length < 10) {
+        showToast('Enter valid API Key and Secret Key', 'rose');
         return;
       }
       if (!riskChecked) {
-        showToast('Please check the Risk Notice box first', 'rose');
+        showToast('Check the Risk Notice box first', 'rose');
         return;
       }
 
@@ -1599,22 +1673,18 @@
             'Content-Type': 'application/json',
             ...(state.jwtToken ? { 'Authorization': `Bearer ${state.jwtToken}` } : {})
           },
-          body: JSON.stringify({
-            exchangeName: ex,
-            apiKey,
-            apiSecret,
-            verificationCode: verifyCode
-          })
+          body: JSON.stringify({ exchangeName: ex, apiKey, apiSecret })
         });
         const data = await res.json();
-
         if (bindBtn) { bindBtn.disabled = false; bindBtn.innerText = 'Bind'; }
 
         if (data.success) {
+          const spotNum = data.spotUsdtBalance != null ? Number(data.spotUsdtBalance) : null;
           state.boundExchanges[ex] = {
             boundAt: Date.now(),
             maskedKey: apiKey.slice(0, 6) + '••••••' + apiKey.slice(-4),
-            spotUsdt: data.spotUsdtBalance != null ? `$${Number(data.spotUsdtBalance).toFixed(2)} USDT` : 'Verified'
+            spotUsdtNum: spotNum,
+            spotUsdt: spotNum != null ? `$${spotNum.toFixed(2)} USDT` : 'Verified'
           };
           localStorage.setItem('bq_bound_exchanges', JSON.stringify(state.boundExchanges));
           updateBoundExchangeBadges();
@@ -1633,7 +1703,7 @@
         }
       } catch (err) {
         if (bindBtn) { bindBtn.disabled = false; bindBtn.innerText = 'Bind'; }
-        showToast('Could not reach BharatQ backend server', 'rose');
+        showToast('Could not reach backend server', 'rose');
       }
     }
 
@@ -1917,18 +1987,30 @@
     async function triggerManualReplenish() {
       const p = state.pairs.find(x => x.symbol === state.selectedPair);
       if (!p) return;
-      p.calls = Math.min(p.maxCalls, p.calls + 1);
-      renderPairs();
+      if (Object.keys(state.boundExchanges).length === 0) {
+        showToast('Bind your exchange API first to place real orders', 'rose');
+        return;
+      }
       if (state.jwtToken) {
         try {
-          await fetch(`${state.backendUrl}/api/v1/bot/manual-action`, {
+          const res = await fetch(`${state.backendUrl}/api/v1/bot/manual-action`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
             body: JSON.stringify({ symbol: p.symbol, action: 'MANUAL_REPLENISH', extraUsdt: p.firstBuy || 20 })
           });
+          const data = await res.json();
+          if (data.success) {
+            p.calls = Math.min(p.maxCalls, p.calls + 1);
+            renderPairs();
+            showToast(data.message || `Manual buy executed for ${p.symbol}`, 'emerald');
+            return;
+          } else {
+            showToast(data.error || 'Exchange order rejected', 'rose');
+            return;
+          }
         } catch (e) {}
       }
-      showToast(`Manual buy executed for ${p.symbol}`, 'emerald');
+      showToast('Unable to execute order — check API connection', 'rose');
     }
 
     async function triggerSellAllPosition() {
@@ -1940,14 +2022,15 @@
       closeModal('tradeSettingsModal');
       if (state.jwtToken) {
         try {
-          await fetch(`${state.backendUrl}/api/v1/bot/manual-action`, {
+          const res = await fetch(`${state.backendUrl}/api/v1/bot/manual-action`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
             body: JSON.stringify({ symbol: p.symbol, action: 'SELL_ALL' })
           });
+          const data = await res.json();
+          if (data.success) showToast(data.message, 'emerald');
         } catch (e) {}
       }
-      showToast(`Closed ${p.symbol} position`, 'emerald');
     }
 
     function saveStrategySettings() {
@@ -1966,7 +2049,7 @@
       }
       closeModal('tradeSettingsModal');
       renderPairs();
-      showToast('Strategy saved & synced to cloud bot', 'emerald');
+      showToast('Strategy saved to cloud bot', 'emerald');
     }
 
     function toggleBotStatus(sym) {
@@ -1986,18 +2069,24 @@
     function renderRevenueDetails() {
       const container = document.getElementById('revenueDaysContainer');
       if (!container) return;
+      const tradeLogs = state.ledgerLogs.filter(l => l.event_type === 'GAS_FEE_20PCT');
       container.innerHTML = `
         <div class="p-3.5 rounded-xl bg-bqBg flex justify-between items-center">
           <div>
-            <span class="text-[10px] text-slate-400 block">Cumulative Profit</span>
+            <span class="text-[10px] text-slate-400 block">Real Cumulative Profit</span>
             <b class="text-base font-black text-bqEmerald font-mono">$${state.user.cumProfit.toFixed(2)}</b>
           </div>
           <div class="text-right">
-            <span class="text-[10px] text-slate-400 block">Today's Profit</span>
+            <span class="text-[10px] text-slate-400 block">Real Today's Profit</span>
             <b class="text-sm font-black text-bqGold font-mono">$${state.user.todayProfit.toFixed(2)}</b>
           </div>
         </div>
-        <p class="text-center text-[11px] text-slate-400 py-2">Settlement records appear automatically when trades close in profit.</p>
+        ${tradeLogs.length ? tradeLogs.map(l => `
+          <div class="p-2.5 rounded-xl bg-bqBg flex justify-between items-center text-[11px]">
+            <span class="text-slate-300">${l.reference_id || 'Settlement'}</span>
+            <b class="text-bqEmerald font-mono">+$${Number(l.amount_usdt).toFixed(4)}</b>
+          </div>
+        `).join('') : '<p class="text-center text-[11px] text-slate-400 py-3">0 closed profit settlements yet. Real settlements appear here after your bound exchange closes a profitable cycle.</p>'}
       `;
     }
 
@@ -2012,12 +2101,35 @@
 
     function renderGasLogs() {
       const el = document.getElementById('gasDeductionList');
-      if (el) el.innerHTML = `<p class="text-center text-[11px] text-slate-400 py-3">No billing records yet.</p>`;
+      if (!el) return;
+      if (!state.ledgerLogs.length) {
+        el.innerHTML = `<p class="text-center text-[11px] text-slate-400 py-3">0 real ledger transactions yet.</p>`;
+        return;
+      }
+      el.innerHTML = state.ledgerLogs.map(l => `
+        <div class="p-2.5 rounded-xl bg-bqBg flex justify-between items-center text-[11px]">
+          <div>
+            <b class="text-slate-200 block">${l.event_type}</b>
+            <span class="text-[10px] text-slate-400 font-mono">${new Date(l.created_at).toLocaleString()}</span>
+          </div>
+          <span class="font-mono font-bold text-bqEmerald">+$${Number(l.amount_usdt).toFixed(4)} USDT</span>
+        </div>
+      `).join('');
     }
 
     function renderCircles() {
       const c = document.getElementById('circleListContainer');
       if (!c) return;
+      if (!state.circles.length) {
+        c.innerHTML = `
+          <div class="native-card p-6 text-center space-y-2">
+            <i class="fa-solid fa-compass text-2xl text-slate-500"></i>
+            <p class="text-xs text-slate-300 font-semibold">No Strategy Circles Published Yet</p>
+            <p class="text-[11px] text-slate-400">Only verified V5 &amp; V6 leaders with real live trading history can publish Strategy Circles.</p>
+          </div>
+        `;
+        return;
+      }
       c.innerHTML = state.circles.map((cir, idx) => `
         <div class="native-card p-3.5 flex justify-between items-center">
           <div>
@@ -2025,13 +2137,38 @@
               <h4 class="font-bold text-white text-sm">${cir.name}</h4>
               <span class="text-[9px] px-1.5 py-0.5 rounded bg-bqGold/20 text-bqGold font-bold">${cir.tag}</span>
             </div>
-            <p class="text-[11px] text-slate-400 mt-0.5">${cir.author}</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">${cir.author} • ${cir.desc || ''}</p>
           </div>
           <button onclick="toggleCircleSync(${idx})" class="px-3.5 py-1.5 rounded-xl text-xs font-bold ${cir.synced ? 'bg-bqEmerald/20 text-bqEmerald' : 'bg-bqGold text-black'}">
             ${cir.synced ? 'Synced' : 'Sync'}
           </button>
         </div>
       `).join('');
+    }
+
+    async function submitCreateRealCircle() {
+      const name = (document.getElementById('newCircleNameInput')?.value || '').trim();
+      const desc = (document.getElementById('newCircleDescInput')?.value || '').trim();
+      if (!name) {
+        showToast('Enter a circle name', 'rose');
+        return;
+      }
+      if (state.jwtToken) {
+        try {
+          const res = await fetch(`${state.backendUrl}/api/v1/circles`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
+            body: JSON.stringify({ name, description: desc })
+          });
+          const data = await res.json();
+          if (data.success) {
+            closeModal('createCircleModal');
+            syncLiveUserProfile();
+            showToast('Official Circle created!', 'emerald');
+            return;
+          }
+        } catch (e) {}
+      }
     }
 
     function toggleCircleSync(idx) {
@@ -2042,20 +2179,66 @@
 
     function renderMlmLogs() {
       const el = document.getElementById('mlmCommissionLogs');
-      if (el) el.innerHTML = `<div class="native-card p-3 text-center text-[11px] text-slate-400">No reward records yet.</div>`;
+      if (el) {
+        if (!state.ledgerLogs.length) {
+          el.innerHTML = `<div class="native-card p-3 text-center text-[11px] text-slate-400">0 real commission records yet.</div>`;
+        } else {
+          el.innerHTML = state.ledgerLogs.map(l => `
+            <div class="native-card p-3 flex justify-between items-center text-xs">
+              <div>
+                <b class="text-white block">${l.event_type} (${l.reference_id || ''})</b>
+                <span class="text-[10px] text-slate-400 font-mono">From: ${l.debit_account}</span>
+              </div>
+              <span class="font-mono font-bold text-bqEmerald">+$${Number(l.amount_usdt).toFixed(4)}</span>
+            </div>
+          `).join('');
+        }
+      }
+
       const dlEl = document.getElementById('downlineMembersList');
       if (dlEl) {
         if (!state.downlineMembers.length) {
-          dlEl.innerHTML = `<div class="native-card p-3 text-center text-[11px] text-slate-400">0 direct members yet. Share code <b class="text-bqGold">${state.user.referralCode}</b> to build your team.</div>`;
+          dlEl.innerHTML = `<div class="native-card p-3 text-center text-[11px] text-slate-400">0 registered downline members yet. Share your code <b class="text-bqGold">${state.user.referralCode}</b> to invite real users.</div>`;
         } else {
           dlEl.innerHTML = state.downlineMembers.map(d => `
             <div class="native-card p-3 flex justify-between items-center text-xs">
-              <div><b class="text-white">${d.email}</b><span class="text-[10px] text-slate-400 block font-mono">UID: ${d.uid}</span></div>
+              <div>
+                <b class="text-white block">${d.email}</b>
+                <span class="text-[10px] text-slate-400 font-mono">UID: ${d.uid} • ${d.isActivated ? '<span class="text-bqEmerald">VIP Active</span>' : 'Free Member'}</span>
+              </div>
               <span class="text-[10px] px-2 py-0.5 rounded bg-bqGold/20 text-bqGold font-bold">${d.rank}</span>
             </div>
           `).join('');
         }
       }
+    }
+
+    async function openLeaderboardReal() {
+      openModal('leaderboardModal');
+      const container = document.getElementById('realLeaderboardContainer');
+      try {
+        const res = await fetch(`${state.backendUrl}/api/v1/leaderboard`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.leaders)) {
+            if (!data.leaders.length) {
+              container.innerHTML = '<p class="text-center text-slate-400 py-4">No active leaders yet.</p>';
+              return;
+            }
+            container.innerHTML = data.leaders.map((u, idx) => `
+              <div class="p-3 rounded-xl bg-bqBg border border-bqBorder flex justify-between items-center">
+                <div>
+                  <b class="text-white block">#${idx + 1} ${u.masked_email}</b>
+                  <span class="text-[10px] text-slate-400 font-mono">UID: ${u.uid} • Directs: ${u.direct_count}</span>
+                </div>
+                <span class="px-2 py-0.5 rounded bg-bqGold/20 text-bqGold font-bold">V${u.rank_level}</span>
+              </div>
+            `).join('');
+            return;
+          }
+        }
+      } catch (e) {}
+      container.innerHTML = '<p class="text-center text-slate-400 py-4">Unable to load live ranking.</p>';
     }
 
     async function logoutUser() {
@@ -2081,7 +2264,7 @@
       openModal('withdrawModal');
     }
 
-    function submitCommissionWithdrawal() {
+    async function submitCommissionWithdrawal() {
       const dest = document.getElementById('wdAddressInput').value.trim();
       const amt = parseFloat(document.getElementById('wdAmountInput').value);
       if (!dest.startsWith('T') || dest.length < 30 || isNaN(amt) || amt < 10) {
@@ -2089,13 +2272,29 @@
         return;
       }
       if (state.user.commissionBalance < amt) {
-        showToast('Insufficient reward balance', 'rose');
+        showToast('Insufficient real balance', 'rose');
         return;
       }
-      state.user.commissionBalance -= amt;
-      updateBalances();
-      closeModal('withdrawModal');
-      showToast('Withdrawal submitted', 'emerald');
+      if (state.jwtToken) {
+        try {
+          const res = await fetch(`${state.backendUrl}/api/v1/wallet/withdraw`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
+            body: JSON.stringify({ destinationTrc20: dest, amountUsdt: amt })
+          });
+          const data = await res.json();
+          if (data.success) {
+            state.user.commissionBalance = Number(data.remainingCommission);
+            updateBalances();
+            closeModal('withdrawModal');
+            showToast(`Withdrawal submitted: $${Number(data.netReceivedUsdt).toFixed(2)} USDT`, 'emerald');
+            return;
+          } else {
+            showToast(data.error || 'Withdrawal failed', 'rose');
+            return;
+          }
+        } catch (e) {}
+      }
     }
 
     function openTransferModal() {
@@ -2103,23 +2302,36 @@
       openModal('transferModal');
     }
 
-    function submitCommissionToGasTransfer() {
+    async function submitCommissionToGasTransfer() {
       const amt = parseFloat(document.getElementById('tfAmountInput')?.value || '0');
       if (isNaN(amt) || amt <= 0 || state.user.commissionBalance < amt) {
         showToast('Insufficient balance', 'rose');
         return;
       }
-      state.user.commissionBalance -= amt;
-      state.user.fuelBalance += amt;
-      updateBalances();
-      closeModal('transferModal');
-      showToast('Transferred to Asset wallet', 'emerald');
+      if (state.jwtToken) {
+        try {
+          const res = await fetch(`${state.backendUrl}/api/v1/wallet/transfer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
+            body: JSON.stringify({ amountUsdt: amt })
+          });
+          const data = await res.json();
+          if (data.success) {
+            state.user.commissionBalance = Number(data.newCommissionBalance);
+            state.user.fuelBalance = Number(data.newGasBalance);
+            updateBalances();
+            closeModal('transferModal');
+            showToast('Transferred to Fuel Wallet', 'emerald');
+            return;
+          }
+        } catch (e) {}
+      }
     }
 
     async function claimTrc20Txid() {
       const txHash = document.getElementById('depositTxidInput').value.trim();
-      if (!txHash || txHash.length < 16) {
-        showToast('Enter valid TRON TXID', 'rose');
+      if (!txHash || txHash.length !== 64) {
+        showToast('Enter valid 64-character TRON TXID', 'rose');
         return;
       }
       if (state.jwtToken) {
@@ -2134,18 +2346,18 @@
             state.user.fuelBalance = Number(data.newGasBalance);
             updateBalances();
             closeModal('depositModal');
-            showToast(`Credited +$${Number(data.creditedAmountUsdt).toFixed(2)} USDT`, 'emerald');
+            showToast(`Verified On-Chain: +$${Number(data.creditedAmountUsdt).toFixed(2)} USDT`, 'emerald');
             return;
           } else {
-            showToast(data.error || 'Verification pending', 'rose');
+            showToast(data.error || 'Transaction not confirmed on TronGrid', 'rose');
             return;
           }
         } catch (e) {}
       }
-      showToast('TXID submitted for verification', 'emerald');
+      showToast('Unable to verify TXID right now', 'rose');
     }
 
-    function activateAnnualPack() {
+    async function activateAnnualPack() {
       if (state.user.isOwnerFree || state.user.isActivated) {
         showToast('VIP Membership is already active', 'emerald');
         return;
@@ -2155,12 +2367,26 @@
         openDepositModal();
         return;
       }
-      state.user.fuelBalance -= 120;
-      state.user.isActivated = true;
-      document.getElementById('homeActivationStatus').innerText = 'VIP Active (365 Days)';
-      document.getElementById('btnHeroActivate').innerText = 'Active';
-      updateBalances();
-      showToast('VIP Activated for 365 Days', 'emerald');
+      if (state.jwtToken) {
+        try {
+          const res = await fetch(`${state.backendUrl}/api/v1/user/activate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` }
+          });
+          const data = await res.json();
+          if (data.success) {
+            state.user.fuelBalance = Number(data.remainingGas ?? (state.user.fuelBalance - 120));
+            state.user.isActivated = true;
+            applyRoleAndRealStatusLabels();
+            updateBalances();
+            showToast('VIP Activated for 365 Days', 'emerald');
+            return;
+          } else {
+            showToast(data.error || 'Activation failed', 'rose');
+            return;
+          }
+        } catch (e) {}
+      }
     }
 
     async function syncLiveUserProfile() {
@@ -2172,19 +2398,31 @@
         if (!res.ok) return;
         const data = await res.json();
         if (data.success) {
+          if (data.user) {
+            const isOwner = Boolean(data.user.is_owner_exempt);
+            state.user.uid = data.user.uid || state.user.uid;
+            state.user.isOwnerFree = isOwner;
+            state.user.isActivated = Boolean(isOwner || data.user.is_activated);
+            state.user.rank = isOwner ? 'V6' : `V${data.user.rank_level || 1}`;
+            state.user.referralCode = data.user.referral_code || state.user.referralCode;
+          }
           if (data.wallet) {
-            state.user.fuelBalance = Number(data.wallet.gas_balance ?? state.user.fuelBalance);
-            state.user.commissionBalance = Number(data.wallet.commission_balance ?? state.user.commissionBalance);
-            state.user.cumProfit = Number(data.wallet.total_trading_profit ?? state.user.cumProfit);
+            state.user.fuelBalance = Number(data.wallet.gas_balance ?? 0);
+            state.user.commissionBalance = Number(data.wallet.commission_balance ?? 0);
+            state.user.cumProfit = Number(data.wallet.total_trading_profit ?? 0);
           }
           if (Array.isArray(data.boundExchanges)) {
+            const freshBound = {};
             data.boundExchanges.forEach(b => {
-              state.boundExchanges[b.exchange_name] = {
+              const prev = state.boundExchanges[b.exchange_name] || {};
+              freshBound[b.exchange_name] = {
                 boundAt: Date.now(),
                 maskedKey: (b.api_key || '').slice(0, 6) + '••••••',
-                spotUsdt: 'Verified'
+                spotUsdtNum: prev.spotUsdtNum ?? null,
+                spotUsdt: prev.spotUsdt || 'Verified'
               };
             });
+            state.boundExchanges = freshBound;
             localStorage.setItem('bq_bound_exchanges', JSON.stringify(state.boundExchanges));
             updateBoundExchangeBadges();
           }
@@ -2192,11 +2430,43 @@
             state.downlineMembers = data.directTeam.map(d => ({
               uid: d.uid,
               email: d.email,
-              rank: `V${d.rank_level || 1}`
+              rank: `V${d.rank_level || 1}`,
+              isActivated: Boolean(d.is_activated)
             }));
             document.getElementById('teamDirectCount').innerText = String(state.downlineMembers.length);
+            document.getElementById('teamActiveVipCount').innerText = String(state.downlineMembers.filter(m => m.isActivated).length);
+            document.getElementById('teamRankTierDisplay').innerText = state.user.rank;
           }
+          if (Array.isArray(data.commissionLogs)) {
+            state.ledgerLogs = data.commissionLogs;
+          }
+          if (Array.isArray(data.circles)) {
+            state.circles = data.circles.map(c => ({
+              id: c.id,
+              name: c.name,
+              author: `${c.owner_email} (V${c.owner_rank || 6})`,
+              tag: 'Verified',
+              desc: c.description || '',
+              synced: false
+            }));
+          }
+          if (data.platformStats) {
+            state.platformStats = data.platformStats;
+            const ownerCard = document.getElementById('ownerPlatformStatsCard');
+            if (ownerCard) {
+              ownerCard.classList.remove('hidden');
+              document.getElementById('ownerRealTotalUsers').innerText = String(data.platformStats.totalUsers || 0);
+              document.getElementById('ownerRealActiveVips').innerText = String(data.platformStats.activeVips || 0);
+              document.getElementById('ownerRealTotalGasPool').innerText = `$${Number(data.platformStats.totalGasBalance || 0).toFixed(2)}`;
+            }
+          }
+
+          localStorage.setItem('bq_user_profile', JSON.stringify(state.user));
+          applyRoleAndRealStatusLabels();
+          updateUserIdentityUI();
           updateBalances();
+          renderCircles();
+          renderGasLogs();
           renderMlmLogs();
           renderRevenueDetails();
         }
@@ -2235,6 +2505,7 @@
       document.getElementById('inviteModalCode').innerText = state.user.referralCode;
       document.getElementById('teamRefLinkInput').value = `https://bharatq-trading-app.onrender.com/?code=${state.user.referralCode}`;
       if (document.getElementById('modalSessionEmail')) document.getElementById('modalSessionEmail').innerText = state.user.email;
+      if (document.getElementById('modalSessionUid')) document.getElementById('modalSessionUid').innerText = state.user.uid || '--';
       if (document.getElementById('modalSessionRank')) document.getElementById('modalSessionRank').innerText = `${state.user.rank} • ${state.user.referralCode}`;
     }
 
@@ -2326,6 +2597,7 @@
         gate?.classList.remove('hidden');
       }
 
+      applyRoleAndRealStatusLabels();
       updateBoundExchangeBadges();
       renderPairs();
       renderCircles();
