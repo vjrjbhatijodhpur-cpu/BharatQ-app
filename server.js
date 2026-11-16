@@ -347,49 +347,7 @@ async function verifyExchangeCredentialsLive(exchangeName, apiKey, apiSecret) {
       const data = await res.json();
       if (data.retCode !== 0) {
         return {
-          valid: false,
-          error: `Bybit (${data.retCode}): ${data.retMsg}`,
-          fixHint: `Ensure Bybit API has Spot Trade permission and whitelist IP: ${serverIp}`,
-          serverIp
-        };
-      }
-      return { valid: true, spotUsdtBalance: null, canTrade: true, serverIp };
-    } catch (e) {
-      return { valid: false, error: e.message, serverIp };
-    }
-  }
-
-  return { valid: true, spotUsdtBalance: null, canTrade: true, serverIp };
-}
-
-// Execute live Spot Market BUY/SELL order on bound Binance account
-async function executeBinanceSpotOrder(uid, symbol, side, quoteOrderQtyUsdt) {
-  try {
-    const keyRes = await pool.query(
-      'SELECT * FROM exchange_api_keys WHERE uid = $1 AND exchange_name = $2 AND is_valid = TRUE LIMIT 1',
-      [uid, 'BINANCE']
-    );
-    if (!keyRes.rows.length) {
-      return { executedOnExchange: false, mode: 'NO_API_BOUND' };
-    }
-    const row = keyRes.rows[0];
-    const apiSecret = decryptApiSecret(row.encrypted_secret, row.iv_hex, row.auth_tag_hex);
-    const timestamp = Date.now();
-    const queryString = `symbol=${symbol.replace('/', '')}&side=${side}&type=MARKET&quoteOrderQty=${Number(quoteOrderQtyUsdt).toFixed(2)}&timestamp=${timestamp}`;
-    const signature = crypto.createHmac('sha256', apiSecret).update(queryString).digest('hex');
-
-    const res = await fetch(`https://api.binance.com/api/v3/order?${queryString}&signature=${signature}`, {
-      method: 'POST',
-      headers: { 'X-MBX-APIKEY': row.api_key }
-    });
-    const data = await res.json();
-    return { executedOnExchange: res.ok, mode: 'LIVE_BINANCE_SPOT', details: data };
-  } catch (err) {
-    return { executedOnExchange: false, mode: 'EXCHANGE_ERROR', error: err.message };
-  }
-}
-
-// Auto-evaluate V1–V6 rank upgrades based on active VIP directs
+// Auto-evaluate V1–V6 rank upgrades based on Royal Q rules (Direct VIPs + Total Team VIPs + 3 Separate Lower-Rank Legs)
 async function evaluateRoyalQRankUpgrade(client, sponsorUid) {
   if (!sponsorUid) return;
   try {
@@ -398,19 +356,62 @@ async function evaluateRoyalQRankUpgrade(client, sponsorUid) {
     const currentRank = Number(userRes.rows[0].rank_level) || 1;
     if (currentRank >= 6) return;
 
+    // 1. Count Direct Active VIPs
     const directsRes = await client.query(
-      'SELECT COUNT(*)::int AS cnt FROM users WHERE sponsor_uid = $1 AND (is_activated = TRUE OR is_owner_exempt = TRUE)',
+      'SELECT uid FROM users WHERE sponsor_uid = $1 AND (is_activated = TRUE OR is_owner_exempt = TRUE)',
       [sponsorUid]
     );
-    const directActive = directsRes.rows[0]?.cnt || 0;
+    const directActive = directsRes.rows.length;
+
+    // 2. Count Total Active VIP Team across all 15 generations
+    const teamRes = await client.query(
+      `WITH RECURSIVE team_tree AS (
+         SELECT uid FROM users WHERE sponsor_uid = $1
+         UNION ALL
+         SELECT u.uid FROM users u INNER JOIN team_tree tt ON u.sponsor_uid = tt.uid
+       )
+       SELECT COUNT(*)::int AS cnt FROM users u
+       INNER JOIN team_tree tt ON u.uid = tt.uid
+       WHERE u.is_activated = TRUE OR u.is_owner_exempt = TRUE`,
+      [sponsorUid]
+    );
+    const totalTeamActive = teamRes.rows[0]?.cnt || 0;
+
+    // 3. Helper to count how many separate direct legs contain at least one leader of rank >= requiredSubRank
+    async function countQualifiedLegs(requiredSubRank) {
+      let qualifiedLegs = 0;
+      const allDirects = await client.query('SELECT uid FROM users WHERE sponsor_uid = $1', [sponsorUid]);
+      for (const leg of allDirects.rows) {
+        const legRankRes = await client.query(
+          `WITH RECURSIVE leg_tree AS (
+             SELECT uid, rank_level, is_activated, is_owner_exempt FROM users WHERE uid = $1
+             UNION ALL
+             SELECT u.uid, u.rank_level, u.is_activated, u.is_owner_exempt
+             FROM users u INNER JOIN leg_tree lt ON u.sponsor_uid = lt.uid
+           )
+           SELECT 1 FROM leg_tree
+           WHERE (is_activated = TRUE OR is_owner_exempt = TRUE)
+             AND rank_level >= $2
+           LIMIT 1`,
+          [leg.uid, requiredSubRank]
+        );
+        if (legRankRes.rows.length > 0) qualifiedLegs++;
+      }
+      return qualifiedLegs;
+    }
 
     let newRank = currentRank;
     for (let r = 6; r > currentRank; r--) {
-      if (directActive >= ROYALQ_RANKS[r].minDirects) {
-        newRank = r;
-        break;
+      const req = ROYALQ_RANKS[r];
+      if (directActive < req.minDirects || totalTeamActive < req.minTeam) continue;
+      if (r >= 3) {
+        const legsWithPrevRank = await countQualifiedLegs(r - 1);
+        if (legsWithPrevRank < 3) continue;
       }
+      newRank = r;
+      break;
     }
+
     if (newRank > currentRank) {
       await client.query('UPDATE users SET rank_level = $1 WHERE uid = $2', [newRank, sponsorUid]);
     }
