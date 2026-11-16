@@ -154,8 +154,10 @@ async function initDatabaseSchema() {
       activation_expires_at TIMESTAMPTZ,
       kyc_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
       pan_number VARCHAR(10),
+      region_code VARCHAR(16) DEFAULT 'IN',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS region_code VARCHAR(16) DEFAULT 'IN';
     CREATE TABLE IF NOT EXISTS user_wallets (
       uid BIGINT PRIMARY KEY REFERENCES users(uid) ON DELETE CASCADE,
       gas_balance NUMERIC(18, 6) NOT NULL DEFAULT 0.000000 CHECK (gas_balance >= 0),
@@ -453,14 +455,12 @@ async function evaluateRoyalQRankUpgrade(client, sponsorUid) {
     const currentRank = Number(userRes.rows[0].rank_level) || 1;
     if (currentRank >= 6) return;
 
-    // 1. Count Direct Active VIPs
     const directsRes = await client.query(
       'SELECT uid FROM users WHERE sponsor_uid = $1 AND (is_activated = TRUE OR is_owner_exempt = TRUE)',
       [sponsorUid]
     );
     const directActive = directsRes.rows.length;
 
-    // 2. Count Total Active VIP Team across all 15 generations
     const teamRes = await client.query(
       `WITH RECURSIVE team_tree AS (
          SELECT uid FROM users WHERE sponsor_uid = $1
@@ -474,7 +474,6 @@ async function evaluateRoyalQRankUpgrade(client, sponsorUid) {
     );
     const totalTeamActive = teamRes.rows[0]?.cnt || 0;
 
-    // 3. Helper to count how many separate direct legs contain at least one leader of rank >= requiredSubRank
     async function countQualifiedLegs(requiredSubRank) {
       let qualifiedLegs = 0;
       const allDirects = await client.query('SELECT uid FROM users WHERE sponsor_uid = $1', [sponsorUid]);
@@ -764,10 +763,10 @@ async function resolveSponsorUid(sponsorCode, isOwner) {
   return ownerSp.rows.length ? ownerSp.rows[0].uid : null;
 }
 
-// Register Endpoint
+// Register Endpoint (Royal Q Onboarding: Region + Verified Email + Secure Password + Invitation Code)
 app.post('/api/v1/auth/register', async (req, res) => {
   try {
-    const { email, mobileNumber, password, sponsorCode } = req.body;
+    const { email, mobileNumber, password, sponsorCode, region } = req.body;
     if (!email || !password) {
       return res.status(400).json({ success: false, error: 'Email and password are required' });
     }
@@ -776,19 +775,22 @@ app.post('/api/v1/auth/register', async (req, res) => {
     const refCode = isOwner ? 'BHARAT1' : 'BQ' + crypto.randomBytes(3).toString('hex').toUpperCase();
     const twoFaSecret = authenticator.generateSecret();
     const pwHash = hashPassword(password);
+    const regionCode = String(region || 'IN').trim().toUpperCase().slice(0, 16);
 
     const sponsorUid = await resolveSponsorUid(sponsorCode, isOwner);
 
     const userRes = await pool.query(
-      `INSERT INTO users (email, mobile_number, password_hash, two_fa_secret, referral_code, sponsor_uid, rank_level, is_activated, is_owner_exempt)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO users (email, mobile_number, password_hash, two_fa_secret, referral_code, sponsor_uid, rank_level, is_activated, is_owner_exempt, region_code)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        ON CONFLICT (email) DO UPDATE SET
-         mobile_number = EXCLUDED.mobile_number,
+         mobile_number = COALESCE(EXCLUDED.mobile_number, users.mobile_number),
+         password_hash = EXCLUDED.password_hash,
+         region_code = EXCLUDED.region_code,
          rank_level = CASE WHEN EXCLUDED.is_owner_exempt THEN 6 ELSE users.rank_level END,
          is_activated = CASE WHEN EXCLUDED.is_owner_exempt THEN TRUE ELSE users.is_activated END,
          is_owner_exempt = EXCLUDED.is_owner_exempt
        RETURNING *`,
-      [cleanEmail, mobileNumber || null, pwHash, twoFaSecret, refCode, sponsorUid, isOwner ? 6 : 1, isOwner, isOwner]
+      [cleanEmail, mobileNumber || null, pwHash, twoFaSecret, refCode, sponsorUid, isOwner ? 6 : 1, isOwner, isOwner, regionCode]
     );
     const user = userRes.rows[0];
 
@@ -844,7 +846,7 @@ app.post('/api/v1/auth/login', async (req, res) => {
     }
 
     if (!userRes.rows.length) {
-      return res.status(401).json({ success: false, error: 'Account not found. Please log in via Email Verification first.' });
+      return res.status(401).json({ success: false, error: 'Account not found. Please register first.' });
     }
 
     const user = userRes.rows[0];
