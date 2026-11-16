@@ -138,6 +138,15 @@ async function initDatabaseSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE(uid, exchange_name)
     );
+    CREATE TABLE IF NOT EXISTS strategy_circles (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      owner_uid BIGINT NOT NULL REFERENCES users(uid) ON DELETE CASCADE,
+      owner_email VARCHAR(255) NOT NULL,
+      owner_rank INT NOT NULL DEFAULT 6,
+      name VARCHAR(120) NOT NULL,
+      description TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
     CREATE TABLE IF NOT EXISTS bot_strategies (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       uid BIGINT NOT NULL REFERENCES users(uid) ON DELETE CASCADE,
@@ -220,10 +229,12 @@ async function initDatabaseSchema() {
       expires_at TIMESTAMPTZ NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+    UPDATE user_wallets SET gas_balance = 0.00 WHERE gas_balance = 48.50;
+    UPDATE user_wallets SET commission_balance = 0.00 WHERE commission_balance = 1240.00;
   `;
   try {
     await pool.query(autoSql);
-    console.log('[DB INIT] PostgreSQL Royal Q 100% Parity schema verified & ready.');
+    console.log('[DB INIT] PostgreSQL real production schema verified & legacy test balances cleaned to $0.00.');
   } catch (err) {
     console.error('[DB INIT ERROR]', err.message);
   }
@@ -258,16 +269,12 @@ function decryptApiSecret(encryptedSecret, ivHex, authTagHex) {
   return decrypted;
 }
 
-// ============================================================================
-// REAL HMAC-SHA256 EXCHANGE VERIFIER (BINANCE / BYBIT / OKX / COINDCX)
-// ============================================================================
 async function verifyExchangeCredentialsLive(exchangeName, apiKey, apiSecret) {
   const ex = String(exchangeName || 'BINANCE').toUpperCase();
   const serverIp = await detectOutboundServerIp();
 
   if (ex === 'BINANCE') {
     try {
-      // 1. Sync Binance server time to avoid -1021 timestamp ahead/behind errors
       let serverTime = Date.now();
       try {
         const tRes = await fetch('https://api.binance.com/api/v3/time');
@@ -277,7 +284,6 @@ async function verifyExchangeCredentialsLive(exchangeName, apiKey, apiSecret) {
         }
       } catch (e) {}
 
-      // 2. Test signed HMAC-SHA256 Spot Account endpoint (/api/v3/account)
       const qs = `timestamp=${serverTime}&recvWindow=10000`;
       const sig = crypto.createHmac('sha256', apiSecret).update(qs).digest('hex');
       const accRes = await fetch(`https://api.binance.com/api/v3/account?${qs}&signature=${sig}`, {
@@ -293,7 +299,7 @@ async function verifyExchangeCredentialsLive(exchangeName, apiKey, apiSecret) {
         if (code === -2015 || String(msg).toLowerCase().includes('ip')) {
           fixHint = `Go to Binance API Management -> Edit -> "Restrict access to trusted IPs only" and add: ${serverIp || 'the IP group shown above'}, then click Save.`;
         } else if (code === -2014) {
-          fixHint = 'Invalid API-key format. Make sure you copied the full 64-character System-generated (HMAC) API Key.';
+          fixHint = 'Invalid API-key format. Make sure you copied the full System-generated (HMAC) API Key.';
         } else if (code === -1022) {
           fixHint = 'Invalid Secret Key signature. Re-copy the Secret Key carefully from Binance.';
         }
@@ -312,23 +318,12 @@ async function verifyExchangeCredentialsLive(exchangeName, apiKey, apiSecret) {
       const usdtAsset = (accData.balances || []).find(b => b.asset === 'USDT');
       const spotUsdtBalance = usdtAsset ? parseFloat(usdtAsset.free || '0') : 0;
 
-      return {
-        valid: true,
-        spotUsdtBalance,
-        canTrade: true,
-        serverIp
-      };
+      return { valid: true, spotUsdtBalance, canTrade: true, serverIp };
     } catch (netErr) {
-      return {
-        valid: false,
-        error: `Network error reaching Binance: ${netErr.message}`,
-        fixHint: 'Check Render outbound internet connectivity and try again.',
-        serverIp
-      };
+      return { valid: false, error: `Network error reaching Binance: ${netErr.message}`, serverIp };
     }
   }
 
-  // Bybit v5 Unified/Spot HMAC verification
   if (ex === 'BYBIT') {
     try {
       const ts = String(Date.now());
@@ -368,7 +363,7 @@ async function executeBinanceSpotOrder(uid, symbol, side, quoteOrderQtyUsdt) {
       [uid, 'BINANCE']
     );
     if (!keyRes.rows.length) {
-      return { executedOnExchange: false, mode: 'CLOUD_SIM_PAPER' };
+      return { executedOnExchange: false, mode: 'NO_API_BOUND' };
     }
     const row = keyRes.rows[0];
     const apiSecret = decryptApiSecret(row.encrypted_secret, row.iv_hex, row.auth_tag_hex);
@@ -383,7 +378,7 @@ async function executeBinanceSpotOrder(uid, symbol, side, quoteOrderQtyUsdt) {
     const data = await res.json();
     return { executedOnExchange: res.ok, mode: 'LIVE_BINANCE_SPOT', details: data };
   } catch (err) {
-    return { executedOnExchange: false, mode: 'FALLBACK_SIM', error: err.message };
+    return { executedOnExchange: false, mode: 'EXCHANGE_ERROR', error: err.message };
   }
 }
 
@@ -498,6 +493,10 @@ async function distributeDifferentialMlm(client, sourceUid, eventType, totalPool
         'UPDATE user_wallets SET commission_balance = commission_balance + $1, updated_at = NOW() WHERE uid = $2',
         [ownerNet, ownerRes.rows[0].uid]
       );
+      await client.query(
+        'INSERT INTO ledger_journal (debit_account, credit_account, amount_usdt, event_type, reference_id) VALUES ($1, $2, $3, $4, $5)',
+        [`UID_${sourceUid}`, `SPONSOR_${ownerRes.rows[0].uid}_OWNER_NET`, ownerNet, eventType, 'PLATFORM_NET_RETENTION']
+      );
     }
   }
 
@@ -535,39 +534,89 @@ app.get('/api/v1/health', async (req, res) => {
   }
 });
 
-// Royal Q Phase 1: Return Exact Server Outbound IP Group for Binance Whitelisting
 app.get('/api/v1/exchange/whitelist-ips', async (req, res) => {
   const liveIp = await detectOutboundServerIp();
-  const fallbackPool = ['35.160.120.126', '44.233.151.27', '34.211.200.85'];
-  const ips = liveIp ? [liveIp, ...fallbackPool.filter(ip => ip !== liveIp)] : fallbackPool;
   res.json({
     success: true,
-    primaryServerIp: liveIp || fallbackPool[0],
-    ipList: ips,
-    ipGroupString: ips.join(' ')
+    primaryServerIp: liveIp || '',
+    ipList: liveIp ? [liveIp] : [],
+    ipGroupString: liveIp || 'Server IP unavailable — check Render outbound network'
   });
+});
+
+app.get('/api/v1/leaderboard', async (req, res) => {
+  try {
+    const q = await pool.query(`
+      SELECT u.uid,
+             CONCAT(LEFT(u.email, 3), '***@', SPLIT_PART(u.email, '@', 2)) AS masked_email,
+             u.rank_level,
+             (SELECT COUNT(*)::int FROM users d WHERE d.sponsor_uid = u.uid) AS direct_count
+      FROM users u
+      WHERE u.is_activated = TRUE OR u.is_owner_exempt = TRUE
+      ORDER BY u.rank_level DESC, direct_count DESC, u.created_at ASC
+      LIMIT 20
+    `);
+    res.json({ success: true, leaders: q.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/v1/circles', requireAuth, async (req, res) => {
+  try {
+    const uRes = await pool.query('SELECT uid, email, rank_level, is_owner_exempt FROM users WHERE uid = $1 LIMIT 1', [req.user.uid]);
+    const u = uRes.rows[0];
+    if (!u || (!u.is_owner_exempt && u.rank_level < 5)) {
+      return res.status(403).json({ success: false, error: 'Only V5 & V6 leaders can publish Strategy Circles' });
+    }
+    const { name, description } = req.body;
+    if (!name) return res.status(400).json({ success: false, error: 'Circle name required' });
+    await pool.query(
+      'INSERT INTO strategy_circles (owner_uid, owner_email, owner_rank, name, description) VALUES ($1, $2, $3, $4, $5)',
+      [u.uid, u.email, u.is_owner_exempt ? 6 : u.rank_level, name.trim(), (description || '').trim()]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 app.get('/api/v1/user/profile', requireAuth, async (req, res) => {
   try {
     const uRes = await pool.query('SELECT uid, email, mobile_number, referral_code, sponsor_uid, rank_level, is_activated, is_owner_exempt FROM users WHERE uid = $1 LIMIT 1', [req.user.uid]);
+    const userRow = uRes.rows[0] || {};
     const wRes = await pool.query('SELECT * FROM user_wallets WHERE uid = $1 LIMIT 1', [req.user.uid]);
     const keysRes = await pool.query('SELECT exchange_name, api_key, is_valid, created_at FROM exchange_api_keys WHERE uid = $1 AND is_valid = TRUE', [req.user.uid]);
     const logsRes = await pool.query(
-      'SELECT * FROM ledger_journal WHERE credit_account LIKE $1 ORDER BY created_at DESC LIMIT 20',
-      [`SPONSOR_${req.user.uid}_%`]
+      'SELECT * FROM ledger_journal WHERE credit_account LIKE $1 OR debit_account = $2 ORDER BY created_at DESC LIMIT 30',
+      [`SPONSOR_${req.user.uid}_%`, `UID_${req.user.uid}`]
     );
     const directsRes = await pool.query(
-      'SELECT uid, email, referral_code, rank_level, is_activated, created_at FROM users WHERE sponsor_uid = $1 ORDER BY created_at DESC LIMIT 50',
+      'SELECT uid, email, referral_code, rank_level, is_activated, created_at FROM users WHERE sponsor_uid = $1 ORDER BY created_at DESC LIMIT 100',
       [req.user.uid]
     );
+    const circlesRes = await pool.query('SELECT * FROM strategy_circles ORDER BY created_at DESC LIMIT 20');
+
+    let platformStats = null;
+    if (userRow.is_owner_exempt) {
+      const statsQ = await pool.query(`
+        SELECT
+          (SELECT COUNT(*)::int FROM users) AS "totalUsers",
+          (SELECT COUNT(*)::int FROM users WHERE is_activated = TRUE OR is_owner_exempt = TRUE) AS "activeVips",
+          (SELECT COALESCE(SUM(gas_balance), 0) FROM user_wallets) AS "totalGasBalance"
+      `);
+      platformStats = statsQ.rows[0];
+    }
+
     res.json({
       success: true,
-      user: uRes.rows[0] || {},
-      wallet: wRes.rows[0] || { gas_balance: 0, commission_balance: 0 },
+      user: userRow,
+      wallet: wRes.rows[0] || { gas_balance: 0, commission_balance: 0, total_trading_profit: 0 },
       boundExchanges: keysRes.rows,
       commissionLogs: logsRes.rows,
-      directTeam: directsRes.rows
+      directTeam: directsRes.rows,
+      circles: circlesRes.rows,
+      platformStats
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -733,10 +782,7 @@ app.post('/api/v1/auth/send-otp', async (req, res) => {
       identifier,
       supabaseSent,
       deliveryChannel: supabaseSent ? 'SUPABASE_EMAIL' : 'POSTGRES_OTP',
-      expiresInSeconds: 300,
-      message: supabaseSent
-        ? `Verification code sent to ${cleanEmail} via Supabase Email Auth`
-        : `6-digit OTP generated for ${identifier}`
+      expiresInSeconds: 300
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -834,9 +880,6 @@ app.post('/api/v1/auth/verify-otp', async (req, res) => {
   }
 });
 
-// ============================================================================
-// REAL HMAC-SHA256 EXCHANGE API BINDING & PERMISSION VERIFICATION
-// ============================================================================
 app.post('/api/v1/exchange/bind', async (req, res) => {
   try {
     const { exchangeName, apiKey, apiSecret } = req.body;
@@ -848,7 +891,6 @@ app.post('/api/v1/exchange/bind', async (req, res) => {
       return res.status(400).json({ success: false, error: 'API Key and Secret Key are required' });
     }
 
-    // 1. Live HMAC-SHA256 Handshake with Binance / Bybit / OKX
     const check = await verifyExchangeCredentialsLive(cleanEx, cleanKey, cleanSecret);
     if (!check.valid) {
       return res.status(400).json({
@@ -859,7 +901,6 @@ app.post('/api/v1/exchange/bind', async (req, res) => {
       });
     }
 
-    // 2. If authenticated with JWT, encrypt and persist to PostgreSQL
     const auth = req.headers.authorization || '';
     const token = auth.replace(/^Bearer\s+/i, '');
     if (token) {
@@ -991,17 +1032,29 @@ app.post('/api/v1/bot/manual-action', requireAuth, async (req, res) => {
     const curPrice = (await getOrFetchLiveSymbolPrice(rawSym)) || 1;
 
     if (action === 'SELL_ALL') {
-      await executeBinanceSpotOrder(req.user.uid, rawSym, 'SELL', 25);
+      const orderRes = await executeBinanceSpotOrder(req.user.uid, rawSym, 'SELL', 25);
       await pool.query(
         `UPDATE bot_strategies SET status = 'PAUSED', current_calls = 0, total_position_usdt = 0, total_base_qty = 0, sub_bin_position_usdt = 0, sub_bin_base_qty = 0, updated_at = NOW() WHERE uid = $1 AND symbol = $2`,
         [req.user.uid, symbol]
       );
-      return res.json({ success: true, message: `Closed all ${symbol} warehouse positions at market price $${curPrice.toLocaleString()}` });
+      return res.json({
+        success: true,
+        executedOnExchange: orderRes.executedOnExchange,
+        message: orderRes.executedOnExchange
+          ? `Sold ${symbol} on Binance Spot at $${curPrice.toLocaleString()}`
+          : `Paused ${symbol} strategy (No active exchange order placed)`
+      });
     }
 
     if (action === 'MANUAL_REPLENISH') {
       const buyAmt = Number(extraUsdt || 20);
-      await executeBinanceSpotOrder(req.user.uid, rawSym, 'BUY', buyAmt);
+      const orderRes = await executeBinanceSpotOrder(req.user.uid, rawSym, 'BUY', buyAmt);
+      if (!orderRes.executedOnExchange) {
+        return res.status(400).json({
+          success: false,
+          error: orderRes.details?.msg || 'Exchange API did not execute order — verify Spot USDT balance and API permissions.'
+        });
+      }
       await pool.query(
         `UPDATE bot_strategies SET
            total_position_usdt = total_position_usdt + $1,
@@ -1011,7 +1064,7 @@ app.post('/api/v1/bot/manual-action', requireAuth, async (req, res) => {
          WHERE uid = $3 AND symbol = $4`,
         [buyAmt, curPrice, req.user.uid, symbol]
       );
-      return res.json({ success: true, message: `Manual Replenishment: Bought $${buyAmt.toFixed(2)} USDT of ${symbol} at $${curPrice.toLocaleString()}` });
+      return res.json({ success: true, message: `Executed real Spot buy: $${buyAmt.toFixed(2)} USDT of ${symbol} at $${curPrice.toLocaleString()}` });
     }
 
     res.json({ success: true });
@@ -1074,7 +1127,7 @@ app.post('/api/v1/wallet/claim-txid', requireAuth, async (req, res) => {
   try {
     const { txHash } = req.body;
     const cleanTx = String(txHash || '').trim();
-    if (!cleanTx || cleanTx.length < 16) {
+    if (!cleanTx || cleanTx.length !== 64) {
       return res.status(400).json({ success: false, error: 'Enter a valid 64-character TRON transaction hash' });
     }
 
@@ -1085,25 +1138,33 @@ app.post('/api/v1/wallet/claim-txid', requireAuth, async (req, res) => {
       return res.status(400).json({ success: false, error: 'This TRON TXID has already been credited' });
     }
 
-    let creditedAmountUsdt = 50.00;
-    try {
-      const tgRes = await fetch(`https://api.trongrid.io/v1/transactions/${cleanTx}/events`, {
-        headers: process.env.TRONGRID_API_KEY ? { 'TRON-PRO-API-KEY': process.env.TRONGRID_API_KEY } : {}
-      });
-      if (tgRes.ok) {
-        const tgData = await tgRes.json();
-        const transferEvent = (tgData.data || []).find(
-          ev => ev.event_name === 'Transfer' && ev.result && ev.result.value
-        );
-        if (transferEvent) {
-          creditedAmountUsdt = Number(transferEvent.result.value) / 1e6;
-        }
-      }
-    } catch (e) {}
+    const tgRes = await fetch(`https://api.trongrid.io/v1/transactions/${cleanTx}/events`, {
+      headers: process.env.TRONGRID_API_KEY ? { 'TRON-PRO-API-KEY': process.env.TRONGRID_API_KEY } : {}
+    });
+    if (!tgRes.ok) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, error: 'Could not verify transaction on TronGrid network' });
+    }
+
+    const tgData = await tgRes.json();
+    const transferEvent = (tgData.data || []).find(
+      ev => ev.event_name === 'Transfer' && ev.contract_address === USDT_TRC20_CONTRACT && ev.result && ev.result.value
+    );
+
+    if (!transferEvent) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, error: 'No confirmed USDT TRC-20 transfer found for this TXID' });
+    }
+
+    const creditedAmountUsdt = Number(transferEvent.result.value) / 1e6;
+    if (creditedAmountUsdt <= 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, error: 'Invalid USDT transfer amount on-chain' });
+    }
 
     await client.query(
       'INSERT INTO trc20_deposits (tx_hash, uid, from_address, to_address, amount_usdt, block_number, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [cleanTx, req.user.uid, 'TRON_USER_WALLET', MASTER_TRC20_ADDRESS, creditedAmountUsdt, Date.now(), 'CREDITED']
+      [cleanTx, req.user.uid, String(transferEvent.result.from || 'TRON_SENDER'), MASTER_TRC20_ADDRESS, creditedAmountUsdt, Number(transferEvent.block_number || 0), 'CREDITED']
     );
 
     const upd = await client.query(
@@ -1141,7 +1202,7 @@ app.post('/api/v1/wallet/withdraw', requireAuth, async (req, res) => {
     const wRes = await client.query('SELECT commission_balance FROM user_wallets WHERE uid = $1 FOR UPDATE', [req.user.uid]);
     if (!wRes.rows.length || Number(wRes.rows[0].commission_balance) < amt) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ success: false, error: 'Insufficient Commission Wallet balance' });
+      return res.status(400).json({ success: false, error: 'Insufficient real balance' });
     }
 
     const netPayoutUsdt = Math.max(0, amt - networkFee);
@@ -1150,8 +1211,8 @@ app.post('/api/v1/wallet/withdraw', requireAuth, async (req, res) => {
       [amt, req.user.uid]
     );
 
-    let txHash = 'TX_ROYALQ_AUTO_' + crypto.randomBytes(16).toString('hex').toUpperCase();
-    let payoutStatus = 'COMPLETED_INSTANT';
+    let txHash = 'PENDING_MANUAL_PAYOUT_' + crypto.randomBytes(8).toString('hex').toUpperCase();
+    let payoutStatus = 'PENDING_PAYOUT';
 
     if (process.env.HOT_WALLET_PRIVATE_KEY && TronWebLib) {
       try {
@@ -1207,7 +1268,7 @@ app.post('/api/v1/wallet/transfer', requireAuth, async (req, res) => {
     const wRes = await client.query('SELECT commission_balance, gas_balance FROM user_wallets WHERE uid = $1 FOR UPDATE', [req.user.uid]);
     if (!wRes.rows.length || Number(wRes.rows[0].commission_balance) < amt) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ success: false, error: 'Insufficient Commission balance to transfer' });
+      return res.status(400).json({ success: false, error: 'Insufficient balance to transfer' });
     }
     const upd = await client.query(
       'UPDATE user_wallets SET commission_balance = commission_balance - $1, gas_balance = gas_balance + $1, updated_at = NOW() WHERE uid = $2 RETURNING commission_balance, gas_balance',
@@ -1304,21 +1365,29 @@ async function evaluateActiveDcaBots() {
           const subBinUsdt = Number(bot.sub_bin_position_usdt);
           const subBinQty = Number(bot.sub_bin_base_qty);
           const grossSubSell = subBinQty * currentPrice;
-          const subProfit = Math.max(0.15, grossSubSell - subBinUsdt);
+
+          const orderRes = await executeBinanceSpotOrder(bot.uid, rawSym, 'SELL', grossSubSell);
+          if (!orderRes.executedOnExchange) continue;
+
+          const subProfit = Math.max(0, grossSubSell - subBinUsdt);
           const subGasFee = subProfit * 0.20;
 
           const client = await pool.connect();
           try {
             await client.query('BEGIN');
-            await executeBinanceSpotOrder(bot.uid, rawSym, 'SELL', grossSubSell);
             const uRes = await client.query('SELECT is_owner_exempt FROM users WHERE uid = $1', [bot.uid]);
             const isOwner = uRes.rows[0]?.is_owner_exempt || false;
-            if (!isOwner) {
+            if (!isOwner && subProfit > 0) {
               await client.query(
                 'UPDATE user_wallets SET gas_balance = GREATEST(0, gas_balance - $1), total_trading_profit = total_trading_profit + $2, updated_at = NOW() WHERE uid = $3',
                 [subGasFee, subProfit, bot.uid]
               );
               await distributeDifferentialMlm(client, bot.uid, 'GAS_FEE_20PCT', subGasFee);
+            } else if (isOwner && subProfit > 0) {
+              await client.query(
+                'UPDATE user_wallets SET total_trading_profit = total_trading_profit + $1, updated_at = NOW() WHERE uid = $2',
+                [subProfit, bot.uid]
+              );
             }
             await client.query(
               `UPDATE bot_strategies SET
@@ -1326,7 +1395,6 @@ async function evaluateActiveDcaBots() {
                  sub_bin_position_usdt = 0,
                  sub_bin_base_qty = 0,
                  sub_bin_entry_price = 0,
-                 avg_entry_price = GREATEST(0.00000001, avg_entry_price * 0.992),
                  updated_at = NOW()
                WHERE id = $1`,
               [bot.id]
@@ -1347,7 +1415,7 @@ async function evaluateActiveDcaBots() {
 
         if (pullbackFromPeakPct >= callbackPct) {
           const grossValueUsdt = baseQty * currentPrice;
-          const profitUsdt = Math.max(0.25, grossValueUsdt - posUsdt);
+          const profitUsdt = Math.max(0, grossValueUsdt - posUsdt);
           const gasFee20Pct = profitUsdt * 0.20;
 
           const client = await pool.connect();
@@ -1358,13 +1426,22 @@ async function evaluateActiveDcaBots() {
             const isOwner = uRes.rows[0]?.is_owner_exempt || false;
 
             if (isOwner || (wRes.rows.length && Number(wRes.rows[0].gas_balance) >= gasFee20Pct)) {
-              await executeBinanceSpotOrder(bot.uid, rawSym, 'SELL', grossValueUsdt);
-              if (!isOwner) {
+              const orderRes = await executeBinanceSpotOrder(bot.uid, rawSym, 'SELL', grossValueUsdt);
+              if (!orderRes.executedOnExchange) {
+                await client.query('ROLLBACK');
+                continue;
+              }
+              if (!isOwner && profitUsdt > 0) {
                 await client.query(
                   'UPDATE user_wallets SET gas_balance = gas_balance - $1, total_trading_profit = total_trading_profit + $2, updated_at = NOW() WHERE uid = $3',
                   [gasFee20Pct, profitUsdt, bot.uid]
                 );
                 await distributeDifferentialMlm(client, bot.uid, 'GAS_FEE_20PCT', gasFee20Pct);
+              } else if (isOwner && profitUsdt > 0) {
+                await client.query(
+                  'UPDATE user_wallets SET total_trading_profit = total_trading_profit + $1, updated_at = NOW() WHERE uid = $2',
+                  [profitUsdt, bot.uid]
+                );
               }
               const nextStatus = cycleType === 'ONE_SHOT' ? 'PAUSED' : 'CYCLING';
               const netCycleGain = Math.max(0, profitUsdt - (isOwner ? 0 : gasFee20Pct));
@@ -1417,7 +1494,8 @@ async function evaluateActiveDcaBots() {
           const addUsdt = Number(bot.first_buy_usdt) * multiple;
           const addQty = addUsdt / currentPrice;
 
-          await executeBinanceSpotOrder(bot.uid, rawSym, 'BUY', addUsdt);
+          const orderRes = await executeBinanceSpotOrder(bot.uid, rawSym, 'BUY', addUsdt);
+          if (!orderRes.executedOnExchange) continue;
 
           if ((strategyMode === 'SUB_BIN' || strategyMode === 'SUB_BIN_REALTIME') && nextCallNumber >= 5) {
             await pool.query(
@@ -1460,5 +1538,5 @@ setInterval(evaluateActiveDcaBots, 3000);
 app.listen(PORT, async () => {
   await initDatabaseSchema();
   await detectOutboundServerIp();
-  console.log(`BharatQ Quantum AI v6.0 Engine running on port ${PORT} (Outbound IP: ${cachedServerPublicIp})`);
+  console.log(`BharatQ Real Production Engine running on port ${PORT} (Outbound IP: ${cachedServerPublicIp})`);
 });
