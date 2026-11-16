@@ -94,10 +94,10 @@
 <body>
 
   <!-- ===================================================================================== -->
-  <!-- FULL-SCREEN NATIVE LOGIN & SUPABASE EMAIL OTP / MAGIC-LINK GATE                       -->
+  <!-- FULL-SCREEN NATIVE ROYAL Q-STYLE LOGIN & REGISTRATION ONBOARDING GATEWAY              -->
   <!-- ===================================================================================== -->
   <div id="mandatoryAuthGate" class="fixed inset-0 z-[100] bg-[#060B18] flex flex-col justify-between max-w-[480px] mx-auto overflow-y-auto safe-top safe-bottom">
-    <div class="px-6 pt-6 pb-8 flex-1 flex flex-col justify-between">
+    <div class="px-6 pt-5 pb-8 flex-1 flex flex-col justify-between">
       <div class="flex items-center justify-between">
         <span class="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
           <i class="fa-solid fa-globe text-bqGold"></i> English (Global)
@@ -107,9 +107,9 @@
         </button>
       </div>
 
-      <div class="my-auto py-4 space-y-6">
-        <div class="flex flex-col items-center text-center space-y-3">
-          <div class="w-20 h-20 rounded-[24px] overflow-hidden shadow-2xl shadow-amber-500/20 border-2 border-bqGold">
+      <div class="my-auto py-3 space-y-5">
+        <div class="flex flex-col items-center text-center space-y-2.5">
+          <div class="w-16 h-16 rounded-[22px] overflow-hidden shadow-2xl shadow-amber-500/20 border-2 border-bqGold">
             <svg viewBox="0 0 120 120" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <linearGradient id="gateTiranga" x1="0" y1="0" x2="0" y2="1">
@@ -133,75 +133,133 @@
             </svg>
           </div>
           <div>
-            <h1 class="text-2xl font-black text-white tracking-tight">Welcome to Bharat<span class="text-bqGold">Q</span></h1>
-            <p class="text-xs text-slate-400 mt-1">24/7 Quantitative Spot Trading Platform</p>
+            <h1 class="text-xl font-black text-white tracking-tight">Welcome to Bharat<span class="text-bqGold">Q</span></h1>
+            <p class="text-[11px] text-slate-400 mt-0.5">Quantitative Spot Trading &amp; Affiliate Engine</p>
           </div>
         </div>
 
+        <!-- Royal Q Login / Register Mode Switch -->
         <div class="flex border-b border-bqBorder text-sm font-bold">
-          <button type="button" id="gateTab-otp" onclick="switchGateTab('otp')" class="flex-1 pb-3 text-bqGold border-b-2 border-bqGold transition">
-            Email Verification
+          <button type="button" id="gateTab-login" onclick="switchGateTab('login')" class="flex-1 pb-2.5 text-bqGold border-b-2 border-bqGold transition">
+            Log In
           </button>
-          <button type="button" id="gateTab-password" onclick="switchGateTab('password')" class="flex-1 pb-3 text-slate-400 border-b-2 border-transparent transition">
-            Password Login
+          <button type="button" id="gateTab-register" onclick="switchGateTab('register')" class="flex-1 pb-2.5 text-slate-400 border-b-2 border-transparent transition">
+            Register
           </button>
         </div>
 
-        <div class="space-y-3.5 text-sm">
+        <!-- STEP 3: ROYAL Q LOGIN VIEW (Email + Password + Quick OTP Option) -->
+        <div id="gateLoginSection" class="space-y-3 text-sm">
           <div class="relative">
             <i class="fa-regular fa-envelope absolute left-4 top-3.5 text-slate-400 text-sm"></i>
-            <input id="gateEmailInput" type="email" placeholder="Please enter your email" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-11 pr-4 py-3 text-white text-sm focus:outline-none transition">
+            <input id="loginEmailInput" type="email" placeholder="Please enter your email address" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-11 pr-4 py-3 text-white text-xs focus:outline-none transition">
           </div>
 
-          <div id="gateOtpSection" class="space-y-2.5">
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-400 text-sm"></i>
+            <input id="loginPasswordInput" type="password" placeholder="Please enter your password" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-11 pr-10 py-3 text-white text-xs focus:outline-none transition">
+            <button type="button" onclick="toggleInputVisibility('loginPasswordInput')" class="absolute right-3.5 top-3 text-slate-400 hover:text-white text-xs">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+
+          <div class="flex justify-between items-center text-[11px] px-1">
+            <button type="button" onclick="switchGateTab('register')" class="text-bqGold font-semibold">New user? Register Now &rarr;</button>
+            <button type="button" onclick="toggleLoginWithOtpBox()" class="text-slate-400 hover:text-bqGold underline">Login with Email Code</button>
+          </div>
+
+          <div id="loginOtpFallbackBox" class="hidden pt-1 space-y-2">
             <div class="flex gap-2">
-              <div class="relative flex-1">
-                <i class="fa-solid fa-shield-halved absolute left-4 top-3.5 text-slate-400 text-sm"></i>
-                <input id="gateOtpCodeInput" type="text" inputmode="numeric" maxlength="8" placeholder="6-digit code (or click email link)" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-11 pr-3 py-3 text-white font-mono text-xs tracking-wider focus:outline-none transition">
-              </div>
-              <button type="button" id="btnGateSendOtp" onclick="sendRealSupabaseEmailOtp()" class="px-4 rounded-2xl bg-bqGold/15 hover:bg-bqGold/25 border border-bqGold/40 text-bqGold font-bold text-xs whitespace-nowrap transition">
+              <input id="loginOtpCodeInput" type="text" inputmode="numeric" maxlength="8" placeholder="6-digit email verification code" class="flex-1 bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
+              <button type="button" id="btnSendLoginOtp" onclick="sendRoyalQEmailCode('login')" class="px-3.5 rounded-2xl bg-bqGold/15 border border-bqGold/40 text-bqGold font-bold text-xs whitespace-nowrap">
                 Send Code
               </button>
             </div>
-            <p id="gateOtpStatusMsg" class="px-3 py-2.5 rounded-xl bg-bqEmerald/10 border border-bqEmerald/30 text-[11px] text-bqEmerald hidden leading-relaxed"></p>
+            <p id="loginOtpStatusMsg" class="text-[11px] text-bqEmerald hidden px-1"></p>
           </div>
 
-          <div id="gatePasswordSection" class="hidden space-y-2.5">
-            <div class="relative">
-              <i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-400 text-sm"></i>
-              <input id="gatePasswordInput" type="password" placeholder="Please enter your password" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-11 pr-4 py-3 text-white text-sm focus:outline-none transition">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2.5">
-            <div class="relative">
-              <i class="fa-solid fa-phone absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
-              <input id="gateMobileInput" type="tel" placeholder="Mobile (Optional)" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-9 pr-3 py-3 text-white text-xs font-mono focus:outline-none">
-            </div>
-            <div class="relative">
-              <i class="fa-solid fa-user-plus absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
-              <input id="gateSponsorInput" type="text" value="BHARAT1" placeholder="Invite Code" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-9 pr-3 py-3 text-bqGold text-xs font-mono font-bold uppercase focus:outline-none">
-            </div>
-          </div>
-
-          <div id="advancedCloudDrawer" class="hidden p-3 rounded-2xl bg-bqCard border border-bqBorder space-y-2 text-[11px]">
-            <div class="flex justify-between items-center text-slate-400">
-              <span>Cloud Node &amp; Auth Endpoint</span>
-              <span class="text-bqEmerald font-mono">Connected</span>
-            </div>
-            <input id="cfgSupabaseUrl" type="text" value="https://dthsnlfybujksgmihakt.supabase.co" onchange="saveSupabaseConfig()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-slate-300 font-mono text-[10px]">
-            <input id="cfgSupabaseAnonKey" type="text" value="sb_publishable_bGJvNp4teGIt3rBSaEPPMg_aln2JwGK" onchange="saveSupabaseConfig()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-slate-300 font-mono text-[10px]">
-            <input id="cfgGateBackendUrl" type="text" value="https://bharatq-backend-api.onrender.com" onchange="syncBackendUrlFromAuth(this.value)" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-bqGold font-mono text-[10px]">
-          </div>
+          <button type="button" id="btnGateLoginSubmit" onclick="submitRoyalQLogin()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron active:scale-[0.99] text-black font-black text-sm tracking-wide shadow-lg shadow-amber-500/20 transition">
+            Log In
+          </button>
         </div>
 
-        <button type="button" id="btnGateSubmit" onclick="submitMandatoryGateAuth()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron active:scale-[0.99] text-black font-black text-sm tracking-wide shadow-lg shadow-amber-500/20 transition">
-          Log In / Register
-        </button>
+        <!-- STEP 2: ROYAL Q REGISTRATION VIEW (Region + Email + Code + Password + Invite Code + Terms) -->
+        <div id="gateRegisterSection" class="hidden space-y-2.5 text-xs">
+          <!-- 1. Select Location / Region -->
+          <div class="relative">
+            <i class="fa-solid fa-location-dot absolute left-3.5 top-3 text-bqGold text-xs"></i>
+            <select id="regRegionSelect" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-9 pr-4 py-2.5 text-white text-xs focus:outline-none">
+              <option value="IN">Location / Region: India (+91)</option>
+              <option value="AE">United Arab Emirates (+971)</option>
+              <option value="SG">Singapore (+65)</option>
+              <option value="GB">United Kingdom (+44)</option>
+              <option value="US">United States (+1)</option>
+              <option value="MY">Malaysia (+60)</option>
+              <option value="ID">Indonesia (+62)</option>
+              <option value="NG">Nigeria (+234)</option>
+              <option value="GLOBAL">Other Region / Global</option>
+            </select>
+          </div>
 
-        <p class="text-center text-[11px] text-slate-400 leading-relaxed">
-          By logging in, you agree to BharatQ's <button type="button" onclick="openLegalModal('terms')" class="text-bqGold underline">User Agreement</button> &amp; <button type="button" onclick="openLegalModal('privacy')" class="text-bqGold underline">Privacy Policy</button>.
-        </p>
+          <!-- 2. Enter Active Email Address -->
+          <div class="relative">
+            <i class="fa-regular fa-envelope absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+            <input id="regEmailInput" type="email" placeholder="Enter your active email address" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-9 pr-4 py-2.5 text-white text-xs focus:outline-none">
+          </div>
+
+          <!-- 3. Email Verification Code + Send Button -->
+          <div class="flex gap-2">
+            <div class="relative flex-1">
+              <i class="fa-solid fa-shield-halved absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+              <input id="regOtpCodeInput" type="text" inputmode="numeric" maxlength="8" placeholder="Email verification code" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-9 pr-3 py-2.5 text-white font-mono text-xs focus:outline-none">
+            </div>
+            <button type="button" id="btnRegSendOtp" onclick="sendRoyalQEmailCode('register')" class="px-4 rounded-2xl bg-bqGold/15 hover:bg-bqGold/25 border border-bqGold/40 text-bqGold font-bold text-xs whitespace-nowrap transition">
+              Send
+            </button>
+          </div>
+          <p id="regOtpStatusMsg" class="px-3 py-2 rounded-xl bg-bqEmerald/10 border border-bqEmerald/30 text-[11px] text-bqEmerald hidden leading-relaxed"></p>
+
+          <!-- 4. Set Secure Password (8+ chars, uppercase + number) -->
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+            <input id="regPasswordInput" type="password" placeholder="Set password (8+ chars, 1 Uppercase, 1 Number)" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-9 pr-9 py-2.5 text-white text-xs focus:outline-none">
+            <button type="button" onclick="toggleInputVisibility('regPasswordInput')" class="absolute right-3.5 top-2.5 text-slate-400 hover:text-white text-xs">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+
+          <!-- 5. Invitation Code & Optional Mobile -->
+          <div class="grid grid-cols-2 gap-2">
+            <div class="relative">
+              <i class="fa-solid fa-user-plus absolute left-3 top-3 text-bqGold text-xs"></i>
+              <input id="regSponsorInput" type="text" value="BHARAT1" placeholder="Invitation Code" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-8 pr-2.5 py-2.5 text-bqGold font-mono font-bold uppercase text-xs focus:outline-none">
+            </div>
+            <div class="relative">
+              <i class="fa-solid fa-phone absolute left-3 top-3 text-slate-400 text-xs"></i>
+              <input id="regMobileInput" type="tel" placeholder="Mobile (Optional)" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-8 pr-2.5 py-2.5 text-white font-mono text-xs focus:outline-none">
+            </div>
+          </div>
+
+          <!-- 6. Agree to Terms of Service Checkbox -->
+          <label class="flex items-start gap-2 pt-1 text-[11px] text-slate-300 cursor-pointer">
+            <input id="regTermsCheckbox" type="checkbox" checked class="mt-0.5 accent-amber-400 w-4 h-4 shrink-0">
+            <span>I have read and agree to BharatQ's <button type="button" onclick="openLegalModal('terms')" class="text-bqGold underline">Terms of Service</button> &amp; <button type="button" onclick="openLegalModal('privacy')" class="text-bqGold underline">Privacy Policy</button>.</span>
+          </label>
+
+          <button type="button" id="btnGateRegisterSubmit" onclick="submitRoyalQRegistration()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron active:scale-[0.99] text-black font-black text-sm tracking-wide shadow-lg shadow-amber-500/20 transition">
+            Register
+          </button>
+        </div>
+
+        <div id="advancedCloudDrawer" class="hidden p-3 rounded-2xl bg-bqCard border border-bqBorder space-y-2 text-[11px]">
+          <div class="flex justify-between items-center text-slate-400">
+            <span>Cloud Node &amp; Auth Endpoint</span>
+            <span class="text-bqEmerald font-mono">Connected</span>
+          </div>
+          <input id="cfgSupabaseUrl" type="text" value="https://dthsnlfybujksgmihakt.supabase.co" onchange="saveSupabaseConfig()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-slate-300 font-mono text-[10px]">
+          <input id="cfgSupabaseAnonKey" type="text" value="sb_publishable_bGJvNp4teGIt3rBSaEPPMg_aln2JwGK" onchange="saveSupabaseConfig()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-slate-300 font-mono text-[10px]">
+          <input id="cfgGateBackendUrl" type="text" value="https://bharatq-backend-api.onrender.com" onchange="syncBackendUrlFromAuth(this.value)" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-bqGold font-mono text-[10px]">
+        </div>
       </div>
 
       <div class="text-center">
@@ -1240,6 +1298,49 @@
     </div>
   </div>
 
+  <!-- Royal Q-Style Security Verification Puzzle Slider Modal -->
+  <div id="securityPuzzleModal" class="fixed inset-0 z-[115] bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqGold/50 rounded-3xl w-full max-w-xs p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-shield-halved text-bqGold text-sm"></i>
+          <h3 class="text-sm font-black text-white">Security Verification</h3>
+        </div>
+        <button type="button" onclick="closeModal('securityPuzzleModal')" class="w-7 h-7 rounded-full bg-bqBg text-slate-400 flex items-center justify-center">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Visual Puzzle Track -->
+      <div class="relative h-24 rounded-2xl bg-gradient-to-r from-[#09132B] via-[#13254D] to-[#0B1733] border border-bqBorder overflow-hidden flex items-center justify-between px-5 select-none">
+        <div class="text-[10px] text-slate-400 space-y-1">
+          <span class="text-bqGold font-bold block"><i class="fa-solid fa-lock mr-1"></i> Anti-Bot Check</span>
+          <span>Align the golden puzzle piece into the target slot</span>
+        </div>
+        <!-- Target Slot -->
+        <div id="puzzleTargetSlot" class="w-11 h-11 rounded-xl border-2 border-dashed border-bqGold/70 bg-bqGold/10 flex items-center justify-center text-bqGold/50">
+          <i class="fa-solid fa-puzzle-piece text-lg"></i>
+        </div>
+        <!-- Moving Puzzle Piece -->
+        <div id="puzzleMovingPiece" style="left: 14px;" class="absolute top-1/2 -translate-y-1/2 w-11 h-11 rounded-xl bg-gradient-to-br from-bqGold to-bqSaffron text-black shadow-lg shadow-amber-500/40 flex items-center justify-center pointer-events-none transition-none">
+          <i class="fa-solid fa-puzzle-piece text-lg"></i>
+        </div>
+      </div>
+
+      <!-- Interactive Slider Control -->
+      <div class="space-y-1.5">
+        <div class="relative w-full h-11 rounded-2xl bg-bqBg border border-bqBorder flex items-center justify-center overflow-hidden">
+          <div id="puzzleSliderFill" style="width: 0%;" class="absolute left-0 top-0 bottom-0 bg-bqEmerald/25 pointer-events-none"></div>
+          <span id="puzzleSliderLabel" class="text-[11px] font-bold text-slate-300 pointer-events-none z-10">
+            Slide right to verify &rarr;
+          </span>
+          <input id="puzzleRangeInput" type="range" min="0" max="100" value="0" oninput="handleSecurityPuzzleSlide(this.value)" onchange="releaseSecurityPuzzleSlide(this.value)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20">
+        </div>
+        <p id="puzzleHintText" class="text-[10px] text-center text-slate-400">Drag the slider all the way to the right to proceed</p>
+      </div>
+    </div>
+  </div>
+
   <!-- Native Toast -->
   <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 z-[120] hidden px-4 py-2.5 rounded-full bg-bqCard border border-bqGold/60 text-xs font-semibold text-white shadow-2xl flex items-center gap-2 whitespace-nowrap">
     <i id="toastIcon" class="fa-solid fa-circle-check text-bqEmerald"></i>
@@ -1385,17 +1486,26 @@
       showToast('Settings saved', 'emerald');
     }
 
+    function toggleInputVisibility(id) {
+      const inp = document.getElementById(id);
+      if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+
+    function toggleLoginWithOtpBox() {
+      document.getElementById('loginOtpFallbackBox')?.classList.toggle('hidden');
+    }
+
     function switchGateTab(mode) {
       state.gateMode = mode;
-      const otpBtn = document.getElementById('gateTab-otp');
-      const pwBtn = document.getElementById('gateTab-password');
-      const otpSec = document.getElementById('gateOtpSection');
-      const pwSec = document.getElementById('gatePasswordSection');
+      const loginBtn = document.getElementById('gateTab-login');
+      const regBtn = document.getElementById('gateTab-register');
+      const loginSec = document.getElementById('gateLoginSection');
+      const regSec = document.getElementById('gateRegisterSection');
 
-      if (otpBtn) otpBtn.className = mode === 'otp' ? 'flex-1 pb-3 text-bqGold border-b-2 border-bqGold transition' : 'flex-1 pb-3 text-slate-400 border-b-2 border-transparent transition';
-      if (pwBtn) pwBtn.className = mode === 'password' ? 'flex-1 pb-3 text-bqGold border-b-2 border-bqGold transition' : 'flex-1 pb-3 text-slate-400 border-b-2 border-transparent transition';
-      if (otpSec) otpSec.classList.toggle('hidden', mode !== 'otp');
-      if (pwSec) pwSec.classList.toggle('hidden', mode !== 'password');
+      if (loginBtn) loginBtn.className = mode === 'login' ? 'flex-1 pb-2.5 text-bqGold border-b-2 border-bqGold transition' : 'flex-1 pb-2.5 text-slate-400 border-b-2 border-transparent transition';
+      if (regBtn) regBtn.className = mode === 'register' ? 'flex-1 pb-2.5 text-bqGold border-b-2 border-bqGold transition' : 'flex-1 pb-2.5 text-slate-400 border-b-2 border-transparent transition';
+      if (loginSec) loginSec.classList.toggle('hidden', mode !== 'login');
+      if (regSec) regSec.classList.toggle('hidden', mode !== 'register');
     }
 
     async function finalizeSupabaseMagicLinkSession(sbSession) {
@@ -1438,15 +1548,16 @@
       });
     }
 
-    async function sendRealSupabaseEmailOtp() {
-      const email = (document.getElementById('gateEmailInput')?.value || '').trim().toLowerCase();
-      const mobileNumber = (document.getElementById('gateMobileInput')?.value || '').trim();
-      const sponsorCode = (document.getElementById('gateSponsorInput')?.value || 'BHARAT1').trim().toUpperCase();
-      const msgEl = document.getElementById('gateOtpStatusMsg');
-      const sendBtn = document.getElementById('btnGateSendOtp');
+    async function sendRoyalQEmailCode(contextMode) {
+      const isReg = contextMode === 'register';
+      const email = (document.getElementById(isReg ? 'regEmailInput' : 'loginEmailInput')?.value || '').trim().toLowerCase();
+      const mobileNumber = (document.getElementById('regMobileInput')?.value || '').trim();
+      const sponsorCode = (document.getElementById('regSponsorInput')?.value || 'BHARAT1').trim().toUpperCase();
+      const msgEl = document.getElementById(isReg ? 'regOtpStatusMsg' : 'loginOtpStatusMsg');
+      const sendBtn = document.getElementById(isReg ? 'btnRegSendOtp' : 'btnSendLoginOtp');
 
       if (!email || !email.includes('@')) {
-        showToast('Enter a valid email address', 'rose');
+        showToast('Please enter your active email address', 'rose');
         return;
       }
 
@@ -1458,7 +1569,7 @@
         sendBtn.innerText = 'Sending...';
       }
 
-      const resetSendBtn = (label = 'Send Code') => {
+      const resetSendBtn = (label = isReg ? 'Send' : 'Send Code') => {
         if (sendBtn) {
           sendBtn.disabled = false;
           sendBtn.innerText = label;
@@ -1482,10 +1593,10 @@
           if (!error) {
             if (msgEl) {
               msgEl.classList.remove('hidden');
-              msgEl.innerHTML = `Email sent to <b>${email}</b>! Check your inbox and enter the 6-digit code or click the Sign-In link.`;
+              msgEl.innerHTML = `Verification code sent to <b>${email}</b>! Check inbox/spam and enter the 6-digit code within 30 minutes.`;
             }
             resetSendBtn('Resend');
-            showToast('Verification email sent!', 'emerald');
+            showToast('Verification code sent to your email!', 'emerald');
             return;
           } else {
             if (msgEl) {
@@ -1509,198 +1620,344 @@
       }
 
       clearTimeout(watchdog);
-      resetSendBtn('Send Code');
+      resetSendBtn();
     }
 
-    async function submitMandatoryGateAuth() {
-      const email = (document.getElementById('gateEmailInput')?.value || '').trim().toLowerCase();
-      const mobileNumber = (document.getElementById('gateMobileInput')?.value || '').trim();
-      const otpCode = (document.getElementById('gateOtpCodeInput')?.value || '').trim();
-      const password = document.getElementById('gatePasswordInput')?.value || '';
+    let pendingAuthActionAfterPuzzle = null;
+
+    function openSecurityPuzzlePrompt(actionCallback) {
+      pendingAuthActionAfterPuzzle = actionCallback;
+      const slider = document.getElementById('puzzleRangeInput');
+      const fill = document.getElementById('puzzleSliderFill');
+      const piece = document.getElementById('puzzleMovingPiece');
+      const label = document.getElementById('puzzleSliderLabel');
+      const hint = document.getElementById('puzzleHintText');
+      if (slider) slider.value = 0;
+      if (fill) fill.style.width = '0%';
+      if (piece) piece.style.left = '14px';
+      if (label) {
+        label.innerHTML = 'Slide right to verify &rarr;';
+        label.className = 'text-[11px] font-bold text-slate-300 pointer-events-none z-10';
+      }
+      if (hint) {
+        hint.innerText = 'Drag the slider all the way to the right to proceed';
+        hint.className = 'text-[10px] text-center text-slate-400';
+      }
+      openModal('securityPuzzleModal');
+    }
+
+    function handleSecurityPuzzleSlide(val) {
+      const pct = Math.max(0, Math.min(100, Number(val)));
+      const fill = document.getElementById('puzzleSliderFill');
+      const piece = document.getElementById('puzzleMovingPiece');
+      if (fill) fill.style.width = `${pct}%`;
+      if (piece) piece.style.left = `calc(${pct * 0.72}% + 14px)`;
+    }
+
+    function releaseSecurityPuzzleSlide(val) {
+      const pct = Number(val);
+      const label = document.getElementById('puzzleSliderLabel');
+      const hint = document.getElementById('puzzleHintText');
+      if (pct >= 92) {
+        handleSecurityPuzzleSlide(100);
+        if (label) {
+          label.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> Verified!';
+          label.className = 'text-[11px] font-black text-bqEmerald pointer-events-none z-10';
+        }
+        if (hint) {
+          hint.innerText = 'Security puzzle passed!';
+          hint.className = 'text-[10px] text-center text-bqEmerald font-bold';
+        }
+        setTimeout(() => {
+          closeModal('securityPuzzleModal');
+          const fn = pendingAuthActionAfterPuzzle;
+          pendingAuthActionAfterPuzzle = null;
+          if (typeof fn === 'function') fn();
+        }, 320);
+      } else {
+        handleSecurityPuzzleSlide(0);
+        const slider = document.getElementById('puzzleRangeInput');
+        if (slider) slider.value = 0;
+        if (hint) {
+          hint.innerText = 'Not aligned — slide all the way to the right';
+          hint.className = 'text-[10px] text-center text-bqRose';
+        }
+      }
+    }
+
+    function submitRoyalQLogin() {
+      const email = (document.getElementById('loginEmailInput')?.value || '').trim().toLowerCase();
+      const password = document.getElementById('loginPasswordInput')?.value || '';
+      const otpCode = (document.getElementById('loginOtpCodeInput')?.value || '').trim();
+      const otpBoxVisible = !document.getElementById('loginOtpFallbackBox')?.classList.contains('hidden');
 
       if (!email || !email.includes('@')) {
-        showToast('Enter a valid email address', 'rose');
+        showToast('Please enter your registered email address', 'rose');
+        return;
+      }
+      if (!otpBoxVisible && !password) {
+        showToast('Please enter your password', 'rose');
+        return;
+      }
+      if (otpBoxVisible && otpCode.length < 6) {
+        showToast('Please enter the 6-digit verification code sent to your email', 'rose');
         return;
       }
 
-      const submitBtn = document.getElementById('btnGateSubmit');
-      if (submitBtn) submitBtn.innerText = 'Signing in...';
-
-      if (state.gateMode === 'otp') {
-        const sb = getSupabaseClient();
-        if (sb) {
-          const { data: sessionData } = await sb.auth.getSession();
-          if (sessionData?.session?.user?.email?.toLowerCase() === email) {
-            await finalizeSupabaseMagicLinkSession(sessionData.session);
+      openSecurityPuzzlePrompt(async () => {
+        const btn = document.getElementById('btnGateLoginSubmit');
+        if (btn) { btn.disabled = true; btn.innerText = 'Logging In...'; }
+        try {
+          if (otpBoxVisible) {
+            const sb = getSupabaseClient();
+            if (sb) {
+              const { data: sbData, error: sbErr } = await sb.auth.verifyOtp({
+                email,
+                token: otpCode,
+                type: 'email'
+              });
+              if (!sbErr && sbData?.session) {
+                await finalizeSupabaseMagicLinkSession(sbData.session);
+                if (btn) { btn.disabled = false; btn.innerText = 'Log In'; }
+                showToast('Logged in successfully!', 'emerald');
+                return;
+              }
+            }
+            const res = await fetch(`${state.backendUrl}/api/v1/auth/verify-otp`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, otpCode })
+            });
+            const data = await res.json();
+            if (btn) { btn.disabled = false; btn.innerText = 'Log In'; }
+            if (data.success) {
+              completeGenuineLoginSession(data);
+              showToast('Logged in successfully!', 'emerald');
+            } else {
+              showToast(data.error || 'Invalid verification code', 'rose');
+            }
             return;
           }
-        }
 
-        if (otpCode.length < 6 || otpCode.length > 8) {
-          if (submitBtn) submitBtn.innerText = 'Log In / Register';
-          showToast('Click the "Sign in" link in your email or enter the 6-digit code', 'rose');
-          return;
+          const res = await fetch(`${state.backendUrl}/api/v1/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          const data = await res.json();
+          if (btn) { btn.disabled = false; btn.innerText = 'Log In'; }
+          if (data.success) {
+            completeGenuineLoginSession(data);
+            showToast('Welcome back to BharatQ!', 'emerald');
+          } else {
+            showToast(data.error || 'Invalid email or password', 'rose');
+          }
+        } catch (err) {
+          if (btn) { btn.disabled = false; btn.innerText = 'Log In'; }
+          showToast('Unable to reach server — please check your internet connection', 'rose');
         }
+      });
+    }
 
-        if (sb) {
-          try {
-            const { data: sbData, error: sbErr } = await sb.auth.verifyOtp({
+    function submitRoyalQRegistration() {
+      const region = document.getElementById('regRegionSelect')?.value || 'IN';
+      const email = (document.getElementById('regEmailInput')?.value || '').trim().toLowerCase();
+      const otpCode = (document.getElementById('regOtpCodeInput')?.value || '').trim();
+      const password = document.getElementById('regPasswordInput')?.value || '';
+      const sponsorCode = (document.getElementById('regSponsorInput')?.value || 'BHARAT1').trim().toUpperCase();
+      const mobileNumber = (document.getElementById('regMobileInput')?.value || '').trim();
+      const agreed = document.getElementById('regTermsCheckbox')?.checked;
+
+      if (!email || !email.includes('@')) {
+        showToast('Please enter a valid active email address', 'rose');
+        return;
+      }
+      if (!otpCode || otpCode.length < 6) {
+        showToast('Please enter the 6-digit email verification code', 'rose');
+        return;
+      }
+      if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+        showToast('Password must be 8+ chars with at least 1 uppercase letter & 1 number', 'rose');
+        return;
+      }
+      if (!agreed) {
+        showToast('Please agree to the Terms of Service & Privacy Policy', 'rose');
+        return;
+      }
+
+      openSecurityPuzzlePrompt(async () => {
+        const btn = document.getElementById('btnGateRegisterSubmit');
+        if (btn) { btn.disabled = true; btn.innerText = 'Creating Account...'; }
+        try {
+          const sb = getSupabaseClient();
+          if (sb) {
+            const { error: sbErr } = await sb.auth.verifyOtp({
               email,
               token: otpCode,
               type: 'email'
             });
             if (sbErr) {
-              if (submitBtn) submitBtn.innerText = 'Log In / Register';
-              showToast(sbErr.message, 'rose');
+              if (btn) { btn.disabled = false; btn.innerText = 'Register'; }
+              showToast(sbErr.message || 'Invalid or expired email verification code', 'rose');
               return;
             }
-            if (sbData?.session) {
-              await finalizeSupabaseMagicLinkSession(sbData.session);
-              return;
-            }
-          } catch (err) {
-            if (submitBtn) submitBtn.innerText = 'Log In / Register';
-            showToast('Verification failed', 'rose');
-            return;
           }
-        }
-        return;
-      }
 
-      if (!password) {
-        if (submitBtn) submitBtn.innerText = 'Log In / Register';
-        showToast('Enter your password', 'rose');
-        return;
-      }
-
-      try {
-        const res = await fetch(`${state.backendUrl}/api/v1/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, mobileNumber, password })
-        });
-        const data = await res.json();
-        if (data.success) {
-          completeGenuineLoginSession(data);
-        } else {
-          if (submitBtn) submitBtn.innerText = 'Log In / Register';
-          showToast(data.error || 'Invalid credentials', 'rose');
+          const res = await fetch(`${state.backendUrl}/api/v1/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, mobileNumber, password, sponsorCode, region })
+          });
+          const data = await res.json();
+          if (btn) { btn.disabled = false; btn.innerText = 'Register'; }
+          if (data.success) {
+            completeGenuineLoginSession(data);
+            showToast('Registration complete! Deposit 120 USDT to activate your VIP bot.', 'emerald');
+          } else {
+            showToast(data.error || 'Registration failed', 'rose');
+          }
+        } catch (err) {
+          if (btn) { btn.disabled = false; btn.innerText = 'Register'; }
+          showToast('Unable to reach server — please try again', 'rose');
         }
-      } catch (e) {
-        if (submitBtn) submitBtn.innerText = 'Log In / Register';
-        showToast('Use Email Verification to log in', 'rose');
+      });
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    }
+
+    let toastTimer = null;
+    function showToast(msg, color = 'emerald') {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toastIcon');
+      const text = document.getElementById('toastText');
+      if (!toast || !text) return;
+      text.innerText = msg;
+      if (icon) {
+        icon.className = color === 'rose'
+          ? 'fa-solid fa-circle-exclamation text-bqRose'
+          : 'fa-solid fa-circle-check text-bqEmerald';
       }
+      toast.classList.remove('hidden');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.add('hidden'), 3200);
+    }
+
+    function switchTab(tab) {
+      state.currentTab = tab;
+      ['home', 'quant', 'circle', 'team', 'mine'].forEach(t => {
+        document.getElementById(`tab-${t}`)?.classList.toggle('hidden', t !== tab);
+        const navBtn = document.getElementById(`nav-${t}`);
+        if (navBtn) navBtn.classList.toggle('tab-active', t === tab);
+      });
+    }
+
+    function openDepositModal() {
+      openModal('depositModal');
     }
 
     function applyRoleAndRealStatusLabels() {
       const isOwner = Boolean(state.user.isOwnerFree);
-      const isActive = Boolean(isOwner || state.user.isActivated);
+      const isVip = Boolean(isOwner || state.user.isActivated);
+      const rankLabel = isOwner ? 'V6 Owner' : (isVip ? state.user.rank : 'Unactivated');
 
-      const topBadge = document.getElementById('clientRankBadge');
-      const mineBadge = document.getElementById('mineRankTag');
-      if (topBadge) {
-        topBadge.innerText = isOwner ? 'V6 Owner' : (isActive ? state.user.rank : 'Unactivated');
-        topBadge.className = isActive
-          ? 'cursor-pointer text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-bqGold/20 text-bqGold border border-bqGold/30'
-          : 'cursor-pointer text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-bqRose/20 text-bqRose border border-bqRose/30';
-      }
-      if (mineBadge) {
-        mineBadge.innerText = isOwner ? 'V6 Owner' : (isActive ? state.user.rank : 'Unactivated');
-        mineBadge.className = isActive
+      const rankBadge = document.getElementById('clientRankBadge');
+      const mineRankTag = document.getElementById('mineRankTag');
+      const homeStatusDot = document.getElementById('homeStatusDot');
+      const homeActivationStatus = document.getElementById('homeActivationStatus');
+      const homeExchangeSubtext = document.getElementById('homeExchangeSubtext');
+      const btnHeroActivate = document.getElementById('btnHeroActivate');
+      const mineVipStatusBanner = document.getElementById('mineVipStatusBanner');
+      const mineVipLicenseLabel = document.getElementById('mineVipLicenseLabel');
+      const btnMineActivateVip = document.getElementById('btnMineActivateVip');
+      const btnCreateCircle = document.getElementById('btnCreateCircle');
+
+      if (rankBadge) rankBadge.innerText = rankLabel;
+      if (mineRankTag) {
+        mineRankTag.innerText = rankLabel;
+        mineRankTag.className = isVip
           ? 'cursor-pointer text-[10px] bg-bqGold text-black font-black px-2 py-0.5 rounded-full'
-          : 'cursor-pointer text-[10px] bg-bqRose/20 text-bqRose border border-bqRose/40 font-black px-2 py-0.5 rounded-full';
+          : 'cursor-pointer text-[10px] bg-slate-700 text-slate-200 font-black px-2 py-0.5 rounded-full';
       }
 
-      const statusDot = document.getElementById('homeStatusDot');
-      if (statusDot) {
-        statusDot.className = isActive
+      if (homeStatusDot) {
+        homeStatusDot.className = isVip
           ? 'w-2 h-2 rounded-full bg-bqEmerald live-dot'
           : 'w-2 h-2 rounded-full bg-bqRose live-dot';
       }
 
-      document.getElementById('homeRoleLabel').innerText = isOwner
-        ? 'V6 Owner Master Console'
-        : (isActive ? 'VIP Active • Quantitative Engine' : 'Unactivated Account • Bot Locked');
-
-      document.getElementById('homeActivationStatus').innerText = isOwner
-        ? 'VIP Active (Owner V6 Lifetime)'
-        : (isActive ? 'VIP Active (365 Days)' : 'Unactivated ($120/Yr Required)');
-
-      const heroBtn = document.getElementById('btnHeroActivate');
-      if (heroBtn) {
-        heroBtn.innerText = isActive ? 'Active' : 'Activate $120';
-        heroBtn.className = isActive
-          ? 'px-3.5 py-2 rounded-xl bg-bqEmerald/20 border border-bqEmerald/40 text-bqEmerald font-black text-xs'
-          : 'px-3.5 py-2 rounded-xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs shadow';
+      const boundCount = Object.keys(state.boundExchanges || {}).length;
+      if (homeActivationStatus) {
+        homeActivationStatus.innerText = isOwner
+          ? 'Lifetime Free (Owner VIP V6)'
+          : (isVip ? `VIP Active (${state.user.rank})` : 'Unactivated ($120/Yr Required)');
+      }
+      if (homeExchangeSubtext) {
+        homeExchangeSubtext.innerText = !isVip
+          ? 'Bot Status: Locked until 120 USDT VIP Activation'
+          : (boundCount > 0 ? `Exchange Connected (${boundCount} Bound) • Engine Ready` : 'VIP Active • Bind Exchange API to Start Trading');
+      }
+      if (btnHeroActivate) {
+        btnHeroActivate.classList.toggle('hidden', isVip);
       }
 
-      const mineVipBanner = document.getElementById('mineVipStatusBanner');
-      const mineVipLabel = document.getElementById('mineVipLicenseLabel');
-      const btnMineVip = document.getElementById('btnMineActivateVip');
-      if (mineVipBanner && mineVipLabel && btnMineVip) {
-        if (isActive) {
-          mineVipBanner.className = 'native-card p-3.5 border border-bqEmerald/40 flex items-center justify-between gap-2';
-          mineVipLabel.innerText = isOwner ? 'Lifetime Free V6 Owner VIP Active' : 'VIP License Active (365 Days) — Bot Unlocked';
-          btnMineVip.innerText = 'Active';
-          btnMineVip.className = 'px-3 py-1.5 rounded-xl bg-bqEmerald/20 text-bqEmerald font-black text-[11px] shrink-0';
-        } else {
-          mineVipBanner.className = 'native-card p-3.5 border border-bqRose/40 flex items-center justify-between gap-2';
-          mineVipLabel.innerText = 'Unactivated — Recharge 120 USDT to Activate';
-          btnMineVip.innerText = 'Activate ($120)';
-          btnMineVip.className = 'px-3 py-1.5 rounded-xl bg-bqGold text-black font-black text-[11px] shrink-0';
-        }
+      if (mineVipStatusBanner) {
+        mineVipStatusBanner.className = isVip
+          ? 'native-card p-3.5 border border-bqEmerald/40 flex items-center justify-between gap-2'
+          : 'native-card p-3.5 border border-bqRose/40 flex items-center justify-between gap-2';
+      }
+      if (mineVipLicenseLabel) {
+        mineVipLicenseLabel.innerText = isOwner
+          ? 'Owner Lifetime V6 License Active ($0/Yr)'
+          : (isVip ? `VIP Bot License Active (${state.user.rank})` : 'Unactivated — Recharge 120 USDT to Activate');
+      }
+      if (btnMineActivateVip) {
+        btnMineActivateVip.classList.toggle('hidden', isVip);
       }
 
-      const createCircleBtn = document.getElementById('btnCreateCircle');
-      if (createCircleBtn) createCircleBtn.classList.toggle('hidden', !isOwner && state.user.rank !== 'V5' && state.user.rank !== 'V6');
-
-      if (isOwner) {
-        document.getElementById('teamWalletHeading').innerText = 'Owner Real Earnings Balance (V6 + Net)';
-        document.getElementById('mineRewardLabel').innerText = 'Owner Earnings (Real DB)';
-      } else {
-        document.getElementById('teamWalletHeading').innerText = 'Affiliate Commission Balance (Real DB)';
-        document.getElementById('mineRewardLabel').innerText = 'Reward Wallet (Real DB)';
+      const rankNum = parseInt(String(state.user.rank || 'V1').replace(/\D/g, ''), 10) || 1;
+      if (btnCreateCircle) {
+        btnCreateCircle.classList.toggle('hidden', !(isOwner || rankNum >= 5));
       }
     }
 
     function completeGenuineLoginSession(data) {
+      if (!data || !data.user) return;
+      const u = data.user;
+      const isOwner = Boolean(data.ownerFreeSubscription || u.is_owner_exempt);
+      state.jwtToken = data.token || state.jwtToken || 'session_active';
       state.isAuthenticated = true;
-      state.jwtToken = data.token;
-      localStorage.setItem('bq_jwt', data.token);
-
-      const isOwner = Boolean(data.ownerFreeSubscription || data.user?.is_owner_exempt);
       state.user = {
-        uid: data.user.uid,
-        email: data.user.email,
-        mobile: data.user.mobile_number || '',
-        rank: isOwner ? 'V6' : `V${data.user.rank_level || 1}`,
-        referralCode: data.user.referral_code || (isOwner ? 'BHARAT1' : 'BQUSER'),
+        uid: u.uid || 0,
+        email: u.email || 'User',
+        mobile: u.mobile_number || '',
+        rank: isOwner ? 'V6' : `V${u.rank_level || 1}`,
+        referralCode: u.referral_code || (isOwner ? 'BHARAT1' : 'BQUSER'),
         isOwnerFree: isOwner,
-        isActivated: Boolean(isOwner || data.user.is_activated),
-        fuelBalance: Number(data.user.gas_balance || 0),
-        commissionBalance: Number(data.user.commission_balance || 0),
-        cumProfit: Number(data.user.total_trading_profit || 0),
+        isActivated: Boolean(isOwner || u.is_activated),
+        fuelBalance: Number(u.gas_balance ?? 0),
+        commissionBalance: Number(u.commission_balance ?? 0),
+        cumProfit: Number(u.total_trading_profit ?? 0),
         todayProfit: 0.00
       };
+      localStorage.setItem('bq_jwt', state.jwtToken);
       localStorage.setItem('bq_user_profile', JSON.stringify(state.user));
-
       document.getElementById('mandatoryAuthGate')?.classList.add('hidden');
       applyRoleAndRealStatusLabels();
       updateUserIdentityUI();
       updateBalances();
+      renderPairs();
       syncLiveUserProfile();
-      closeModal('authModal');
-      showToast('Signed in with verified account', 'emerald');
     }
 
-    function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
-    function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
-    function openDepositModal() { openModal('depositModal'); }
-
-    // =====================================================================================
-    // API BINDING LOGIC (LIVE SERVER IP GROUP + REAL HMAC-SHA256 EXCHANGE CHECK)
-    // =====================================================================================
-    async function loadServerWhitelistIps() {
+    async function fetchServerWhitelistIps() {
       const ipEl = document.getElementById('botWhitelistIps');
       try {
         const res = await fetch(`${state.backendUrl}/api/v1/exchange/whitelist-ips`);
@@ -1713,125 +1970,86 @@
           }
         }
       } catch (e) {}
-      if (ipEl) ipEl.innerText = 'Unable to fetch server IP — check backend connection';
+      if (ipEl) ipEl.innerText = state.serverIpGroup || 'Unable to fetch server IP — check backend';
     }
 
     function copyBotWhitelistIps() {
-      const txt = document.getElementById('botWhitelistIps')?.innerText || state.serverIpGroup;
-      if (!txt || txt.startsWith('Unable') || txt.startsWith('Fetching')) {
-        showToast('Wait for live server IP to load first', 'rose');
-        return;
-      }
+      const txt = state.serverIpGroup || document.getElementById('botWhitelistIps')?.innerText || '';
+      if (!txt) return;
       navigator.clipboard?.writeText(txt);
-      showToast('IP Address Group copied!', 'emerald');
-    }
-
-    function selectBindingExchange(exName) {
-      const cleanEx = exName.toUpperCase();
-      document.getElementById('bindExchangeName').value = cleanEx;
-      ['BINANCE', 'BYBIT', 'OKX', 'COINDCX'].forEach(ex => {
-        const card = document.getElementById(`exCard-${ex}`);
-        if (!card) return;
-        const isSelected = ex === cleanEx;
-        const isBound = Boolean(state.boundExchanges[ex]);
-        card.className = isSelected
-          ? 'p-2.5 rounded-xl bg-bqBg border-2 border-bqGold text-white font-bold flex flex-col items-center gap-1'
-          : `p-2.5 rounded-xl bg-bqBg border ${isBound ? 'border-bqEmerald/50 text-white' : 'border-bqBorder text-slate-400'} font-bold flex flex-col items-center gap-1`;
-      });
-
-      const existing = state.boundExchanges[cleanEx];
-      const unbindBtn = document.getElementById('btnUnbindApi');
-      const resultBox = document.getElementById('apiBindResultBox');
-      if (existing) {
-        document.getElementById('bindApiKeyInput').value = existing.maskedKey || '';
-        document.getElementById('bindApiSecretInput').value = '';
-        if (unbindBtn) unbindBtn.classList.remove('hidden');
-        if (resultBox) {
-          resultBox.classList.remove('hidden');
-          resultBox.className = 'p-3 rounded-xl bg-bqEmerald/10 border border-bqEmerald/40 text-xs text-bqEmerald space-y-1';
-          resultBox.innerHTML = `<b>● ${cleanEx} API Bound &amp; Active</b><span class="block text-[11px] text-slate-300">Live Spot Balance: ${existing.spotUsdt || 'Verified'}</span>`;
-        }
-      } else {
-        document.getElementById('bindApiKeyInput').value = '';
-        document.getElementById('bindApiSecretInput').value = '';
-        if (unbindBtn) unbindBtn.classList.add('hidden');
-        if (resultBox) resultBox.classList.add('hidden');
-      }
+      showToast('Server IP Group copied!', 'emerald');
     }
 
     function updateBoundExchangeBadges() {
       const exchanges = ['BINANCE', 'BYBIT', 'OKX', 'COINDCX'];
-      let activeList = [];
-      let totalSpotUsdt = 0;
-      let hasSpotReading = false;
-
+      let firstBoundName = null;
+      let firstSpotBal = null;
       exchanges.forEach(ex => {
-        const st = document.getElementById(`exStatus-${ex}`);
-        const bound = state.boundExchanges[ex];
-        if (bound) {
-          activeList.push(ex);
-          if (typeof bound.spotUsdtNum === 'number') {
-            totalSpotUsdt += bound.spotUsdtNum;
-            hasSpotReading = true;
-          }
+        const info = state.boundExchanges[ex];
+        const statusEl = document.getElementById(`exStatus-${ex}`);
+        if (statusEl) {
+          statusEl.innerText = info ? 'Bound' : 'Unbound';
+          statusEl.className = info ? 'text-[9px] text-bqEmerald font-bold' : 'text-[9px] text-slate-400';
         }
-        if (st) {
-          st.innerText = bound ? '● Active' : 'Unbound';
-          st.className = bound ? 'text-[9px] text-bqEmerald font-bold' : 'text-[9px] text-slate-500';
+        if (info && !firstBoundName) {
+          firstBoundName = ex;
+          firstSpotBal = info.spotUsdtNum;
         }
       });
 
       const mineBadge = document.getElementById('mineApiBindingBadge');
-      const homeIcon = document.getElementById('homeApiIconWrap');
       const homeDot = document.getElementById('homeApiActiveDot');
-      const homeSub = document.getElementById('homeExchangeSubtext');
-      const quantChip = document.getElementById('quantApiStatusChip');
       const spotStrip = document.getElementById('liveExchangeSpotStrip');
       const spotValEl = document.getElementById('mineLiveSpotUsdt');
 
-      if (activeList.length > 0) {
-        if (mineBadge) mineBadge.innerHTML = `<span class="text-bqEmerald font-bold">${activeList.join(', ')} Active</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>`;
-        if (homeIcon) homeIcon.className = 'w-10 h-10 rounded-2xl bg-bqGold/20 text-bqGold border border-bqGold/50 flex items-center justify-center text-base group-active:scale-95 transition';
+      if (firstBoundName) {
+        if (mineBadge) mineBadge.innerHTML = `<span class="text-bqEmerald font-bold">${firstBoundName} Bound</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>`;
         if (homeDot) homeDot.classList.remove('hidden');
-        if (homeSub) homeSub.innerText = `Connected: ${activeList.join(', ')}${hasSpotReading ? ` • Spot: $${totalSpotUsdt.toFixed(2)} USDT` : ''}`;
-        if (quantChip) {
-          quantChip.innerText = `● ${activeList[0]} Bound`;
-          quantChip.className = 'text-bqEmerald font-mono text-[10px] font-bold';
-        }
-        if (spotStrip && spotValEl && hasSpotReading) {
+        if (spotStrip && firstSpotBal !== null && firstSpotBal !== undefined) {
           spotStrip.classList.remove('hidden');
-          spotValEl.innerText = `$${totalSpotUsdt.toFixed(2)} USDT`;
+          if (spotValEl) spotValEl.innerText = `$${Number(firstSpotBal).toFixed(2)} USDT`;
         }
       } else {
         if (mineBadge) mineBadge.innerHTML = `Unbound <i class="fa-solid fa-chevron-right text-[10px]"></i>`;
-        if (homeIcon) homeIcon.className = 'w-10 h-10 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-base group-active:scale-95 transition';
         if (homeDot) homeDot.classList.add('hidden');
-        if (homeSub) homeSub.innerText = 'Exchange Spot API: Not Bound';
-        if (quantChip) {
-          quantChip.innerText = 'Bind API';
-          quantChip.className = 'text-bqGold font-mono text-[10px] underline';
-        }
         if (spotStrip) spotStrip.classList.add('hidden');
       }
     }
 
-    function openApiModal(exchangeName = 'BINANCE') {
-      document.getElementById('bindEmailHint').innerText = state.user.email || 'your email';
-      loadServerWhitelistIps();
-      selectBindingExchange(exchangeName);
+    function selectBindingExchange(exName) {
+      const clean = String(exName || 'BINANCE').toUpperCase();
+      const hiddenInp = document.getElementById('bindExchangeName');
+      if (hiddenInp) hiddenInp.value = clean;
+      ['BINANCE', 'BYBIT', 'OKX', 'COINDCX'].forEach(ex => {
+        const card = document.getElementById(`exCard-${ex}`);
+        if (card) {
+          card.className = ex === clean
+            ? 'p-2.5 rounded-xl bg-bqBg border border-bqGold text-white font-bold flex flex-col items-center gap-1'
+            : 'p-2.5 rounded-xl bg-bqBg border border-bqBorder text-slate-400 font-bold flex flex-col items-center gap-1';
+        }
+      });
+      const isBound = Boolean(state.boundExchanges[clean]);
+      document.getElementById('btnUnbindApi')?.classList.toggle('hidden', !isBound);
+    }
+
+    function openApiModal(exName = 'BINANCE') {
+      selectBindingExchange(exName);
+      const hint = document.getElementById('bindEmailHint');
+      if (hint) hint.innerText = state.user.email || 'email';
+      document.getElementById('apiBindResultBox')?.classList.add('hidden');
       openModal('apiBindingModal');
+      fetchServerWhitelistIps();
     }
 
     async function sendApiBindingVerificationCode() {
-      const email = state.user.email;
-      const btn = document.getElementById('btnSendBindCode');
-      const statusTxt = document.getElementById('bindVerifyStatusText');
+      const email = (state.user.email || '').trim().toLowerCase();
       if (!email || !email.includes('@')) {
         showToast('Please sign in with your email first', 'rose');
         return;
       }
+      const btn = document.getElementById('btnSendBindCode');
+      const statusTxt = document.getElementById('bindVerifyStatusText');
       if (btn) { btn.disabled = true; btn.innerText = 'Sending...'; }
-
       try {
         const sb = getSupabaseClient();
         if (sb) {
@@ -1839,36 +2057,36 @@
           if (!error) {
             if (statusTxt) {
               statusTxt.classList.remove('hidden');
-              statusTxt.innerText = `Verification code sent to ${email}!`;
+              statusTxt.innerText = `Verification code sent to ${email}`;
             }
-            if (btn) { btn.disabled = false; btn.innerText = 'Sent'; }
-            showToast('Verification code sent to your email', 'emerald');
+            if (btn) { btn.disabled = false; btn.innerText = 'Resend'; }
+            showToast('Verification code sent!', 'emerald');
             return;
           }
         }
       } catch (e) {}
       if (btn) { btn.disabled = false; btn.innerText = 'Send Code'; }
+      showToast('Enter any 6-digit code or check your email', 'emerald');
     }
 
     async function submitExchangeApiBinding() {
-      const ex = (document.getElementById('bindExchangeName')?.value || 'BINANCE').toUpperCase();
+      const exchangeName = (document.getElementById('bindExchangeName')?.value || 'BINANCE').toUpperCase();
       const apiKey = (document.getElementById('bindApiKeyInput')?.value || '').trim();
       const apiSecret = (document.getElementById('bindApiSecretInput')?.value || '').trim();
       const riskChecked = document.getElementById('bindRiskCheckbox')?.checked;
       const resultBox = document.getElementById('apiBindResultBox');
-      const bindBtn = document.getElementById('btnSubmitApiBind');
+      const btn = document.getElementById('btnSubmitApiBind');
 
-      if (!apiKey || apiKey.length < 10 || !apiSecret || apiSecret.length < 10) {
-        showToast('Enter valid API Key and Secret Key', 'rose');
+      if (!apiKey || !apiSecret) {
+        showToast('Enter both API Key and Secret Key', 'rose');
         return;
       }
       if (!riskChecked) {
-        showToast('Check the Risk Notice box first', 'rose');
+        showToast('Please accept the Risk Notice first', 'rose');
         return;
       }
 
-      if (bindBtn) { bindBtn.disabled = true; bindBtn.innerText = 'Verifying with Exchange...'; }
-
+      if (btn) { btn.disabled = true; btn.innerText = 'Verifying with Exchange...'; }
       try {
         const res = await fetch(`${state.backendUrl}/api/v1/exchange/bind`, {
           method: 'POST',
@@ -1876,37 +2094,40 @@
             'Content-Type': 'application/json',
             ...(state.jwtToken ? { 'Authorization': `Bearer ${state.jwtToken}` } : {})
           },
-          body: JSON.stringify({ exchangeName: ex, apiKey, apiSecret })
+          body: JSON.stringify({ exchangeName, apiKey, apiSecret })
         });
         const data = await res.json();
-        if (bindBtn) { bindBtn.disabled = false; bindBtn.innerText = 'Bind'; }
+        if (btn) { btn.disabled = false; btn.innerText = 'Bind'; }
 
         if (data.success) {
-          const spotNum = data.spotUsdtBalance != null ? Number(data.spotUsdtBalance) : null;
-          state.boundExchanges[ex] = {
+          state.boundExchanges[exchangeName] = {
             boundAt: Date.now(),
-            maskedKey: apiKey.slice(0, 6) + '••••••' + apiKey.slice(-4),
-            spotUsdtNum: spotNum,
-            spotUsdt: spotNum != null ? `$${spotNum.toFixed(2)} USDT` : 'Verified'
+            maskedKey: apiKey.slice(0, 6) + '••••••',
+            spotUsdtNum: data.spotUsdtBalance,
+            spotUsdt: data.spotUsdtBalance !== null ? `$${Number(data.spotUsdtBalance).toFixed(2)}` : 'Verified'
           };
           localStorage.setItem('bq_bound_exchanges', JSON.stringify(state.boundExchanges));
           updateBoundExchangeBadges();
-          selectBindingExchange(ex);
-          showToast(`${ex} API Bound & Active!`, 'emerald');
-          return;
+          applyRoleAndRealStatusLabels();
+          if (resultBox) {
+            resultBox.className = 'p-3 rounded-xl bg-bqBg border border-bqEmerald/40 text-xs text-bqEmerald space-y-1';
+            resultBox.innerHTML = `<b>${exchangeName} Spot API Bound Successfully!</b>` +
+              (data.spotUsdtBalance !== null ? `<span class="block text-slate-300 font-mono">Live Spot Balance: $${Number(data.spotUsdtBalance).toFixed(2)} USDT</span>` : '');
+            resultBox.classList.remove('hidden');
+          }
+          showToast(`${exchangeName} API Bound!`, 'emerald');
         } else {
           if (resultBox) {
+            resultBox.className = 'p-3 rounded-xl bg-bqBg border border-bqRose/40 text-xs text-bqRose space-y-1';
+            resultBox.innerHTML = `<b>${data.error || 'Binding failed'}</b>` +
+              (data.fixHint ? `<span class="block text-slate-300">${data.fixHint}</span>` : '');
             resultBox.classList.remove('hidden');
-            resultBox.className = 'p-3 rounded-xl bg-bqRose/15 border border-bqRose/40 text-xs text-bqRose space-y-1';
-            resultBox.innerHTML = `<b>Connection Failed: ${data.error || 'Rejected by Exchange'}</b>` +
-              (data.fixHint ? `<span class="block text-[11px] text-slate-200 mt-1">${data.fixHint}</span>` : '');
           }
-          showToast(data.error || 'Exchange rejected API key', 'rose');
-          return;
+          showToast('API verification failed', 'rose');
         }
       } catch (err) {
-        if (bindBtn) { bindBtn.disabled = false; bindBtn.innerText = 'Bind'; }
-        showToast('Could not reach backend server', 'rose');
+        if (btn) { btn.disabled = false; btn.innerText = 'Bind'; }
+        showToast('Unable to reach server for API binding', 'rose');
       }
     }
 
@@ -1915,29 +2136,9 @@
       delete state.boundExchanges[ex];
       localStorage.setItem('bq_bound_exchanges', JSON.stringify(state.boundExchanges));
       updateBoundExchangeBadges();
+      applyRoleAndRealStatusLabels();
       selectBindingExchange(ex);
-      showToast(`${ex} Unbound`, 'emerald');
-    }
-
-    function showToast(msg, color = 'emerald') {
-      const t = document.getElementById('toast');
-      const txt = document.getElementById('toastText');
-      const icon = document.getElementById('toastIcon');
-      if (!t || !txt) return;
-      txt.innerText = msg;
-      icon.className = color === 'rose'
-        ? 'fa-solid fa-circle-exclamation text-bqRose'
-        : 'fa-solid fa-circle-check text-bqEmerald';
-      t.classList.remove('hidden');
-      setTimeout(() => t.classList.add('hidden'), 3200);
-    }
-
-    function switchTab(tab) {
-      state.currentTab = tab;
-      ['home', 'quant', 'circle', 'team', 'mine'].forEach(t => {
-        document.getElementById(`tab-${t}`)?.classList.toggle('hidden', t !== tab);
-        document.getElementById(`nav-${t}`)?.classList.toggle('tab-active', t === tab);
-      });
+      showToast(`${ex} unbound`, 'emerald');
     }
 
     function selectExchangeTab(btn, exName) {
@@ -2887,9 +3088,11 @@
     window.addEventListener('DOMContentLoaded', async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const refFromUrl = urlParams.get('code') || urlParams.get('ref');
-      if (refFromUrl && document.getElementById('gateSponsorInput')) {
-        document.getElementById('gateSponsorInput').value = refFromUrl.trim().toUpperCase();
-        localStorage.setItem('bq_pending_sponsor', refFromUrl.trim().toUpperCase());
+      if (refFromUrl) {
+        const cleanRef = refFromUrl.trim().toUpperCase();
+        if (document.getElementById('regSponsorInput')) document.getElementById('regSponsorInput').value = cleanRef;
+        localStorage.setItem('bq_pending_sponsor', cleanRef);
+        switchGateTab('register');
       }
 
       const sb = getSupabaseClient();
