@@ -148,7 +148,7 @@
           </button>
         </div>
 
-        <!-- STEP 3: ROYAL Q LOGIN VIEW (Email + Password + Quick OTP Option) -->
+        <!-- ROYAL Q LOGIN VIEW -->
         <div id="gateLoginSection" class="space-y-3 text-sm">
           <div class="relative">
             <i class="fa-regular fa-envelope absolute left-4 top-3.5 text-slate-400 text-sm"></i>
@@ -183,9 +183,8 @@
           </button>
         </div>
 
-        <!-- STEP 2: ROYAL Q REGISTRATION VIEW (Region + Email + Code + Password + Invite Code + Terms) -->
+        <!-- ROYAL Q REGISTRATION VIEW -->
         <div id="gateRegisterSection" class="hidden space-y-2.5 text-xs">
-          <!-- 1. Select Location / Region -->
           <div class="relative">
             <i class="fa-solid fa-location-dot absolute left-3.5 top-3 text-bqGold text-xs"></i>
             <select id="regRegionSelect" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-9 pr-4 py-2.5 text-white text-xs focus:outline-none">
@@ -201,13 +200,11 @@
             </select>
           </div>
 
-          <!-- 2. Enter Active Email Address -->
           <div class="relative">
             <i class="fa-regular fa-envelope absolute left-3.5 top-3 text-slate-400 text-xs"></i>
             <input id="regEmailInput" type="email" placeholder="Enter your active email address" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-9 pr-4 py-2.5 text-white text-xs focus:outline-none">
           </div>
 
-          <!-- 3. Email Verification Code + Send Button -->
           <div class="flex gap-2">
             <div class="relative flex-1">
               <i class="fa-solid fa-shield-halved absolute left-3.5 top-3 text-slate-400 text-xs"></i>
@@ -219,7 +216,6 @@
           </div>
           <p id="regOtpStatusMsg" class="px-3 py-2 rounded-xl bg-bqEmerald/10 border border-bqEmerald/30 text-[11px] text-bqEmerald hidden leading-relaxed"></p>
 
-          <!-- 4. Set Secure Password (8+ chars, uppercase + number) -->
           <div class="relative">
             <i class="fa-solid fa-lock absolute left-3.5 top-3 text-slate-400 text-xs"></i>
             <input id="regPasswordInput" type="password" placeholder="Set password (8+ chars, 1 Uppercase, 1 Number)" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-9 pr-9 py-2.5 text-white text-xs focus:outline-none">
@@ -228,7 +224,6 @@
             </button>
           </div>
 
-          <!-- 5. Invitation Code & Optional Mobile -->
           <div class="grid grid-cols-2 gap-2">
             <div class="relative">
               <i class="fa-solid fa-user-plus absolute left-3 top-3 text-bqGold text-xs"></i>
@@ -240,7 +235,6 @@
             </div>
           </div>
 
-          <!-- 6. Agree to Terms of Service Checkbox -->
           <label class="flex items-start gap-2 pt-1 text-[11px] text-slate-300 cursor-pointer">
             <input id="regTermsCheckbox" type="checkbox" checked class="mt-0.5 accent-amber-400 w-4 h-4 shrink-0">
             <span>I have read and agree to BharatQ's <button type="button" onclick="openLegalModal('terms')" class="text-bqGold underline">Terms of Service</button> &amp; <button type="button" onclick="openLegalModal('privacy')" class="text-bqGold underline">Privacy Policy</button>.</span>
@@ -321,7 +315,7 @@
                 <span class="text-[11px] font-bold text-bqGold uppercase tracking-wider" id="homeRoleLabel">Royal Q-Style Quantitative Engine</span>
               </div>
               <h2 class="text-lg font-black text-white leading-snug" id="homeActivationStatus">Unactivated ($120/Yr Required)</h2>
-              <p class="text-[11px] text-slate-300" id="homeExchangeSubtext">Bot Status: Locked until 120 USDT VIP Activation</p>
+              <p class="text-[11px] text-slate-300" id="homeExchangeSubtext">Bot Status: Locked until 120 USDT VIP Activation + $20 Fuel Gas</p>
             </div>
             <button onclick="activateAnnualPack()" id="btnHeroActivate" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs shadow">
               Activate $120
@@ -589,7 +583,7 @@
       </section>
 
       <!-- =============================================================================== -->
-      <!-- TAB 5: MINE / ASSETS (100% REAL BALANCES, REAL SPOT USDT & REAL LEDGER RECORDS)  -->
+      <!-- TAB 5: MINE / ASSETS (100% REAL BALANCES, REAL SPOT USDT & REAL LEDGER RECORDS) -->
       <!-- =============================================================================== -->
       <section id="tab-mine" class="hidden space-y-3.5">
         <div class="native-card p-4 flex items-center justify-between">
@@ -614,7 +608,7 @@
         <div id="mineVipStatusBanner" class="native-card p-3.5 border border-bqRose/40 flex items-center justify-between gap-2">
           <div>
             <span class="text-[10px] uppercase font-bold text-bqRose block">VIP Bot License Status</span>
-            <b id="mineVipLicenseLabel" class="text-xs text-white">Unactivated — Recharge 120 USDT to Activate</b>
+            <b id="mineVipLicenseLabel" class="text-xs text-white">Unactivated — Recharge 120 USDT + $20 Fuel Gas</b>
           </div>
           <button id="btnMineActivateVip" onclick="activateAnnualPack()" class="px-3 py-1.5 rounded-xl bg-bqGold text-black font-black text-[11px] shrink-0">
             Activate ($120)
@@ -624,7 +618,7 @@
         <div class="gold-banner rounded-2xl p-4 space-y-3">
           <div class="flex justify-between items-center">
             <div>
-              <span class="text-[11px] text-slate-400 block">Fuel Gas Wallet (Real DB)</span>
+              <span class="text-[11px] text-slate-400 block">Fuel Gas Wallet (Min $20 to Trade)</span>
               <div class="text-2xl font-black text-white font-mono mt-0.5" id="walletGasAmount">0.00 <span class="text-xs font-normal text-slate-400">USDT</span></div>
             </div>
             <div class="text-right">
@@ -1129,7 +1123,7 @@
     </div>
   </div>
 
-  <!-- Real Leader Ranking Modal (Fetched from PostgreSQL DB) -->
+  <!-- Real Leader Ranking Modal -->
   <div id="leaderboardModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-3">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
@@ -1176,6 +1170,10 @@
         <div class="flex justify-between">
           <span class="text-slate-400">Annual Bot License Fee:</span>
           <span class="text-bqGold font-mono font-black">120.00 USDT / Year</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Minimum Fuel Gas Required:</span>
+          <span class="text-amber-300 font-mono font-bold">20.00 USDT</span>
         </div>
         <div class="flex justify-between">
           <span class="text-slate-400">Your Fuel Gas Balance:</span>
@@ -1311,23 +1309,19 @@
         </button>
       </div>
 
-      <!-- Visual Puzzle Track -->
       <div class="relative h-24 rounded-2xl bg-gradient-to-r from-[#09132B] via-[#13254D] to-[#0B1733] border border-bqBorder overflow-hidden flex items-center justify-between px-5 select-none">
         <div class="text-[10px] text-slate-400 space-y-1">
           <span class="text-bqGold font-bold block"><i class="fa-solid fa-lock mr-1"></i> Anti-Bot Check</span>
           <span>Align the golden puzzle piece into the target slot</span>
         </div>
-        <!-- Target Slot -->
         <div id="puzzleTargetSlot" class="w-11 h-11 rounded-xl border-2 border-dashed border-bqGold/70 bg-bqGold/10 flex items-center justify-center text-bqGold/50">
           <i class="fa-solid fa-puzzle-piece text-lg"></i>
         </div>
-        <!-- Moving Puzzle Piece -->
         <div id="puzzleMovingPiece" style="left: 14px;" class="absolute top-1/2 -translate-y-1/2 w-11 h-11 rounded-xl bg-gradient-to-br from-bqGold to-bqSaffron text-black shadow-lg shadow-amber-500/40 flex items-center justify-center pointer-events-none transition-none">
           <i class="fa-solid fa-puzzle-piece text-lg"></i>
         </div>
       </div>
 
-      <!-- Interactive Slider Control -->
       <div class="space-y-1.5">
         <div class="relative w-full h-11 rounded-2xl bg-bqBg border border-bqBorder flex items-center justify-center overflow-hidden">
           <div id="puzzleSliderFill" style="width: 0%;" class="absolute left-0 top-0 bottom-0 bg-bqEmerald/25 pointer-events-none"></div>
@@ -1812,7 +1806,7 @@
           if (btn) { btn.disabled = false; btn.innerText = 'Register'; }
           if (data.success) {
             completeGenuineLoginSession(data);
-            showToast('Registration complete! Deposit 120 USDT to activate your VIP bot.', 'emerald');
+            showToast('Registration complete! Deposit 120 USDT + $20 Fuel Gas to activate.', 'emerald');
           } else {
             showToast(data.error || 'Registration failed', 'rose');
           }
@@ -1901,8 +1895,8 @@
       }
       if (homeExchangeSubtext) {
         homeExchangeSubtext.innerText = !isVip
-          ? 'Bot Status: Locked until 120 USDT VIP Activation'
-          : (boundCount > 0 ? `Exchange Connected (${boundCount} Bound) • Engine Ready` : 'VIP Active • Bind Exchange API to Start Trading');
+          ? 'Bot Status: Locked until 120 USDT VIP Activation + $20 Fuel Gas'
+          : (boundCount > 0 ? `Exchange Connected (${boundCount} Bound) • Min $20 Fuel Gas Required` : 'VIP Active • Bind Exchange API & Hold $20 Fuel Gas');
       }
       if (btnHeroActivate) {
         btnHeroActivate.classList.toggle('hidden', isVip);
@@ -1916,7 +1910,7 @@
       if (mineVipLicenseLabel) {
         mineVipLicenseLabel.innerText = isOwner
           ? 'Owner Lifetime V6 License Active ($0/Yr)'
-          : (isVip ? `VIP Bot License Active (${state.user.rank})` : 'Unactivated — Recharge 120 USDT to Activate');
+          : (isVip ? `VIP Bot License Active (${state.user.rank})` : 'Unactivated — Recharge 120 USDT + $20 Fuel Gas');
       }
       if (btnMineActivateVip) {
         btnMineActivateVip.classList.toggle('hidden', isVip);
@@ -2228,11 +2222,17 @@
 
       const buildRow = (p) => {
         const isUserVipActive = Boolean(state.user.isOwnerFree || state.user.isActivated);
-        const isRunning = isUserVipActive && p.status === 'Cycling';
+        const hasMinFuelGas = Boolean(state.user.isOwnerFree || Number(state.user.fuelBalance || 0) >= 20);
+        const canRunBot = isUserVipActive && hasMinFuelGas;
+        const isRunning = canRunBot && p.status === 'Cycling';
         const priceDisplay = formatLiveTokenPrice(p.price);
         const up = p.change >= 0;
         const badgeText = p.base.length > 5 ? p.base.slice(0, 5) : p.base;
         const modeShort = p.strategyMode === 'SUB_BIN_REALTIME' ? 'Sub-Bin RT' : (p.strategyMode === 'SUB_BIN' ? 'Sub-Bin' : 'Whole');
+        const statusBadgeLabel = !isUserVipActive ? 'Unactivated' : (!hasMinFuelGas ? 'Low Fuel (<$20)' : (isRunning ? 'Cycling' : 'Paused'));
+        const actionBtnLabel = !isUserVipActive
+          ? '<i class="fa-solid fa-lock text-[9px] mr-1"></i>Activate'
+          : (!hasMinFuelGas ? '<i class="fa-solid fa-gas-pump text-[9px] mr-1"></i>Add Gas' : (isRunning ? 'Stop' : 'Start'));
         return `
           <div class="native-card p-3 flex items-center justify-between gap-2">
             <div onclick="openStrategyModal('${p.symbol}')" class="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer">
@@ -2242,8 +2242,8 @@
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5">
                   <span class="font-bold text-white text-xs truncate">${p.symbol}</span>
-                  <span class="text-[9px] px-1.5 py-0.2 rounded ${!isUserVipActive ? 'bg-bqRose/20 text-bqRose' : (isRunning ? 'bg-bqEmerald/20 text-bqEmerald' : 'bg-slate-800 text-slate-400')} font-semibold">
-                    ${!isUserVipActive ? 'Unactivated' : (isRunning ? 'Cycling' : 'Paused')}
+                  <span class="text-[9px] px-1.5 py-0.2 rounded ${!canRunBot ? 'bg-bqRose/20 text-bqRose' : (isRunning ? 'bg-bqEmerald/20 text-bqEmerald' : 'bg-slate-800 text-slate-400')} font-semibold">
+                    ${statusBadgeLabel}
                   </span>
                 </div>
                 <div class="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5 font-mono">
@@ -2258,8 +2258,8 @@
               <button onclick="openStrategyModal('${p.symbol}')" class="px-2.5 py-1.5 rounded-xl bg-bqBg border border-bqBorder text-slate-300 text-[11px] font-semibold">
                 Settings
               </button>
-              <button onclick="toggleBotStatus('${p.symbol}')" class="px-3 py-1.5 rounded-xl text-[11px] font-bold ${!isUserVipActive ? 'bg-slate-800 text-slate-400 border border-bqBorder' : (isRunning ? 'bg-bqRose/20 text-bqRose' : 'bg-bqGold text-black')}">
-                ${!isUserVipActive ? '<i class="fa-solid fa-lock text-[9px] mr-1"></i>Activate' : (isRunning ? 'Stop' : 'Start')}
+              <button onclick="toggleBotStatus('${p.symbol}')" class="px-3 py-1.5 rounded-xl text-[11px] font-bold ${!canRunBot ? 'bg-slate-800 text-slate-400 border border-bqBorder' : (isRunning ? 'bg-bqRose/20 text-bqRose' : 'bg-bqGold text-black')}">
+                ${actionBtnLabel}
               </button>
             </div>
           </div>
@@ -2369,7 +2369,7 @@
     async function syncBotStrategyToBackend(p) {
       if (!state.jwtToken || !p) return;
       try {
-        await fetch(`${state.backendUrl}/api/v1/bot/strategy`, {
+        const res = await fetch(`${state.backendUrl}/api/v1/bot/strategy`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -2394,12 +2394,24 @@
             layerSchedule: p.layerSchedule || []
           })
         });
+        const data = await res.json();
+        if (!data.success && data.error) {
+          p.status = 'Paused';
+          renderPairs();
+          showToast(data.error, 'rose');
+          if (data.error.includes('Fuel Gas')) openDepositModal();
+        }
       } catch (e) {}
     }
 
     function openStrategyModal(sym) {
       if (!state.user.isOwnerFree && !state.user.isActivated) {
         openVipActivationGateModal();
+        return;
+      }
+      if (!state.user.isOwnerFree && Number(state.user.fuelBalance || 0) < 20) {
+        showToast('Minimum 20.00 USDT Fuel Gas balance required before trading!', 'rose');
+        openDepositModal();
         return;
       }
       state.selectedPair = sym;
@@ -2465,6 +2477,12 @@
         openVipActivationGateModal();
         return;
       }
+      if (!state.user.isOwnerFree && Number(state.user.fuelBalance || 0) < 20) {
+        closeModal('tradeSettingsModal');
+        showToast('Minimum 20.00 USDT Fuel Gas required before trading!', 'rose');
+        openDepositModal();
+        return;
+      }
       if (Object.keys(state.boundExchanges).length === 0) {
         showToast('Bind your exchange API first to place real orders', 'rose');
         return;
@@ -2517,6 +2535,12 @@
         openVipActivationGateModal();
         return;
       }
+      if (!state.user.isOwnerFree && Number(state.user.fuelBalance || 0) < 20) {
+        closeModal('tradeSettingsModal');
+        showToast('Minimum 20.00 USDT Fuel Gas required before saving strategy!', 'rose');
+        openDepositModal();
+        return;
+      }
       const p = state.pairs.find(x => x.symbol === state.selectedPair);
       if (p) {
         p.strategyMode = document.getElementById('cfgStrategyMode').value;
@@ -2540,6 +2564,11 @@
       if (!p) return;
       if (!state.user.isOwnerFree && !state.user.isActivated) {
         openVipActivationGateModal();
+        return;
+      }
+      if (p.status !== 'Cycling' && !state.user.isOwnerFree && Number(state.user.fuelBalance || 0) < 20) {
+        showToast('Minimum 20.00 USDT Fuel Gas balance required to start trading!', 'rose');
+        openDepositModal();
         return;
       }
       if (p.status !== 'Cycling' && Object.keys(state.boundExchanges).length === 0) {
@@ -2877,7 +2906,7 @@
             applyRoleAndRealStatusLabels();
             updateBalances();
             renderPairs();
-            showToast('VIP Activated for 365 Days! Bot Unlocked.', 'emerald');
+            showToast('VIP Activated for 365 Days! Hold $20+ Fuel Gas to trade.', 'emerald');
             return;
           } else {
             showToast(data.error || 'Activation failed', 'rose');
