@@ -224,42 +224,33 @@
             </button>
           </div>
 
-          <div class="grid grid-cols-2 gap-2">
-            <div class="relative">
-              <i class="fa-solid fa-user-plus absolute left-3 top-3 text-bqGold text-xs"></i>
-              <input id="regSponsorInput" type="text" value="BHARAT1" placeholder="Invitation Code" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-8 pr-2.5 py-2.5 text-bqGold font-mono font-bold uppercase text-xs focus:outline-none">
-            </div>
-            <div class="relative">
-              <i class="fa-solid fa-phone absolute left-3 top-3 text-slate-400 text-xs"></i>
-              <input id="regMobileInput" type="tel" placeholder="Mobile (Optional)" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-8 pr-2.5 py-2.5 text-white font-mono text-xs focus:outline-none">
-            </div>
+          <div class="relative">
+            <i class="fa-solid fa-mobile-screen-button absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+            <input id="regMobileInput" type="tel" placeholder="Mobile number (Optional)" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-9 pr-4 py-2.5 text-white text-xs focus:outline-none">
           </div>
 
-          <label class="flex items-start gap-2 pt-1 text-[11px] text-slate-300 cursor-pointer">
-            <input id="regTermsCheckbox" type="checkbox" checked class="mt-0.5 accent-amber-400 w-4 h-4 shrink-0">
-            <span>I have read and agree to BharatQ's <button type="button" onclick="openLegalModal('terms')" class="text-bqGold underline">Terms of Service</button> &amp; <button type="button" onclick="openLegalModal('privacy')" class="text-bqGold underline">Privacy Policy</button>.</span>
+          <div class="relative">
+            <i class="fa-solid fa-user-tag absolute left-3.5 top-3 text-bqGold text-xs"></i>
+            <input id="regSponsorInput" type="text" value="BHARAT1" placeholder="Invitation code (Required)" class="w-full bg-bqCard border border-bqBorder focus:border-bqGold rounded-2xl pl-9 pr-4 py-2.5 text-bqGold font-mono font-bold uppercase text-xs focus:outline-none">
+          </div>
+
+          <label class="flex items-start gap-2 pt-0.5 text-[11px] text-slate-400 cursor-pointer">
+            <input id="regTermsCheckbox" type="checkbox" checked class="mt-0.5 accent-amber-400 w-3.5 h-3.5 shrink-0">
+            <span>I have read and agree to the <button type="button" onclick="openLegalModal('terms')" class="text-bqGold underline">Terms of Service</button> &amp; <button type="button" onclick="openLegalModal('privacy')" class="text-bqGold underline">Privacy Policy</button>.</span>
           </label>
 
-          <button type="button" id="btnGateRegisterSubmit" onclick="submitRoyalQRegistration()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron active:scale-[0.99] text-black font-black text-sm tracking-wide shadow-lg shadow-amber-500/20 transition">
+          <button type="button" id="btnGateRegisterSubmit" onclick="submitRoyalQRegistration()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron active:scale-[0.99] text-black font-black text-sm tracking-wide shadow-lg shadow-amber-500/20 transition">
             Register
           </button>
         </div>
-
-        <div id="advancedCloudDrawer" class="hidden p-3 rounded-2xl bg-bqCard border border-bqBorder space-y-2 text-[11px]">
-          <div class="flex justify-between items-center text-slate-400">
-            <span>Cloud Node &amp; Auth Endpoint</span>
-            <span class="text-bqEmerald font-mono">Connected</span>
-          </div>
-          <input id="cfgSupabaseUrl" type="text" value="https://dthsnlfybujksgmihakt.supabase.co" onchange="saveSupabaseConfig()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-slate-300 font-mono text-[10px]">
-          <input id="cfgSupabaseAnonKey" type="text" value="sb_publishable_bGJvNp4teGIt3rBSaEPPMg_aln2JwGK" onchange="saveSupabaseConfig()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-slate-300 font-mono text-[10px]">
-          <input id="cfgGateBackendUrl" type="text" value="https://bharatq-backend-api.onrender.com" onchange="syncBackendUrlFromAuth(this.value)" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-bqGold font-mono text-[10px]">
-        </div>
       </div>
 
-      <div class="text-center">
-        <span class="inline-flex items-center gap-1.5 text-[11px] text-slate-500">
-          <i class="fa-solid fa-lock text-bqEmerald"></i> Non-Custodial Spot API Architecture
-        </span>
+      <!-- Hidden Server Endpoint Drawer (Accessible via Top-Right Gear Icon Only) -->
+      <div id="advancedCloudDrawer" class="hidden pt-3 border-t border-bqBorder space-y-2 text-xs">
+        <span class="text-[11px] font-bold text-slate-400 block">Backend Connection Settings</span>
+        <input id="gateBackendUrlInput" type="text" value="https://bharatq-backend-api.onrender.com" oninput="syncBackendUrlFromAuth(this.value)" placeholder="Backend API URL" class="w-full bg-bqCard border border-bqBorder rounded-xl px-3 py-2 text-[11px] font-mono text-bqGold">
+        <input id="cfgSupabaseUrl" type="hidden" value="https://dthsnlfybujksgmihakt.supabase.co">
+        <input id="cfgSupabaseAnonKey" type="hidden" value="sb_publishable_bGJvNp4teGIt3rBSaEPPMg_aln2JwGK">
       </div>
     </div>
   </div>
@@ -775,44 +766,85 @@
         </div>
       </div>
 
+      <input id="bindExchangeName" type="hidden" value="BINANCE">
+
       <div class="space-y-2.5 text-xs">
-        <input type="hidden" id="bindExchangeName" value="BINANCE">
         <div>
           <label class="text-slate-400 block mb-1">API Key</label>
-          <input id="bindApiKeyInput" type="text" placeholder="Paste your HMAC API Key" class="w-full bg-bqBg border border-bqBorder focus:border-bqGold rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
+          <input id="bindApiKeyInput" type="text" placeholder="Paste your exchange Spot API Key" class="w-full bg-bqBg border border-bqBorder focus:border-bqGold rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
         </div>
         <div>
           <label class="text-slate-400 block mb-1">Secret Key</label>
-          <input id="bindApiSecretInput" type="password" placeholder="Paste your Secret Key" class="w-full bg-bqBg border border-bqBorder focus:border-bqGold rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
+          <input id="bindApiSecretInput" type="password" placeholder="Paste your exchange Secret Key" class="w-full bg-bqBg border border-bqBorder focus:border-bqGold rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
         </div>
-
         <div>
-          <label class="text-slate-400 block mb-1">Verification Code (<span id="bindEmailHint" class="text-slate-300 font-mono">email</span>)</label>
+          <label class="text-slate-400 block mb-1">Email Verification Code (<span id="bindEmailHint" class="text-bqGold">email</span>)</label>
           <div class="flex gap-2">
-            <input id="bindVerifyCodeInput" type="text" inputmode="numeric" maxlength="8" placeholder="Enter verification code" class="flex-1 bg-bqBg border border-bqBorder focus:border-bqGold rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
+            <input id="bindVerifyCodeInput" type="text" inputmode="numeric" maxlength="8" placeholder="Enter 6-digit code" class="flex-1 bg-bqBg border border-bqBorder rounded-xl px-3.5 py-2.5 text-white font-mono text-xs focus:outline-none">
             <button type="button" id="btnSendBindCode" onclick="sendApiBindingVerificationCode()" class="px-3.5 rounded-xl bg-bqGold/15 border border-bqGold/40 text-bqGold font-bold text-xs whitespace-nowrap">
               Send Code
             </button>
           </div>
-          <p id="bindVerifyStatusText" class="text-[10px] text-bqEmerald mt-1 hidden"></p>
+          <p id="bindVerifyStatusText" class="text-[11px] text-bqEmerald hidden mt-1"></p>
         </div>
 
-        <label class="flex items-start gap-2.5 pt-1 text-[11px] text-slate-300 cursor-pointer">
-          <input id="bindRiskCheckbox" type="checkbox" checked class="mt-0.5 accent-amber-400 w-4 h-4 shrink-0">
-          <span>I have read the <b class="text-bqGold">Risk Notice</b>, disabled Withdrawal permissions on my exchange, and whitelisted the IP group above.</span>
+        <label class="flex items-start gap-2 pt-1 text-[11px] text-slate-400 cursor-pointer">
+          <input id="bindRiskCheckbox" type="checkbox" checked class="mt-0.5 accent-amber-400 w-3.5 h-3.5 shrink-0">
+          <span>Risk Notice: I have enabled <b>Spot Trading</b> only and disabled Withdrawal permissions on this API key.</span>
         </label>
-      </div>
 
-      <div id="apiBindResultBox" class="hidden p-3 rounded-xl bg-bqBg border text-xs space-y-1"></div>
+        <div id="apiBindResultBox" class="hidden"></div>
 
-      <div class="flex gap-2 pt-1">
-        <button type="button" id="btnSubmitApiBind" onclick="submitExchangeApiBinding()" class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs shadow-lg">
-          Bind
-        </button>
-        <button type="button" id="btnUnbindApi" onclick="unbindCurrentExchange()" class="hidden px-4 py-3 rounded-2xl bg-bqRose/20 border border-bqRose/40 text-bqRose font-bold text-xs">
-          Unbind
-        </button>
+        <div class="flex gap-2 pt-1">
+          <button type="button" id="btnUnbindApi" onclick="unbindCurrentExchange()" class="hidden px-4 py-3 rounded-2xl bg-bqRose/20 text-bqRose font-bold text-xs">
+            Unbind
+          </button>
+          <button type="button" id="btnSubmitApiBind" onclick="submitExchangeApiBinding()" class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs shadow-lg">
+            Bind
+          </button>
+        </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Deposit Modal (Royal Q-Style Personal TRC-20 Sub-Wallet + Auto-Scanner) -->
+  <div id="depositModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end justify-center">
+    <div class="bg-bqCard border-t border-bqBorder rounded-t-3xl w-full max-w-[480px] p-5 space-y-4 safe-bottom max-h-[90dvh] overflow-y-auto">
+      <div class="w-10 h-1 bg-slate-700 rounded-full mx-auto"></div>
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <div>
+          <h3 class="text-sm font-bold text-white">Deposit USDT (TRC-20)</h3>
+          <span class="text-[10px] text-bqEmerald font-semibold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-bqEmerald live-dot"></span> Auto-Credit Active • No TXID Needed
+          </span>
+        </div>
+        <button onclick="closeDepositModal()" class="w-8 h-8 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="text-center space-y-2.5">
+        <div class="w-32 h-32 mx-auto bg-white p-2 rounded-2xl">
+          <img id="personalDepositQrImg" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=TUKdKMmRqpapdSzcQowC2y32cxxHomYEZo" alt="Personal TRC20 QR" class="w-full h-full object-contain">
+        </div>
+        <span class="text-[11px] text-slate-400 block">Chain Name: <b class="text-bqGold">TRON (TRC-20)</b> • Personal Deposit Address</span>
+        <div class="flex items-center gap-2 bg-bqBg p-3 rounded-xl border border-bqBorder">
+          <span id="personalDepositAddressText" class="font-mono text-[11px] text-white truncate flex-1 select-all">Loading personal address...</span>
+          <button onclick="copyOfficialAddress()" class="bg-bqGold text-black font-bold px-3 py-1 rounded-lg text-xs">Copy</button>
+        </div>
+        <div class="p-2.5 rounded-xl bg-bqBg border border-bqEmerald/30 flex items-center justify-between text-[11px]">
+          <span id="depositAutoScanStatus" class="text-slate-300 text-left">
+            <i class="fa-solid fa-radar text-bqEmerald mr-1"></i> Auto-scanning TRON network every 15s...
+          </span>
+          <button type="button" id="btnManualScanDeposit" onclick="refreshPersonalDepositAddress(true)" class="px-2.5 py-1 rounded-lg bg-bqEmerald/20 text-bqEmerald font-bold text-[10px] shrink-0">
+            Check Now
+          </button>
+        </div>
+      </div>
+      <details class="pt-1 border-t border-bqBorder/60 text-xs">
+        <summary class="text-slate-400 cursor-pointer select-none py-1">Optional: Verify Real On-Chain TXID</summary>
+        <div class="flex gap-2 pt-2">
+          <input id="depositTxidInput" type="text" placeholder="Paste 64-character TRON transaction hash" class="bg-bqBg border border-bqBorder text-white text-xs px-3 py-2.5 rounded-xl flex-1 font-mono">
+          <button onclick="claimTrc20Txid()" class="bg-bqEmerald text-black font-bold px-4 rounded-xl text-xs">Verify</button>
+        </div>
+      </details>
     </div>
   </div>
 
@@ -942,33 +974,6 @@
       <button onclick="saveStrategySettings()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs">
         Confirm &amp; Save
       </button>
-    </div>
-  </div>
-
-  <!-- Deposit Modal -->
-  <div id="depositModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end justify-center">
-    <div class="bg-bqCard border-t border-bqBorder rounded-t-3xl w-full max-w-[480px] p-5 space-y-4 safe-bottom">
-      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
-        <h3 class="text-sm font-bold text-white">Deposit USDT (TRC-20)</h3>
-        <button onclick="closeModal('depositModal')" class="w-8 h-8 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="text-center space-y-2.5">
-        <div class="w-32 h-32 mx-auto bg-white p-2 rounded-2xl">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=TUKdKMmRqpapdSzcQowC2y32cxxHomYEZo" alt="TRC20 QR" class="w-full h-full object-contain">
-        </div>
-        <span class="text-[11px] text-slate-400 block">Chain Name: <b class="text-bqGold">TRON (TRC-20)</b></span>
-        <div class="flex items-center gap-2 bg-bqBg p-3 rounded-xl border border-bqBorder">
-          <span class="font-mono text-[11px] text-white truncate flex-1 select-all">TUKdKMmRqpapdSzcQowC2y32cxxHomYEZo</span>
-          <button onclick="copyOfficialAddress()" class="bg-bqGold text-black font-bold px-3 py-1 rounded-lg text-xs">Copy</button>
-        </div>
-      </div>
-      <div class="space-y-2 text-xs">
-        <label class="text-slate-400 block">Verify Real On-Chain TXID (TronGrid Verified)</label>
-        <div class="flex gap-2">
-          <input id="depositTxidInput" type="text" placeholder="Paste 64-character TRON transaction hash" class="bg-bqBg border border-bqBorder text-white text-xs px-3 py-2.5 rounded-xl flex-1 font-mono">
-          <button onclick="claimTrc20Txid()" class="bg-bqEmerald text-black font-bold px-4 rounded-xl text-xs">Verify</button>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -1417,7 +1422,7 @@
       supabaseUrl: localStorage.getItem('bq_supabase_url') || DEFAULT_SUPABASE_URL,
       supabaseAnonKey: localStorage.getItem('bq_supabase_anon_key') || DEFAULT_SUPABASE_ANON_KEY,
       jwtToken: localStorage.getItem('bq_jwt') || null,
-      officialTrc20: 'TUKdKMmRqpapdSzcQowC2y32cxxHomYEZo',
+      officialTrc20: localStorage.getItem('bq_personal_trc20') || 'TUKdKMmRqpapdSzcQowC2y32cxxHomYEZo',
       boundExchanges: JSON.parse(localStorage.getItem('bq_bound_exchanges') || '{}'),
       serverIpGroup: '',
       user: (() => {
@@ -1853,8 +1858,66 @@
       });
     }
 
+    let depositScanPollTimer = null;
+
+    function updatePersonalDepositModalUI(addr) {
+      if (!addr) return;
+      state.officialTrc20 = addr;
+      localStorage.setItem('bq_personal_trc20', addr);
+      const addrEl = document.getElementById('personalDepositAddressText');
+      const qrEl = document.getElementById('personalDepositQrImg');
+      if (addrEl) addrEl.innerText = addr;
+      if (qrEl) qrEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(addr)}`;
+    }
+
+    async function refreshPersonalDepositAddress(manualTrigger = false) {
+      if (!state.jwtToken) return;
+      const btn = document.getElementById('btnManualScanDeposit');
+      const statusEl = document.getElementById('depositAutoScanStatus');
+      if (manualTrigger && btn) {
+        btn.disabled = true;
+        btn.innerText = 'Scanning...';
+      }
+      try {
+        const res = await fetch(`${state.backendUrl}/api/v1/wallet/deposit-address`, {
+          headers: { 'Authorization': `Bearer ${state.jwtToken}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.depositAddress) {
+            updatePersonalDepositModalUI(data.depositAddress);
+            if (Number(data.newlyCreditedUsdt) > 0) {
+              state.user.fuelBalance = Number(data.newGasBalance);
+              updateBalances();
+              renderPairs();
+              showToast(`Auto-Credited +$${Number(data.newlyCreditedUsdt).toFixed(2)} USDT!`, 'emerald');
+              if (statusEl) {
+                statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-bqEmerald mr-1"></i> Credited +$${Number(data.newlyCreditedUsdt).toFixed(2)} USDT!`;
+              }
+            } else if (manualTrigger) {
+              showToast('No new confirmed USDT transfer yet — auto-scanner active', 'emerald');
+            }
+          }
+        }
+      } catch (e) {}
+      if (manualTrigger && btn) {
+        btn.disabled = false;
+        btn.innerText = 'Check Now';
+      }
+    }
+
     function openDepositModal() {
+      updatePersonalDepositModalUI(state.officialTrc20);
       openModal('depositModal');
+      refreshPersonalDepositAddress(false);
+      clearInterval(depositScanPollTimer);
+      depositScanPollTimer = setInterval(() => refreshPersonalDepositAddress(false), 10000);
+    }
+
+    function closeDepositModal() {
+      clearInterval(depositScanPollTimer);
+      depositScanPollTimer = null;
+      closeModal('depositModal');
     }
 
     function applyRoleAndRealStatusLabels() {
@@ -1943,6 +2006,9 @@
       };
       localStorage.setItem('bq_jwt', state.jwtToken);
       localStorage.setItem('bq_user_profile', JSON.stringify(state.user));
+      if (data.personalDepositAddress) {
+        updatePersonalDepositModalUI(data.personalDepositAddress);
+      }
       document.getElementById('mandatoryAuthGate')?.classList.add('hidden');
       applyRoleAndRealStatusLabels();
       updateUserIdentityUI();
@@ -2938,6 +3004,9 @@
             state.user.commissionBalance = Number(data.wallet.commission_balance ?? 0);
             state.user.cumProfit = Number(data.wallet.total_trading_profit ?? 0);
           }
+          if (data.personalDepositAddress) {
+            updatePersonalDepositModalUI(data.personalDepositAddress);
+          }
           if (Array.isArray(data.boundExchanges)) {
             const freshBound = {};
             data.boundExchanges.forEach(b => {
@@ -3077,41 +3146,52 @@
     const EXCLUDED_LEVERAGED_SUFFIXES = ['UPUSDT', 'DOWNUSDT', 'BEARUSDT', 'BULLUSDT', 'USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'BUSDUSDT', 'USDPUSDT', 'EURUSDT', 'TRYUSDT', 'BRLUSDT', 'ARSUSDT', 'AEURUSDT', 'EURIUSDT'];
 
     async function fetchAllExchangeCoinsLive() {
-      try {
-        const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
-        if (!res.ok) return;
-        const allTickers = await res.json();
-        const usdtSpotTickers = allTickers.filter(item => {
-          const sym = item.symbol || '';
-          if (!sym.endsWith('USDT')) return false;
-          if (EXCLUDED_LEVERAGED_SUFFIXES.includes(sym)) return false;
-          if (sym.endsWith('UPUSDT') || sym.endsWith('DOWNUSDT')) return false;
-          const lastP = parseFloat(item.lastPrice);
-          const qVol = parseFloat(item.quoteVolume);
-          return lastP > 0 && qVol > 10000;
-        });
+      const feedUrls = [
+        'https://data-api.binance.vision/api/v3/ticker/24hr',
+        'https://api.binance.com/api/v3/ticker/24hr',
+        `${state.backendUrl}/api/v1/market/tickers`
+      ];
 
-        usdtSpotTickers.sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume));
+      for (const feedUrl of feedUrls) {
+        try {
+          const res = await fetch(feedUrl);
+          if (!res.ok) continue;
+          const allTickers = await res.json();
+          if (!Array.isArray(allTickers) || allTickers.length < 40) continue;
 
-        usdtSpotTickers.forEach(item => {
-          const sym = item.symbol;
-          const lastP = parseFloat(item.lastPrice);
-          const chg = parseFloat(item.priceChangePercent);
-          const qVol = parseFloat(item.quoteVolume);
+          const usdtSpotTickers = allTickers.filter(item => {
+            const sym = item.symbol || '';
+            if (!sym.endsWith('USDT')) return false;
+            if (EXCLUDED_LEVERAGED_SUFFIXES.includes(sym)) return false;
+            if (sym.endsWith('UPUSDT') || sym.endsWith('DOWNUSDT')) return false;
+            const lastP = parseFloat(item.lastPrice);
+            const qVol = parseFloat(item.quoteVolume);
+            return lastP > 0 && qVol > 10000;
+          });
 
-          if (state.pairMap[sym]) {
-            state.pairMap[sym].price = lastP;
-            state.pairMap[sym].change = chg;
-            state.pairMap[sym].quoteVolume = qVol;
-          } else {
-            const newObj = buildDefaultPairObject(sym, lastP, chg, qVol);
-            state.pairMap[sym] = newObj;
-            state.pairs.push(newObj);
-          }
-        });
+          usdtSpotTickers.sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume));
 
-        renderPairs();
-      } catch (e) {}
+          usdtSpotTickers.forEach(item => {
+            const sym = item.symbol;
+            const lastP = parseFloat(item.lastPrice);
+            const chg = parseFloat(item.priceChangePercent);
+            const qVol = parseFloat(item.quoteVolume);
+
+            if (state.pairMap[sym]) {
+              state.pairMap[sym].price = lastP;
+              state.pairMap[sym].change = chg;
+              state.pairMap[sym].quoteVolume = qVol;
+            } else {
+              const newObj = buildDefaultPairObject(sym, lastP, chg, qVol);
+              state.pairMap[sym] = newObj;
+              state.pairs.push(newObj);
+            }
+          });
+
+          renderPairs();
+          return;
+        } catch (e) {}
+      }
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
