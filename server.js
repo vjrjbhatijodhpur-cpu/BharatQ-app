@@ -158,6 +158,15 @@ async function initDatabaseSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     ALTER TABLE users ADD COLUMN IF NOT EXISTS region_code VARCHAR(16) DEFAULT 'IN';
+    CREATE TABLE IF NOT EXISTS user_deposit_wallets (
+      uid BIGINT PRIMARY KEY REFERENCES users(uid) ON DELETE CASCADE,
+      trc20_address VARCHAR(42) UNIQUE NOT NULL,
+      encrypted_privkey TEXT NOT NULL,
+      iv_hex VARCHAR(32) NOT NULL,
+      auth_tag_hex VARCHAR(32) NOT NULL,
+      last_checked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
     CREATE TABLE IF NOT EXISTS user_wallets (
       uid BIGINT PRIMARY KEY REFERENCES users(uid) ON DELETE CASCADE,
       gas_balance NUMERIC(18, 6) NOT NULL DEFAULT 0.000000 CHECK (gas_balance >= 0),
@@ -325,6 +334,146 @@ function normalizeTronAddress(addr) {
     }
   } catch (e) {}
   return raw;
+}
+
+// Deterministically derive & persist a unique Royal Q-style TRON (TRC-20) sub-wallet per user
+async function getOrCreateUserTrc20DepositWallet(uid) {
+  const existing = await pool.query(
+    'SELECT uid, trc20_address FROM user_deposit_wallets WHERE uid = $1 LIMIT 1',
+    [uid]
+  );
+  if (existing.rows.length) {
+    return existing.rows[0].trc20_address;
+  }
+
+  // Deterministic 32-byte secp256k1 private key derived from KMS_MASTER_KEY_HEX + uid
+  const privKeyHex = crypto
+    .createHmac('sha256', Buffer.from(KMS_MASTER_KEY_HEX, 'hex'))
+    .update(`BHARATQ_TRC20_SUBWALLET_V1_${uid}`)
+    .digest('hex');
+
+  let derivedTrc20Address = '';
+  if (TronWebLib) {
+    const TronWebCtor = TronWebLib.TronWeb || TronWebLib;
+    if (TronWebCtor.address && typeof TronWebCtor.address.fromPrivateKey === 'function') {
+      derivedTrc20Address = TronWebCtor.address.fromPrivateKey(privKeyHex);
+    }
+  }
+  if (!derivedTrc20Address) {
+    derivedTrc20Address = MASTER_TRC20_ADDRESS;
+  }
+
+  const { encryptedSecret, ivHex, authTagHex } = encryptApiSecret(privKeyHex);
+  const ins = await pool.query(
+    `INSERT INTO user_deposit_wallets (uid, trc20_address, encrypted_privkey, iv_hex, auth_tag_hex)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (uid) DO UPDATE SET last_checked_at = NOW()
+     RETURNING trc20_address`,
+    [uid, derivedTrc20Address, encryptedSecret, ivHex, authTagHex]
+  );
+  return ins.rows[0]?.trc20_address || derivedTrc20Address;
+}
+
+// Scan TronGrid for incoming USDT (TRC-20) to a user's unique sub-wallet and auto-credit Fuel Gas
+async function syncDepositsForSingleSubWallet(uid, subWalletAddress) {
+  if (!subWalletAddress || subWalletAddress === MASTER_TRC20_ADDRESS) return { newlyCreditedUsdt: 0, count: 0 };
+  let newlyCreditedUsdt = 0;
+  let count = 0;
+
+  try {
+    const url = `https://api.trongrid.io/v1/accounts/${subWalletAddress}/transactions/trc20?only_confirmed=true&only_to=true&limit=20&contract_address=${USDT_TRC20_CONTRACT}`;
+    const tgRes = await fetch(url, {
+      headers: process.env.TRONGRID_API_KEY ? { 'TRON-PRO-API-KEY': process.env.TRONGRID_API_KEY } : {}
+    });
+    if (!tgRes.ok) return { newlyCreditedUsdt: 0, count: 0 };
+
+    const tgData = await tgRes.json();
+    const txs = Array.isArray(tgData.data) ? tgData.data : [];
+
+    for (const tx of txs) {
+      const txHash = String(tx.transaction_id || '').trim();
+      const toAddr = normalizeTronAddress(tx.to);
+      const fromAddr = normalizeTronAddress(tx.from) || 'TRON_SENDER';
+      const decimals = Number(tx.token_info?.decimals ?? 6);
+      const amountUsdt = Number(tx.value || 0) / Math.pow(10, decimals);
+
+      if (!txHash || txHash.length !== 64 || toAddr !== subWalletAddress || amountUsdt <= 0) continue;
+
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const dup = await client.query('SELECT 1 FROM trc20_deposits WHERE tx_hash = $1 FOR UPDATE', [txHash]);
+        if (dup.rows.length) {
+          await client.query('ROLLBACK');
+          continue;
+        }
+
+        await client.query(
+          'INSERT INTO trc20_deposits (tx_hash, uid, from_address, to_address, amount_usdt, block_number, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [txHash, uid, fromAddr, subWalletAddress, amountUsdt, Number(tx.block_timestamp || 0), 'AUTO_CREDITED']
+        );
+
+        await client.query(
+          'UPDATE user_wallets SET gas_balance = gas_balance + $1, updated_at = NOW() WHERE uid = $2',
+          [amountUsdt, uid]
+        );
+
+        await client.query(
+          'INSERT INTO ledger_journal (debit_account, credit_account, amount_usdt, event_type, reference_id) VALUES ($1, $2, $3, $4, $5)',
+          [`TRON_${subWalletAddress.slice(0, 8)}`, `UID_${uid}_FUEL`, amountUsdt, 'AUTO_TRC20_DEPOSIT', txHash.slice(0, 16)]
+        );
+
+        await client.query('COMMIT');
+        newlyCreditedUsdt += amountUsdt;
+        count += 1;
+      } catch (dbErr) {
+        await client.query('ROLLBACK');
+      } finally {
+        client.release();
+      }
+    }
+
+    await pool.query('UPDATE user_deposit_wallets SET last_checked_at = NOW() WHERE uid = $1', [uid]);
+
+    // Auto-sweep any confirmed USDT in user's sub-wallet straight to Owner Master Cold Wallet when TRX gas is available
+    if (newlyCreditedUsdt > 0 && TronWebLib && MASTER_TRC20_ADDRESS && subWalletAddress !== MASTER_TRC20_ADDRESS) {
+      try {
+        const wRow = await pool.query('SELECT * FROM user_deposit_wallets WHERE uid = $1 LIMIT 1', [uid]);
+        if (wRow.rows.length) {
+          const subPrivKey = decryptApiSecret(wRow.rows[0].encrypted_privkey, wRow.rows[0].iv_hex, wRow.rows[0].auth_tag_hex);
+          const TronWebCtor = TronWebLib.TronWeb || TronWebLib;
+          const tronWeb = new TronWebCtor({
+            fullHost: 'https://api.trongrid.io',
+            headers: process.env.TRONGRID_API_KEY ? { 'TRON-PRO-API-KEY': process.env.TRONGRID_API_KEY } : {},
+            privateKey: subPrivKey
+          });
+          const trxBalanceSun = await tronWeb.trx.getBalance(subWalletAddress);
+          if (trxBalanceSun >= 15_000_000) {
+            const contract = await tronWeb.contract().at(USDT_TRC20_CONTRACT);
+            const rawBal = await contract.balanceOf(subWalletAddress).call();
+            const sweepSun = Number(rawBal.toString());
+            if (sweepSun > 0) {
+              await contract.transfer(MASTER_TRC20_ADDRESS, sweepSun).send();
+            }
+          }
+        }
+      } catch (sweepErr) {}
+    }
+  } catch (e) {}
+
+  return { newlyCreditedUsdt, count };
+}
+
+// Background 15-second Royal Q-style TRC-20 auto-scanner for all user sub-wallets
+async function scanAllUserTrc20SubWallets() {
+  try {
+    const walletsRes = await pool.query(
+      'SELECT uid, trc20_address FROM user_deposit_wallets ORDER BY last_checked_at ASC LIMIT 25'
+    );
+    for (const row of walletsRes.rows) {
+      await syncDepositsForSingleSubWallet(row.uid, row.trc20_address);
+    }
+  } catch (e) {}
 }
 
 // Real HMAC-SHA256 verification against Binance / Bybit Spot API
@@ -670,6 +819,38 @@ app.get('/api/v1/health', async (req, res) => {
   }
 });
 
+// Live 400+ USDT Spot Tickers Proxy (Ensures all 400+ pairs load even when ISP blocks api.binance.com)
+let cachedAllUsdtTickers = [];
+let cachedTickersUpdatedAt = 0;
+
+app.get('/api/v1/market/tickers', async (req, res) => {
+  try {
+    if (cachedAllUsdtTickers.length > 50 && Date.now() - cachedTickersUpdatedAt < 5000) {
+      return res.json(cachedAllUsdtTickers);
+    }
+    const endpoints = [
+      'https://api.binance.com/api/v3/ticker/24hr',
+      'https://data-api.binance.vision/api/v3/ticker/24hr'
+    ];
+    for (const url of endpoints) {
+      try {
+        const bRes = await fetch(url);
+        if (bRes.ok) {
+          const all = await bRes.json();
+          if (Array.isArray(all) && all.length > 50) {
+            cachedAllUsdtTickers = all.filter(t => t && t.symbol && t.symbol.endsWith('USDT'));
+            cachedTickersUpdatedAt = Date.now();
+            return res.json(cachedAllUsdtTickers);
+          }
+        }
+      } catch (e) {}
+    }
+    res.json(cachedAllUsdtTickers);
+  } catch (err) {
+    res.status(500).json([]);
+  }
+});
+
 // Live Outbound IP Group Endpoint for Binance IP Restriction
 app.get('/api/v1/exchange/whitelist-ips', async (req, res) => {
   const liveIp = await detectOutboundServerIp();
@@ -723,6 +904,7 @@ app.post('/api/v1/circles', requireAuth, async (req, res) => {
 // Full User Profile, Real Wallets, Direct Team & 15-Level Downline Tree
 app.get('/api/v1/user/profile', requireAuth, async (req, res) => {
   try {
+    const personalDepositAddress = await getOrCreateUserTrc20DepositWallet(req.user.uid);
     const uRes = await pool.query('SELECT uid, email, mobile_number, referral_code, sponsor_uid, rank_level, is_activated, is_owner_exempt FROM users WHERE uid = $1 LIMIT 1', [req.user.uid]);
     const userRow = uRes.rows[0] || {};
     const wRes = await pool.query('SELECT * FROM user_wallets WHERE uid = $1 LIMIT 1', [req.user.uid]);
@@ -770,6 +952,7 @@ app.get('/api/v1/user/profile', requireAuth, async (req, res) => {
     res.json({
       success: true,
       user: userRow,
+      personalDepositAddress,
       wallet: wRes.rows[0] || { gas_balance: 0, commission_balance: 0, total_trading_profit: 0 },
       boundExchanges: keysRes.rows,
       commissionLogs: logsRes.rows,
@@ -829,6 +1012,7 @@ app.post('/api/v1/auth/register', async (req, res) => {
        ON CONFLICT (uid) DO NOTHING`,
       [user.uid]
     );
+    const personalDepositAddress = await getOrCreateUserTrc20DepositWallet(user.uid);
 
     const walletRes = await pool.query('SELECT * FROM user_wallets WHERE uid = $1', [user.uid]);
     const wallet = walletRes.rows[0] || { gas_balance: 0, commission_balance: 0 };
@@ -838,6 +1022,7 @@ app.post('/api/v1/auth/register', async (req, res) => {
       success: true,
       token,
       ownerFreeSubscription: isOwner,
+      personalDepositAddress,
       user: { ...user, gas_balance: wallet.gas_balance, commission_balance: wallet.commission_balance },
       twoFaSetup: { secret: twoFaSecret }
     });
@@ -885,12 +1070,14 @@ app.post('/api/v1/auth/login', async (req, res) => {
 
     const walletRes = await pool.query('SELECT * FROM user_wallets WHERE uid = $1', [user.uid]);
     const wallet = walletRes.rows[0] || { gas_balance: 0, commission_balance: 0, total_trading_profit: 0 };
+    const personalDepositAddress = await getOrCreateUserTrc20DepositWallet(user.uid);
 
     const token = jwt.sign({ uid: user.uid, email: user.email, rank_level: user.rank_level, isOwner }, JWT_SECRET, { expiresIn: '30d' });
     res.json({
       success: true,
       token,
       ownerFreeSubscription: isOwner || user.is_owner_exempt,
+      personalDepositAddress,
       user: {
         ...user,
         gas_balance: wallet.gas_balance,
@@ -1028,6 +1215,7 @@ app.post('/api/v1/auth/verify-otp', async (req, res) => {
     const user = userRes.rows[0];
     const walletRes = await pool.query('SELECT * FROM user_wallets WHERE uid = $1', [user.uid]);
     const wallet = walletRes.rows[0] || { gas_balance: 0, commission_balance: 0, total_trading_profit: 0 };
+    const personalDepositAddress = await getOrCreateUserTrc20DepositWallet(user.uid);
 
     const token = jwt.sign({ uid: user.uid, email: user.email, rank_level: user.rank_level, isOwner }, JWT_SECRET, { expiresIn: '30d' });
     res.json({
@@ -1035,6 +1223,7 @@ app.post('/api/v1/auth/verify-otp', async (req, res) => {
       token,
       verifiedBySupabase,
       ownerFreeSubscription: isOwner || user.is_owner_exempt,
+      personalDepositAddress,
       user: {
         ...user,
         gas_balance: wallet.gas_balance,
@@ -1355,7 +1544,25 @@ app.post('/api/v1/user/activate', requireAuth, async (req, res) => {
   }
 });
 
-// Real On-Chain TRON TRC-20 USDT Deposit Claim via TronGrid (Strictly Verifies Recipient === MASTER_TRC20_ADDRESS)
+// Royal Q-Style Personal Sub-Wallet Address & Instant Auto-Scan Endpoint (No TXID Needed)
+app.get('/api/v1/wallet/deposit-address', requireAuth, async (req, res) => {
+  try {
+    const depositAddress = await getOrCreateUserTrc20DepositWallet(req.user.uid);
+    const scanResult = await syncDepositsForSingleSubWallet(req.user.uid, depositAddress);
+    const wRes = await pool.query('SELECT gas_balance FROM user_wallets WHERE uid = $1 LIMIT 1', [req.user.uid]);
+    res.json({
+      success: true,
+      depositAddress,
+      autoScanActive: true,
+      newlyCreditedUsdt: scanResult.newlyCreditedUsdt,
+      newGasBalance: Number(wRes.rows[0]?.gas_balance || 0)
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Real On-Chain TRON TRC-20 USDT Deposit Claim via TronGrid (Accepts User's Sub-Wallet OR Master Wallet)
 app.post('/api/v1/wallet/claim-txid', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -1390,12 +1597,13 @@ app.post('/api/v1/wallet/claim-txid', requireAuth, async (req, res) => {
       return res.status(400).json({ success: false, error: 'No confirmed USDT TRC-20 transfer found for this TXID' });
     }
 
+    const userSubWallet = await getOrCreateUserTrc20DepositWallet(req.user.uid);
     const recipientAddress = normalizeTronAddress(transferEvent.result.to);
-    if (recipientAddress !== MASTER_TRC20_ADDRESS) {
+    if (recipientAddress !== userSubWallet && recipientAddress !== MASTER_TRC20_ADDRESS) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        error: `Invalid destination wallet. USDT must be sent directly to ${MASTER_TRC20_ADDRESS}`
+        error: `Invalid destination wallet. USDT must be sent to your personal deposit address (${userSubWallet})`
       });
     }
 
@@ -1407,7 +1615,7 @@ app.post('/api/v1/wallet/claim-txid', requireAuth, async (req, res) => {
 
     await client.query(
       'INSERT INTO trc20_deposits (tx_hash, uid, from_address, to_address, amount_usdt, block_number, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [cleanTx, req.user.uid, normalizeTronAddress(transferEvent.result.from) || 'TRON_SENDER', MASTER_TRC20_ADDRESS, creditedAmountUsdt, Number(transferEvent.block_number || 0), 'CREDITED']
+      [cleanTx, req.user.uid, normalizeTronAddress(transferEvent.result.from) || 'TRON_SENDER', recipientAddress, creditedAmountUsdt, Number(transferEvent.block_number || 0), 'CREDITED']
     );
 
     const upd = await client.query(
@@ -1870,11 +2078,13 @@ async function distributeDailyGlobalV6Pool() {
 
 startBinanceAllMarketStream();
 setInterval(evaluateActiveDcaBots, 3000);
+setInterval(scanAllUserTrc20SubWallets, 15000);
 setInterval(distributeDailyGlobalV6Pool, 60 * 60 * 1000);
 
 app.listen(PORT, async () => {
   await initDatabaseSchema();
   await detectOutboundServerIp();
   await distributeDailyGlobalV6Pool();
+  scanAllUserTrc20SubWallets();
   console.log(`BharatQ Real Production Engine running on port ${PORT} (Outbound IP: ${cachedServerPublicIp})`);
 });
