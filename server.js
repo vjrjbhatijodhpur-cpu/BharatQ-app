@@ -839,6 +839,10 @@ function requireAuth(req, res, next) {
     req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch (err) {
+    return res.status(401).json({ success: false, error: 'Invalid or expired JWT token' });
+  }
+}
+
 // Health & Engine Status Endpoint (Always returns 200 OK so Render health checks pass immediately)
 app.get('/api/v1/health', async (req, res) => {
   try {
