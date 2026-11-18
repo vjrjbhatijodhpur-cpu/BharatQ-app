@@ -652,14 +652,13 @@ async function executeBinanceSpotOrder(uid, rawSymbol, side, quoteOrderQtyUsdt, 
     const filledQuoteUsdt = orderData && orderData.cummulativeQuoteQty ? parseFloat(orderData.cummulativeQuoteQty) : null;
     const filledBaseQty = orderData && orderData.executedQty ? parseFloat(orderData.executedQty) : null;
     const rawMsg = String(orderData?.msg || '');
-    const friendlyError = (binanceRes?.status === 451 || rawMsg.toLowerCase().includes('restricted location'))
-      ? 'Server location restricted by Binance. Switch your Render backend service region from Oregon (US) to Singapore or Frankfurt.'
-      : rawMsg;
+    const isGeoBlocked = binanceRes?.status === 451 || rawMsg.toLowerCase().includes('restricted location');
     return {
       executedOnExchange: ok,
+      isGeoBlocked,
       filledQuoteUsdt,
       filledBaseQty,
-      friendlyError,
+      friendlyError: isGeoBlocked ? 'GEO_RELAY_REQUIRED' : rawMsg,
       details: orderData
     };
   } catch (err) {
@@ -1520,7 +1519,7 @@ app.post('/api/v1/bot/manual-action', requireAuth, async (req, res) => {
         error: 'Minimum 20.00 USDT Fuel Gas balance required in your Fuel Wallet before executing orders.'
       });
     }
-    const { symbol, action, extraUsdt } = req.body;
+    const { symbol, action, extraUsdt, clientDirectFill } = req.body;
     const rawSym = String(symbol || 'BTCUSDT').replace('/', '').toUpperCase();
     const curPrice = (await getOrFetchLiveSymbolPrice(rawSym)) || 1;
 
@@ -1536,14 +1535,43 @@ app.post('/api/v1/bot/manual-action', requireAuth, async (req, res) => {
         return res.status(400).json({ success: false, error: `No active ${symbol} position held to sell.` });
       }
       const estSellUsdt = heldQty > 0 ? heldQty * curPrice : heldCostUsdt;
-      const orderRes = await executeBinanceSpotOrder(req.user.uid, rawSym, 'SELL', estSellUsdt, heldQty > 0 ? heldQty : null);
-      if (!orderRes.executedOnExchange) {
-        return res.status(400).json({
-          success: false,
-          error: orderRes.friendlyError || orderRes.details?.msg || 'Binance Spot SELL failed — verify API permissions & coin balance.'
-        });
+
+      let receivedUsdt = estSellUsdt;
+      if (clientDirectFill && clientDirectFill.orderId) {
+        receivedUsdt = Number(clientDirectFill.filledQuoteUsdt || estSellUsdt);
+      } else {
+        const orderRes = await executeBinanceSpotOrder(req.user.uid, rawSym, 'SELL', estSellUsdt, heldQty > 0 ? heldQty : null);
+        if (!orderRes.executedOnExchange) {
+          if (orderRes.isGeoBlocked) {
+            const keyRes = await pool.query(
+              "SELECT api_key, encrypted_secret, iv_hex, auth_tag_hex FROM exchange_api_keys WHERE uid = $1 AND exchange_name = 'BINANCE' AND is_valid = TRUE LIMIT 1",
+              [req.user.uid]
+            );
+            if (keyRes.rows.length) {
+              const kRow = keyRes.rows[0];
+              const rules = await getBinanceSymbolPrecisionRules(rawSym);
+              const roundedQty = Math.max(rules.minQty, roundToStepSize(heldQty > 0 ? heldQty : (estSellUsdt / curPrice), rules.stepSize));
+              return res.json({
+                success: false,
+                requiresClientRelay: true,
+                relayOrder: {
+                  side: 'SELL',
+                  rawSymbol: rawSym,
+                  quantity: roundedQty,
+                  apiKey: kRow.api_key,
+                  apiSecret: decryptApiSecret(kRow.encrypted_secret, kRow.iv_hex, kRow.auth_tag_hex)
+                }
+              });
+            }
+          }
+          return res.status(400).json({
+            success: false,
+            error: orderRes.friendlyError || orderRes.details?.msg || 'Binance Spot SELL failed — verify API permissions & coin balance.'
+          });
+        }
+        receivedUsdt = orderRes.filledQuoteUsdt || estSellUsdt;
       }
-      const receivedUsdt = orderRes.filledQuoteUsdt || estSellUsdt;
+
       const realizedPnl = +(receivedUsdt - heldCostUsdt).toFixed(4);
       await pool.query(
         `UPDATE bot_strategies SET status = 'PAUSED', current_calls = 0, total_position_usdt = 0, total_base_qty = 0, avg_entry_price = 0, sub_bin_position_usdt = 0, sub_bin_base_qty = 0, updated_at = NOW() WHERE uid = $1 AND symbol = $2`,
@@ -1566,15 +1594,46 @@ app.post('/api/v1/bot/manual-action', requireAuth, async (req, res) => {
 
     if (action === 'MANUAL_REPLENISH') {
       const buyAmt = Number(extraUsdt || 20);
-      const orderRes = await executeBinanceSpotOrder(req.user.uid, rawSym, 'BUY', buyAmt);
-      if (!orderRes.executedOnExchange) {
-        return res.status(400).json({
-          success: false,
-          error: orderRes.friendlyError || orderRes.details?.msg || 'Exchange API did not execute order — verify Spot USDT balance and API permissions.'
-        });
+      let actualSpentUsdt = buyAmt;
+      let actualBoughtQty = buyAmt / curPrice;
+
+      if (clientDirectFill && clientDirectFill.orderId) {
+        actualSpentUsdt = Number(clientDirectFill.filledQuoteUsdt || buyAmt);
+        actualBoughtQty = Number(clientDirectFill.filledBaseQty || (actualSpentUsdt / curPrice));
+      } else {
+        const orderRes = await executeBinanceSpotOrder(req.user.uid, rawSym, 'BUY', buyAmt);
+        if (!orderRes.executedOnExchange) {
+          if (orderRes.isGeoBlocked) {
+            const keyRes = await pool.query(
+              "SELECT api_key, encrypted_secret, iv_hex, auth_tag_hex FROM exchange_api_keys WHERE uid = $1 AND exchange_name = 'BINANCE' AND is_valid = TRUE LIMIT 1",
+              [req.user.uid]
+            );
+            if (keyRes.rows.length) {
+              const kRow = keyRes.rows[0];
+              const rules = await getBinanceSymbolPrecisionRules(rawSym);
+              const safeUsdt = Math.max(rules.minNotional, buyAmt);
+              return res.json({
+                success: false,
+                requiresClientRelay: true,
+                relayOrder: {
+                  side: 'BUY',
+                  rawSymbol: rawSym,
+                  quoteOrderQty: safeUsdt.toFixed(Math.min(rules.quotePrecision, 2)),
+                  apiKey: kRow.api_key,
+                  apiSecret: decryptApiSecret(kRow.encrypted_secret, kRow.iv_hex, kRow.auth_tag_hex)
+                }
+              });
+            }
+          }
+          return res.status(400).json({
+            success: false,
+            error: orderRes.friendlyError || orderRes.details?.msg || 'Exchange API did not execute order — verify Spot USDT balance and API permissions.'
+          });
+        }
+        actualSpentUsdt = orderRes.filledQuoteUsdt || buyAmt;
+        actualBoughtQty = orderRes.filledBaseQty || (actualSpentUsdt / curPrice);
       }
-      const actualSpentUsdt = orderRes.filledQuoteUsdt || buyAmt;
-      const actualBoughtQty = orderRes.filledBaseQty || (actualSpentUsdt / curPrice);
+
       const fillPrice = actualBoughtQty > 0 ? actualSpentUsdt / actualBoughtQty : curPrice;
 
       const curBot = await pool.query(
