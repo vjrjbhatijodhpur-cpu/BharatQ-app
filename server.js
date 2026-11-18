@@ -45,6 +45,33 @@ let cachedServerPublicIp = '';
 const liveMarketPrices = {};
 const priceRollingHistory = {};
 const binanceSymbolRulesCache = {};
+const BINANCE_REST_BASES = [
+  'https://api.binance.com',
+  'https://api1.binance.com',
+  'https://api2.binance.com',
+  'https://api3.binance.com',
+  'https://api4.binance.com'
+];
+
+// Global Binance REST Cluster Failover Helper
+async function binanceSignedFetch(pathAndQuery, options = {}) {
+  let lastRes = null;
+  let lastData = null;
+  for (const base of BINANCE_REST_BASES) {
+    try {
+      const res = await fetch(`${base}${pathAndQuery}`, options);
+      const data = await res.json();
+      lastRes = res;
+      lastData = data;
+      const msg = String(data?.msg || '');
+      if (res.status === 451 || msg.toLowerCase().includes('restricted location')) {
+        continue;
+      }
+      return { res, data, base };
+    } catch (e) {}
+  }
+  return { res: lastRes, data: lastData, base: BINANCE_REST_BASES[0] };
+}
 
 // Fetch and cache Binance exchangeInfo precision rules (stepSize & minNotional)
 async function getBinanceSymbolPrecisionRules(rawSymbol) {
@@ -195,6 +222,12 @@ async function initDatabaseSchema() {
       name VARCHAR(120) NOT NULL,
       description TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS circle_subscriptions (
+      uid BIGINT NOT NULL REFERENCES users(uid) ON DELETE CASCADE,
+      circle_id UUID NOT NULL REFERENCES strategy_circles(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (uid, circle_id)
     );
     CREATE TABLE IF NOT EXISTS bot_strategies (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -485,7 +518,7 @@ async function verifyExchangeCredentialsLive(exchangeName, apiKey, apiSecret) {
     try {
       let serverTime = Date.now();
       try {
-        const tRes = await fetch('https://api.binance.com/api/v3/time');
+        const tRes = await fetch('https://data-api.binance.vision/api/v3/time');
         if (tRes.ok) {
           const tData = await tRes.json();
           if (tData.serverTime) serverTime = tData.serverTime;
@@ -494,17 +527,18 @@ async function verifyExchangeCredentialsLive(exchangeName, apiKey, apiSecret) {
 
       const qs = `timestamp=${serverTime}&recvWindow=10000`;
       const sig = crypto.createHmac('sha256', apiSecret).update(qs).digest('hex');
-      const accRes = await fetch(`https://api.binance.com/api/v3/account?${qs}&signature=${sig}`, {
+      const { res: accRes, data: accData } = await binanceSignedFetch(`/api/v3/account?${qs}&signature=${sig}`, {
         method: 'GET',
         headers: { 'X-MBX-APIKEY': apiKey }
       });
-      const accData = await accRes.json();
 
-      if (!accRes.ok) {
-        const code = accData.code || accRes.status;
-        const msg = accData.msg || 'Binance API authentication failed';
+      if (!accRes || !accRes.ok) {
+        const code = accData?.code || accRes?.status || 451;
+        const msg = accData?.msg || 'Binance API authentication failed';
         let fixHint = 'Verify your API Key and Secret Key have no extra spaces.';
-        if (code === -2015 || String(msg).toLowerCase().includes('ip')) {
+        if (code === 451 || String(msg).toLowerCase().includes('restricted location')) {
+          fixHint = 'Your backend server is hosted in a US region blocked by Binance. Deploy your Render backend service in Singapore or Frankfurt region.';
+        } else if (code === -2015 || String(msg).toLowerCase().includes('ip')) {
           fixHint = `Go to Binance API Management -> Edit -> "Restrict access to trusted IPs only" and add: ${serverIp || 'the IP group shown above'}, then click Save.`;
         } else if (code === -2014) {
           fixHint = 'Invalid API-key format. Make sure you copied the full System-generated (HMAC) API Key.';
@@ -561,7 +595,11 @@ async function verifyExchangeCredentialsLive(exchangeName, apiKey, apiSecret) {
     }
   }
 
-  return { valid: true, spotUsdtBalance: null, canTrade: true, serverIp };
+  return {
+    valid: false,
+    error: `${ex} Spot adapter is coming soon. Please bind Binance or Bybit for live automated trading.`,
+    serverIp
+  };
 }
 
 // Execute a real Spot market order on user's bound Binance account with LOT_SIZE & MIN_NOTIONAL precision
@@ -581,7 +619,7 @@ async function executeBinanceSpotOrder(uid, rawSymbol, side, quoteOrderQtyUsdt, 
 
     let serverTime = Date.now();
     try {
-      const tRes = await fetch('https://api.binance.com/api/v3/time');
+      const tRes = await fetch('https://data-api.binance.vision/api/v3/time');
       if (tRes.ok) {
         const tData = await tRes.json();
         if (tData.serverTime) serverTime = tData.serverTime;
@@ -606,17 +644,22 @@ async function executeBinanceSpotOrder(uid, rawSymbol, side, quoteOrderQtyUsdt, 
     const qs = `symbol=${rawSymbol}&side=${side}&type=MARKET&${orderParam}&timestamp=${serverTime}&recvWindow=10000`;
     const sig = crypto.createHmac('sha256', apiSecret).update(qs).digest('hex');
 
-    const binanceRes = await fetch(`https://api.binance.com/api/v3/order?${qs}&signature=${sig}`, {
+    const { res: binanceRes, data: orderData } = await binanceSignedFetch(`/api/v3/order?${qs}&signature=${sig}`, {
       method: 'POST',
       headers: { 'X-MBX-APIKEY': row.api_key }
     });
-    const orderData = await binanceRes.json();
+    const ok = Boolean(binanceRes && binanceRes.ok);
     const filledQuoteUsdt = orderData && orderData.cummulativeQuoteQty ? parseFloat(orderData.cummulativeQuoteQty) : null;
     const filledBaseQty = orderData && orderData.executedQty ? parseFloat(orderData.executedQty) : null;
+    const rawMsg = String(orderData?.msg || '');
+    const friendlyError = (binanceRes?.status === 451 || rawMsg.toLowerCase().includes('restricted location'))
+      ? 'Server location restricted by Binance. Switch your Render backend service region from Oregon (US) to Singapore or Frankfurt.'
+      : rawMsg;
     return {
-      executedOnExchange: binanceRes.ok,
+      executedOnExchange: ok,
       filledQuoteUsdt,
       filledBaseQty,
+      friendlyError,
       details: orderData
     };
   } catch (err) {
@@ -819,7 +862,7 @@ app.get('/api/v1/health', async (req, res) => {
   }
 });
 
-// Live 400+ USDT Spot Tickers Proxy (Ensures all 400+ pairs load even when ISP blocks api.binance.com)
+// Live 400+ USDT Spot Tickers Proxy
 let cachedAllUsdtTickers = [];
 let cachedTickersUpdatedAt = 0;
 
@@ -901,6 +944,28 @@ app.post('/api/v1/circles', requireAuth, async (req, res) => {
   }
 });
 
+// Persist User Strategy Circle Subscription in PostgreSQL
+app.post('/api/v1/circles/sync', requireAuth, async (req, res) => {
+  try {
+    const { circleId, synced } = req.body;
+    if (!circleId) return res.status(400).json({ success: false, error: 'circleId required' });
+    if (synced) {
+      await pool.query(
+        'INSERT INTO circle_subscriptions (uid, circle_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [req.user.uid, circleId]
+      );
+    } else {
+      await pool.query(
+        'DELETE FROM circle_subscriptions WHERE uid = $1 AND circle_id = $2',
+        [req.user.uid, circleId]
+      );
+    }
+    res.json({ success: true, synced: Boolean(synced) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Full User Profile, Real Wallets, Direct Team & 15-Level Downline Tree
 app.get('/api/v1/user/profile', requireAuth, async (req, res) => {
   try {
@@ -913,8 +978,15 @@ app.get('/api/v1/user/profile', requireAuth, async (req, res) => {
       'SELECT * FROM ledger_journal WHERE credit_account LIKE $1 OR debit_account = $2 ORDER BY created_at DESC LIMIT 30',
       [`SPONSOR_${req.user.uid}_%`, `UID_${req.user.uid}`]
     );
+    const todayProfitRes = await pool.query(
+      `SELECT COALESCE(SUM(amount_usdt), 0) AS today_usdt
+       FROM ledger_journal
+       WHERE credit_account LIKE $1 AND created_at >= CURRENT_DATE`,
+      [`SPONSOR_${req.user.uid}_%`]
+    );
     const directsRes = await pool.query(
-      'SELECT uid, email, referral_code, rank_level, is_activated, created_at FROM users WHERE sponsor_uid = $1 ORDER BY created_at DESC LIMIT 100',
+      `SELECT uid, email, referral_code, rank_level, is_activated, created_at
+       FROM users WHERE sponsor_uid = $1 ORDER BY created_at DESC`,
       [req.user.uid]
     );
     const fullDownlineRes = await pool.query(
@@ -937,7 +1009,8 @@ app.get('/api/v1/user/profile', requireAuth, async (req, res) => {
       [req.user.uid]
     );
     const circlesRes = await pool.query('SELECT * FROM strategy_circles ORDER BY created_at DESC LIMIT 20');
-
+    const syncedCirclesRes = await pool.query('SELECT circle_id FROM circle_subscriptions WHERE uid = $1', [req.user.uid]);
+    const strategiesRes = await pool.query('SELECT * FROM bot_strategies WHERE uid = $1', [req.user.uid]);
     let platformStats = null;
     if (userRow.is_owner_exempt) {
       const statsQ = await pool.query(`
@@ -954,11 +1027,14 @@ app.get('/api/v1/user/profile', requireAuth, async (req, res) => {
       user: userRow,
       personalDepositAddress,
       wallet: wRes.rows[0] || { gas_balance: 0, commission_balance: 0, total_trading_profit: 0 },
+      todayProfit: Number(todayProfitRes.rows[0]?.today_usdt || 0),
       boundExchanges: keysRes.rows,
+      botStrategies: strategiesRes.rows,
       commissionLogs: logsRes.rows,
       directTeam: directsRes.rows,
       fullDownlineTeam: fullDownlineRes.rows,
       circles: circlesRes.rows,
+      syncedCircleIds: syncedCirclesRes.rows.map(r => r.circle_id),
       platformStats
     });
   } catch (err) {
@@ -1449,19 +1525,42 @@ app.post('/api/v1/bot/manual-action', requireAuth, async (req, res) => {
     const curPrice = (await getOrFetchLiveSymbolPrice(rawSym)) || 1;
 
     if (action === 'SELL_ALL') {
-      const botRes = await pool.query('SELECT total_base_qty FROM bot_strategies WHERE uid = $1 AND symbol = $2 LIMIT 1', [req.user.uid, symbol]);
-      const heldQty = Number(botRes.rows[0]?.total_base_qty || 0);
-      const orderRes = await executeBinanceSpotOrder(req.user.uid, rawSym, 'SELL', 25, heldQty > 0 ? heldQty : null);
+      const botRes = await pool.query(
+        'SELECT total_base_qty, total_position_usdt, avg_entry_price FROM bot_strategies WHERE uid = $1 AND symbol = $2 LIMIT 1',
+        [req.user.uid, symbol]
+      );
+      const botRow = botRes.rows[0];
+      const heldQty = Number(botRow?.total_base_qty || 0);
+      const heldCostUsdt = Number(botRow?.total_position_usdt || 0);
+      if (heldQty <= 0 && heldCostUsdt <= 0) {
+        return res.status(400).json({ success: false, error: `No active ${symbol} position held to sell.` });
+      }
+      const estSellUsdt = heldQty > 0 ? heldQty * curPrice : heldCostUsdt;
+      const orderRes = await executeBinanceSpotOrder(req.user.uid, rawSym, 'SELL', estSellUsdt, heldQty > 0 ? heldQty : null);
+      if (!orderRes.executedOnExchange) {
+        return res.status(400).json({
+          success: false,
+          error: orderRes.friendlyError || orderRes.details?.msg || 'Binance Spot SELL failed — verify API permissions & coin balance.'
+        });
+      }
+      const receivedUsdt = orderRes.filledQuoteUsdt || estSellUsdt;
+      const realizedPnl = +(receivedUsdt - heldCostUsdt).toFixed(4);
       await pool.query(
         `UPDATE bot_strategies SET status = 'PAUSED', current_calls = 0, total_position_usdt = 0, total_base_qty = 0, avg_entry_price = 0, sub_bin_position_usdt = 0, sub_bin_base_qty = 0, updated_at = NOW() WHERE uid = $1 AND symbol = $2`,
         [req.user.uid, symbol]
       );
+      if (realizedPnl > 0) {
+        await pool.query(
+          'UPDATE user_wallets SET total_trading_profit = total_trading_profit + $1, updated_at = NOW() WHERE uid = $2',
+          [realizedPnl, req.user.uid]
+        );
+      }
       return res.json({
         success: true,
-        executedOnExchange: orderRes.executedOnExchange,
-        message: orderRes.executedOnExchange
-          ? `Sold ${symbol} on Binance Spot at $${curPrice.toLocaleString()}`
-          : `Paused ${symbol} strategy (No active exchange order placed)`
+        executedOnExchange: true,
+        receivedUsdt,
+        realizedPnl,
+        message: `Sold ${heldQty.toFixed(6)} ${symbol.replace('/USDT', '')} on Binance Spot for $${receivedUsdt.toFixed(2)} USDT (${realizedPnl >= 0 ? '+' : ''}$${realizedPnl.toFixed(2)})`
       });
     }
 
@@ -1471,21 +1570,52 @@ app.post('/api/v1/bot/manual-action', requireAuth, async (req, res) => {
       if (!orderRes.executedOnExchange) {
         return res.status(400).json({
           success: false,
-          error: orderRes.details?.msg || 'Exchange API did not execute order — verify Spot USDT balance and API permissions.'
+          error: orderRes.friendlyError || orderRes.details?.msg || 'Exchange API did not execute order — verify Spot USDT balance and API permissions.'
         });
       }
       const actualSpentUsdt = orderRes.filledQuoteUsdt || buyAmt;
       const actualBoughtQty = orderRes.filledBaseQty || (actualSpentUsdt / curPrice);
-      await pool.query(
-        `UPDATE bot_strategies SET
-           total_position_usdt = total_position_usdt + $1,
-           total_base_qty = total_base_qty + $2,
-           current_calls = current_calls + 1,
-           updated_at = NOW()
-         WHERE uid = $3 AND symbol = $4`,
-        [actualSpentUsdt, actualBoughtQty, req.user.uid, symbol]
+      const fillPrice = actualBoughtQty > 0 ? actualSpentUsdt / actualBoughtQty : curPrice;
+
+      const curBot = await pool.query(
+        'SELECT total_position_usdt, total_base_qty, current_calls FROM bot_strategies WHERE uid = $1 AND symbol = $2 LIMIT 1',
+        [req.user.uid, symbol]
       );
-      return res.json({ success: true, message: `Executed real Spot buy: $${actualSpentUsdt.toFixed(2)} USDT of ${symbol} at $${curPrice.toLocaleString()}` });
+      let newTotalPos = actualSpentUsdt;
+      let newTotalQty = actualBoughtQty;
+      let newAvgPrice = fillPrice;
+      let newCalls = 1;
+
+      if (curBot.rows.length) {
+        newTotalPos = Number(curBot.rows[0].total_position_usdt || 0) + actualSpentUsdt;
+        newTotalQty = Number(curBot.rows[0].total_base_qty || 0) + actualBoughtQty;
+        newAvgPrice = newTotalQty > 0 ? newTotalPos / newTotalQty : fillPrice;
+        newCalls = Number(curBot.rows[0].current_calls || 0) + 1;
+        await pool.query(
+          `UPDATE bot_strategies SET
+             total_position_usdt = $1,
+             total_base_qty = $2,
+             avg_entry_price = $3,
+             current_calls = $4,
+             updated_at = NOW()
+           WHERE uid = $5 AND symbol = $6`,
+          [newTotalPos, newTotalQty, newAvgPrice, newCalls, req.user.uid, symbol]
+        );
+      } else {
+        await pool.query(
+          `INSERT INTO bot_strategies (uid, symbol, status, first_buy_usdt, current_calls, total_position_usdt, total_base_qty, avg_entry_price)
+           VALUES ($1, $2, 'PAUSED', $3, 1, $4, $5, $6)`,
+          [req.user.uid, symbol, actualSpentUsdt, newTotalPos, newTotalQty, newAvgPrice]
+        );
+      }
+      return res.json({
+        success: true,
+        positionUsdt: newTotalPos,
+        baseQty: newTotalQty,
+        avgEntryPrice: newAvgPrice,
+        calls: newCalls,
+        message: `Bought $${actualSpentUsdt.toFixed(2)} USDT of ${symbol} at $${fillPrice.toLocaleString()} (New Avg: $${newAvgPrice.toFixed(4)})`
+      });
     }
 
     res.json({ success: true });
@@ -1544,7 +1674,7 @@ app.post('/api/v1/user/activate', requireAuth, async (req, res) => {
   }
 });
 
-// Royal Q-Style Personal Sub-Wallet Address & Instant Auto-Scan Endpoint (No TXID Needed)
+// Royal Q-Style Personal Sub-Wallet Address & Instant Auto-Scan Endpoint
 app.get('/api/v1/wallet/deposit-address', requireAuth, async (req, res) => {
   try {
     const depositAddress = await getOrCreateUserTrc20DepositWallet(req.user.uid);
@@ -1562,7 +1692,7 @@ app.get('/api/v1/wallet/deposit-address', requireAuth, async (req, res) => {
   }
 });
 
-// Real On-Chain TRON TRC-20 USDT Deposit Claim via TronGrid (Accepts User's Sub-Wallet OR Master Wallet)
+// Real On-Chain TRON TRC-20 USDT Deposit Claim via TronGrid
 app.post('/api/v1/wallet/claim-txid', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -1781,7 +1911,6 @@ function startBinanceAllMarketStream() {
 async function evaluateActiveDcaBots() {
   dcaCyclesProcessed += 1;
   try {
-    // Automatic Low-Fuel Pause Protection: Pause active cycles if non-owner Fuel Gas drops below 20.00 USDT
     await pool.query(`
       UPDATE bot_strategies b
       SET status = 'PAUSED', updated_at = NOW()
