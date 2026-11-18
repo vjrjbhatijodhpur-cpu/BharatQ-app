@@ -438,10 +438,8 @@
         <div class="flex items-center justify-between gap-1.5 overflow-x-auto pb-1 text-xs font-bold">
           <button onclick="selectExchangeTab(this, 'Binance')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqGold text-black shrink-0">Binance</button>
           <button onclick="selectExchangeTab(this, 'Bybit')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0">Bybit</button>
-          <button onclick="selectExchangeTab(this, 'OKX')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0">OKX</button>
-          <button onclick="selectExchangeTab(this, 'CoinDCX')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0">CoinDCX</button>
-          <button onclick="selectExchangeTab(this, 'KuCoin')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0">KuCoin</button>
-          <button onclick="selectExchangeTab(this, 'HTX')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0">HTX</button>
+          <button onclick="selectExchangeTab(this, 'OKX')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0">OKX (Soon)</button>
+          <button onclick="selectExchangeTab(this, 'CoinDCX')" class="ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0">CoinDCX (Soon)</button>
         </div>
 
         <div class="flex gap-2">
@@ -461,10 +459,15 @@
 
         <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-[10px] font-bold">
           <button onclick="setQuickCategory('ALL')" id="cat-ALL" class="cat-pill px-2.5 py-1 rounded-lg bg-bqGold/20 text-bqGold border border-bqGold/40 shrink-0">All Listed</button>
-          <button onclick="setQuickCategory('MAJOR')" id="cat-MAJOR" class="cat-pill px-2.5 py-1 rounded-lg bg-bqCard text-slate-400 border border-bqBorder shrink-0">Layer 1 / Major</button>
-          <button onclick="setQuickCategory('MEME')" id="cat-MEME" class="cat-pill px-2.5 py-1 rounded-lg bg-bqCard text-slate-400 border border-bqBorder shrink-0">Meme Coins</button>
-          <button onclick="setQuickCategory('AI')" id="cat-AI" class="cat-pill px-2.5 py-1 rounded-lg bg-bqCard text-slate-400 border border-bqBorder shrink-0">AI &amp; DePIN</button>
-          <button onclick="setQuickCategory('DEFI')" id="cat-DEFI" class="cat-pill px-2.5 py-1 rounded-lg bg-bqCard text-slate-400 border border-bqBorder shrink-0">DeFi &amp; Gaming</button>
+          <button onclick="setQuickCategory('MAJOR')" id="cat-MAJOR" class="cat-pill px-2.5 py-1 rounded-lg bg-bqCard text-slate-400 border border-bqBorder shrink-0">1. Layer 1 / Major</button>
+          <button onclick="setQuickCategory('MEME')" id="cat-MEME" class="cat-pill px-2.5 py-1 rounded-lg bg-bqCard text-slate-400 border border-bqBorder shrink-0">2. Meme Coins</button>
+          <button onclick="setQuickCategory('AI')" id="cat-AI" class="cat-pill px-2.5 py-1 rounded-lg bg-bqCard text-slate-400 border border-bqBorder shrink-0">3. AI &amp; DePIN</button>
+          <button onclick="setQuickCategory('UTILITY')" id="cat-UTILITY" class="cat-pill px-2.5 py-1 rounded-lg bg-bqCard text-slate-400 border border-bqBorder shrink-0">4. Tight-Range Utility</button>
+        </div>
+
+        <div id="categoryStrategyBanner" class="hidden p-2.5 rounded-xl bg-bqCard border border-bqGold/30 text-[11px] text-slate-300 flex items-center justify-between gap-2">
+          <span id="categoryStrategyText"></span>
+          <span id="categoryBadgeTag" class="text-[9px] font-black px-2 py-0.5 rounded bg-bqGold/20 text-bqGold shrink-0">AI Recommended</span>
         </div>
 
         <div class="flex items-center justify-between px-1 text-[11px] text-slate-400">
@@ -740,13 +743,13 @@
           <span>Bybit</span>
           <span id="exStatus-BYBIT" class="text-[9px] text-slate-500">Unbound</span>
         </button>
-        <button type="button" onclick="selectBindingExchange('OKX')" id="exCard-OKX" class="p-2.5 rounded-xl bg-bqBg border border-bqBorder text-slate-400 font-bold flex flex-col items-center gap-1">
+        <button type="button" onclick="selectBindingExchange('OKX')" id="exCard-OKX" class="p-2.5 rounded-xl bg-bqBg border border-bqBorder text-slate-400 font-bold flex flex-col items-center gap-1 opacity-70">
           <span>OKX</span>
-          <span id="exStatus-OKX" class="text-[9px] text-slate-500">Unbound</span>
+          <span id="exStatus-OKX" class="text-[9px] text-amber-400">Coming Soon</span>
         </button>
-        <button type="button" onclick="selectBindingExchange('COINDCX')" id="exCard-COINDCX" class="p-2.5 rounded-xl bg-bqBg border border-bqBorder text-slate-400 font-bold flex flex-col items-center gap-1">
+        <button type="button" onclick="selectBindingExchange('COINDCX')" id="exCard-COINDCX" class="p-2.5 rounded-xl bg-bqBg border border-bqBorder text-slate-400 font-bold flex flex-col items-center gap-1 opacity-70">
           <span>CoinDCX</span>
-          <span id="exStatus-COINDCX" class="text-[9px] text-slate-500">Unbound</span>
+          <span id="exStatus-COINDCX" class="text-[9px] text-amber-400">Coming Soon</span>
         </button>
       </div>
 
@@ -874,16 +877,19 @@
       </div>
 
       <div class="grid grid-cols-3 gap-2 text-[11px]">
-        <button onclick="triggerManualReplenish()" class="py-2 rounded-xl bg-bqEmerald/15 border border-bqEmerald/40 text-bqEmerald font-bold">
+        <button onclick="openManualBuyModal()" class="py-2 rounded-xl bg-bqEmerald/15 border border-bqEmerald/40 text-bqEmerald font-bold">
           <i class="fa-solid fa-cart-plus mr-1"></i> Buy
         </button>
-        <button onclick="triggerSellAllPosition()" class="py-2 rounded-xl bg-bqRose/15 border border-bqRose/40 text-bqRose font-bold">
+        <button onclick="openManualSellModal()" class="py-2 rounded-xl bg-bqRose/15 border border-bqRose/40 text-bqRose font-bold">
           <i class="fa-solid fa-bolt mr-1"></i> Sell
         </button>
         <button onclick="toggleCycleTypeInModal()" id="btnModalCycleType" class="py-2 rounded-xl bg-bqGold/15 border border-bqGold/40 text-bqGold font-bold">
           <i class="fa-solid fa-rotate mr-1"></i> Cycle
         </button>
       </div>
+      <p id="cycleModeExplainer" class="text-[10px] text-slate-400 bg-bqBg px-3 py-1.5 rounded-xl border border-bqBorder">
+        <b class="text-bqGold">Cycle Mode:</b> Automatically restarts a new buy cycle after each Take-Profit sell. Tap <b>Cycle</b> to switch to <b>One-Shot</b> (stops after next TP).
+      </p>
 
       <div class="space-y-3 text-xs">
         <div>
@@ -977,6 +983,98 @@
     </div>
   </div>
 
+  <!-- Royal Q-Style Manual Replenish (Buy) Confirmation Sheet -->
+  <div id="manualBuyConfirmModal" class="fixed inset-0 z-[70] bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqEmerald/50 rounded-3xl w-full max-w-sm p-5 space-y-4 shadow-2xl text-xs">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <div>
+          <h3 class="text-sm font-black text-white">Buy / Replenish <span id="buyModalSymbol" class="text-bqEmerald">BTC/USDT</span></h3>
+          <span class="text-[10px] text-slate-400">Real Binance Spot Market Order</span>
+        </div>
+        <button onclick="closeModal('manualBuyConfirmModal')" class="w-7 h-7 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="p-3 rounded-2xl bg-bqBg border border-bqBorder space-y-2">
+        <div class="flex justify-between">
+          <span class="text-slate-400">Live Market Price:</span>
+          <b id="buyModalLivePrice" class="text-white font-mono">$0.00</b>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Current Position Amount:</span>
+          <b id="buyModalCurPos" class="text-slate-200 font-mono">$0.00 USDT</b>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Current Average Price:</span>
+          <b id="buyModalCurAvg" class="text-slate-200 font-mono">--</b>
+        </div>
+        <div class="flex justify-between border-t border-bqBorder pt-2">
+          <span class="text-slate-400">Est. New Average Price:</span>
+          <b id="buyModalNewAvg" class="text-bqEmerald font-mono">--</b>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-slate-400 block mb-1">Replenish Purchase Amount (USDT)</label>
+        <input id="manualBuyAmountInput" type="number" min="10" step="1" value="20" oninput="recalcManualBuyPreview()" class="w-full bg-bqBg border border-bqBorder focus:border-bqEmerald rounded-xl px-3.5 py-2.5 text-white font-mono text-sm font-bold focus:outline-none">
+        <div class="grid grid-cols-4 gap-1.5 mt-2">
+          <button type="button" onclick="setManualBuyPreset(15)" class="py-1.5 rounded-lg bg-bqBg border border-bqBorder text-slate-300 font-mono text-[11px]">$15</button>
+          <button type="button" onclick="setManualBuyPreset(20)" class="py-1.5 rounded-lg bg-bqBg border border-bqBorder text-slate-300 font-mono text-[11px]">$20</button>
+          <button type="button" onclick="setManualBuyPreset(50)" class="py-1.5 rounded-lg bg-bqBg border border-bqBorder text-slate-300 font-mono text-[11px]">$50</button>
+          <button type="button" onclick="setManualBuyPreset(100)" class="py-1.5 rounded-lg bg-bqBg border border-bqBorder text-slate-300 font-mono text-[11px]">$100</button>
+        </div>
+      </div>
+
+      <button id="btnConfirmManualBuy" onclick="executeConfirmedManualBuy()" class="w-full py-3 rounded-2xl bg-bqEmerald text-black font-black text-xs shadow-lg">
+        Confirm Real Spot Buy
+      </button>
+    </div>
+  </div>
+
+  <!-- Royal Q-Style Manual Clearance (Sell) Confirmation Sheet -->
+  <div id="manualSellConfirmModal" class="fixed inset-0 z-[70] bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-bqCard border border-bqRose/50 rounded-3xl w-full max-w-sm p-5 space-y-4 shadow-2xl text-xs">
+      <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
+        <div>
+          <h3 class="text-sm font-black text-white">Sell / Clearance <span id="sellModalSymbol" class="text-bqRose">BTC/USDT</span></h3>
+          <span class="text-[10px] text-slate-400">Real Binance Spot Market Liquidation</span>
+        </div>
+        <button onclick="closeModal('manualSellConfirmModal')" class="w-7 h-7 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="p-3.5 rounded-2xl bg-bqBg border border-bqBorder space-y-2">
+        <div class="flex justify-between">
+          <span class="text-slate-400">Held Quantity:</span>
+          <b id="sellModalQty" class="text-white font-mono">0.000000</b>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Position Cost:</span>
+          <b id="sellModalCost" class="text-slate-200 font-mono">$0.00 USDT</b>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Est. Market Value:</span>
+          <b id="sellModalEstValue" class="text-white font-mono">$0.00 USDT</b>
+        </div>
+        <div class="flex justify-between border-t border-bqBorder pt-2">
+          <span class="text-slate-400">Est. Floating P&amp;L:</span>
+          <b id="sellModalPnl" class="text-bqEmerald font-mono">$0.00 (0.00%)</b>
+        </div>
+      </div>
+
+      <p class="text-[11px] text-slate-400 leading-relaxed">
+        Confirming will immediately sell 100% of your held <b id="sellModalBaseName" class="text-white">BTC</b> on Binance Spot at market price and set the bot to <b>Paused</b>.
+      </p>
+
+      <div class="flex gap-2">
+        <button onclick="closeModal('manualSellConfirmModal')" class="flex-1 py-3 rounded-2xl bg-bqBg border border-bqBorder text-slate-300 font-bold text-xs">
+          Cancel
+        </button>
+        <button id="btnConfirmManualSell" onclick="executeConfirmedManualSell()" class="flex-1 py-3 rounded-2xl bg-bqRose text-white font-black text-xs shadow-lg">
+          Confirm Sell Now
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Withdraw Modal -->
   <div id="withdrawModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end justify-center">
     <div class="bg-bqCard border-t border-bqBorder rounded-t-3xl w-full max-w-[480px] p-5 space-y-4 safe-bottom">
@@ -1040,22 +1138,30 @@
   <div id="marginReserveModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-bqCard border border-bqBorder rounded-2xl w-full max-w-sm p-5 space-y-4">
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
-        <h3 class="text-sm font-bold text-white">Position Reserve Calculator</h3>
+        <h3 class="text-sm font-bold text-white">Exact Position Reserve Calculator</h3>
         <button onclick="closeModal('marginReserveModal')" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="grid grid-cols-2 gap-2 text-xs">
         <div>
           <label class="text-slate-400 block mb-1">First Buy (USDT)</label>
-          <input id="mrFirstBuy" type="number" value="20" oninput="calculateMarginReserve()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-white font-mono">
+          <input id="mrFirstBuy" type="number" value="10" oninput="calculateMarginReserve()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-white font-mono">
         </div>
         <div>
-          <label class="text-slate-400 block mb-1">Margin Calls</label>
-          <input id="mrCalls" type="number" value="7" oninput="calculateMarginReserve()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-white font-mono">
+          <label class="text-slate-400 block mb-1">Margin Calls (1–7)</label>
+          <input id="mrCalls" type="number" min="1" max="7" value="7" oninput="calculateMarginReserve()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-white font-mono">
         </div>
       </div>
-      <div class="p-3 rounded-xl bg-bqBg border border-bqGold/30 text-center">
-        <span class="text-[10px] text-slate-400 block">Recommended Spot Balance</span>
-        <span id="mrTotalOutput" class="text-lg font-black text-bqEmerald font-mono">$300.00 USDT</span>
+      <div>
+        <label class="text-slate-400 text-xs block mb-1">Layer Multiple Mode</label>
+        <select id="mrMultiplePreset" onchange="calculateMarginReserve()" class="w-full bg-bqBg border border-bqBorder rounded-xl px-3 py-2 text-xs text-bqGold font-bold">
+          <option value="SMART">Smart Safe Multiples (1.5, 2, 2.5, 3, 4, 5, 6 = 25x)</option>
+          <option value="ROYALQ">Royal Q Default 2x Martingale (2, 4, 8, 16, 32, 64, 128 = 255x)</option>
+        </select>
+      </div>
+      <div class="p-3 rounded-xl bg-bqBg border border-bqGold/30 text-center space-y-1">
+        <span class="text-[10px] text-slate-400 block">Exact Safe Spot Reserve Needed</span>
+        <span id="mrTotalOutput" class="text-lg font-black text-bqEmerald font-mono">$250.00 USDT</span>
+        <span id="mrFormulaDetail" class="text-[10px] text-slate-400 font-mono block">10 × (1 + 24.0) = $250.00 USDT</span>
       </div>
     </div>
   </div>
@@ -1350,16 +1456,35 @@
     const DEFAULT_SUPABASE_URL = 'https://dthsnlfybujksgmihakt.supabase.co';
     const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_bGJvNp4teGIt3rBSaEPPMg_aln2JwGK';
 
-    const MAJOR_BASES = new Set(['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'ADA', 'AVAX', 'TRX', 'DOT', 'LINK', 'TON', 'SUI', 'APT', 'NEAR', 'ATOM', 'LTC', 'BCH', 'ETC', 'XLM', 'HBAR', 'ICP', 'FIL', 'ALGO', 'VET', 'SEI', 'INJ', 'TIA', 'KAS', 'OP', 'ARB', 'POL', 'MATIC']);
-    const MEME_BASES = new Set(['DOGE', 'SHIB', 'PEPE', 'WIF', 'BONK', 'FLOKI', 'BOME', 'MEME', 'PEOPLE', '1000SATS', 'ORDI', 'TURBO', 'NEIRO', 'PNUT', 'ACT', 'DOGS', 'NOT', 'HMSTR', 'CATI', 'TRUMP', 'MELANIA']);
-    const AI_BASES = new Set(['FET', 'RENDER', 'RNDR', 'TAO', 'WLD', 'GRT', 'THETA', 'AR', 'ARKM', 'IO', 'AKT', 'AIOZ', 'GLM', 'NMR', 'OCEAN', 'AGIX', 'PHB', 'NFP', 'AI', 'VIRTUAL']);
-    const DEFI_BASES = new Set(['UNI', 'AAVE', 'MKR', 'LDO', 'CRV', 'SNX', 'COMP', 'SUSHI', 'CAKE', '1INCH', 'DYDX', 'GMX', 'JUP', 'RAY', 'ENA', 'ETHFI', 'PENDLE', 'RUNE', 'AXS', 'SAND', 'MANA', 'GALA', 'IMX', 'BEAMX', 'PIXEL', 'PORTAL']);
+    const MAJOR_BASES = new Set(['SOL', 'XRP', 'ADA', 'AVAX', 'SUI', 'NEAR', 'LINK', 'BTC', 'ETH', 'BNB', 'DOT', 'APT', 'SEI', 'INJ', 'TIA', 'KAS', 'OP', 'ARB', 'POL', 'MATIC', 'HBAR', 'ICP', 'FIL', 'ALGO', 'VET']);
+    const MEME_BASES = new Set(['DOGE', 'PEPE', 'SHIB', 'WIF', 'BONK', 'FLOKI', 'BOME', 'MEME', 'PEOPLE', '1000SATS', 'ORDI', 'TURBO', 'NEIRO', 'PNUT', 'ACT', 'DOGS', 'NOT', 'HMSTR', 'CATI', 'TRUMP', 'MELANIA']);
+    const AI_BASES = new Set(['FET', 'RENDER', 'RNDR', 'TAO', 'AR', 'GRT', 'WLD', 'THETA', 'ARKM', 'IO', 'AKT', 'AIOZ', 'GLM', 'NMR', 'OCEAN', 'AGIX', 'PHB', 'NFP', 'AI', 'VIRTUAL']);
+    const UTILITY_BASES = new Set(['TRX', 'TON', 'LTC', 'XLM', 'ATOM', 'BCH', 'ETC', 'UNI', 'AAVE', 'MKR', 'LDO', 'CRV', 'JUP', 'RAY', 'ENA', 'RUNE', 'AXS', 'SAND', 'MANA', 'GALA', 'IMX']);
+
+    const CATEGORY_STRATEGY_HINTS = {
+      MAJOR: {
+        text: 'Best All-Round Profit + Safety: High liquidity ($500M–$5B+/day) & reliable 3%–10% rebounds.',
+        tag: 'Top-30 Layer 1'
+      },
+      MEME: {
+        text: 'Highest Daily Cycle Frequency: Fast +2% to +8% intraday waves — ideal for 0.50%–1.30% TP.',
+        tag: 'High Velocity'
+      },
+      AI: {
+        text: 'Best for Dynamic ATR Breakouts: Strong +8% to +25% rally bursts stretched up to 4.2% TP.',
+        tag: 'AI & DePIN'
+      },
+      UTILITY: {
+        text: 'Best Steady Daily Scalper: Tight ±2% to ±5% range swings with shallow drawdown.',
+        tag: 'Low Drawdown'
+      }
+    };
 
     function detectCoinCategory(baseAsset) {
       if (MAJOR_BASES.has(baseAsset)) return 'MAJOR';
       if (MEME_BASES.has(baseAsset)) return 'MEME';
       if (AI_BASES.has(baseAsset)) return 'AI';
-      if (DEFI_BASES.has(baseAsset)) return 'DEFI';
+      if (UTILITY_BASES.has(baseAsset)) return 'UTILITY';
       return 'SPOT';
     }
 
@@ -1374,12 +1499,11 @@
     }
 
     const PRIORITY_SEED_PAIRS = [
-      'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT',
-      'ADAUSDT', 'TRXUSDT', 'AVAXUSDT', 'SHIBUSDT', 'TONUSDT', 'LINKUSDT',
-      'DOTUSDT', 'SUIUSDT', 'PEPEUSDT', 'NEARUSDT', 'LTCUSDT', 'BCHUSDT',
-      'UNIUSDT', 'APTUSDT', 'ICPUSDT', 'FETUSDT', 'RENDERUSDT', 'TAOUSDT',
-      'ARBUSDT', 'OPUSDT', 'INJUSDT', 'TIAUSDT', 'WIFUSDT', 'BONKUSDT',
-      'FLOKIUSDT', 'AAVEUSDT', 'JUPUSDT', 'ENAUSDT', 'SEIUSDT', 'ATOMUSDT'
+      'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'AVAXUSDT', 'SUIUSDT', 'NEARUSDT', 'LINKUSDT',
+      'DOGEUSDT', 'PEPEUSDT', 'SHIBUSDT', 'WIFUSDT', 'BONKUSDT', 'FLOKIUSDT',
+      'FETUSDT', 'RENDERUSDT', 'TAOUSDT', 'ARUSDT', 'GRTUSDT',
+      'TRXUSDT', 'TONUSDT', 'LTCUSDT', 'XLMUSDT', 'ATOMUSDT',
+      'BNBUSDT', 'DOTUSDT', 'APTUSDT', 'BCHUSDT', 'UNIUSDT', 'ARBUSDT', 'OPUSDT', 'INJUSDT', 'TIAUSDT', 'JUPUSDT', 'SEIUSDT'
     ];
 
     function buildDefaultPairObject(rawSymbol, price = 0, change = 0, quoteVolume = 0) {
@@ -1399,6 +1523,9 @@
         calls: 0,
         maxCalls: 7,
         pnl: 0.00,
+        positionUsdt: 0,
+        baseQty: 0,
+        avgEntryPrice: 0,
         firstBuy: 20,
         openDoubling: false,
         drop: 3.5,
@@ -2002,7 +2129,7 @@
         fuelBalance: Number(u.gas_balance ?? 0),
         commissionBalance: Number(u.commission_balance ?? 0),
         cumProfit: Number(u.total_trading_profit ?? 0),
-        todayProfit: 0.00
+        todayProfit: Number(data.todayProfit ?? 0)
       };
       localStorage.setItem('bq_jwt', state.jwtToken);
       localStorage.setItem('bq_user_profile', JSON.stringify(state.user));
@@ -2041,7 +2168,7 @@
     }
 
     function updateBoundExchangeBadges() {
-      const exchanges = ['BINANCE', 'BYBIT', 'OKX', 'COINDCX'];
+      const exchanges = ['BINANCE', 'BYBIT'];
       let firstBoundName = null;
       let firstSpotBal = null;
       exchanges.forEach(ex => {
@@ -2078,9 +2205,13 @@
 
     function selectBindingExchange(exName) {
       const clean = String(exName || 'BINANCE').toUpperCase();
+      if (clean === 'OKX' || clean === 'COINDCX') {
+        showToast(`${clean} Spot adapter is coming soon — use Binance or Bybit for live trading`, 'rose');
+        return;
+      }
       const hiddenInp = document.getElementById('bindExchangeName');
       if (hiddenInp) hiddenInp.value = clean;
-      ['BINANCE', 'BYBIT', 'OKX', 'COINDCX'].forEach(ex => {
+      ['BINANCE', 'BYBIT'].forEach(ex => {
         const card = document.getElementById(`exCard-${ex}`);
         if (card) {
           card.className = ex === clean
@@ -2117,22 +2248,38 @@
           if (!error) {
             if (statusTxt) {
               statusTxt.classList.remove('hidden');
-              statusTxt.innerText = `Verification code sent to ${email}`;
+              statusTxt.innerText = `6-digit verification code sent to ${email}`;
             }
             if (btn) { btn.disabled = false; btn.innerText = 'Resend'; }
-            showToast('Verification code sent!', 'emerald');
+            showToast('Verification code sent to your email!', 'emerald');
             return;
           }
         }
+        const res = await fetch(`${state.backendUrl}/api/v1/auth/send-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (statusTxt) {
+            statusTxt.classList.remove('hidden');
+            statusTxt.innerText = `6-digit verification code sent to ${email}`;
+          }
+          if (btn) { btn.disabled = false; btn.innerText = 'Resend'; }
+          showToast('Verification code sent to your email!', 'emerald');
+          return;
+        }
       } catch (e) {}
       if (btn) { btn.disabled = false; btn.innerText = 'Send Code'; }
-      showToast('Enter any 6-digit code or check your email', 'emerald');
+      showToast('Unable to send email verification code right now', 'rose');
     }
 
     async function submitExchangeApiBinding() {
       const exchangeName = (document.getElementById('bindExchangeName')?.value || 'BINANCE').toUpperCase();
       const apiKey = (document.getElementById('bindApiKeyInput')?.value || '').trim();
       const apiSecret = (document.getElementById('bindApiSecretInput')?.value || '').trim();
+      const verifyCode = (document.getElementById('bindVerifyCodeInput')?.value || '').trim();
       const riskChecked = document.getElementById('bindRiskCheckbox')?.checked;
       const resultBox = document.getElementById('apiBindResultBox');
       const btn = document.getElementById('btnSubmitApiBind');
@@ -2141,13 +2288,43 @@
         showToast('Enter both API Key and Secret Key', 'rose');
         return;
       }
+      if (!verifyCode || verifyCode.length < 6) {
+        showToast('Tap "Send Code" and enter the 6-digit email verification code', 'rose');
+        return;
+      }
       if (!riskChecked) {
         showToast('Please accept the Risk Notice first', 'rose');
         return;
       }
 
-      if (btn) { btn.disabled = true; btn.innerText = 'Verifying with Exchange...'; }
+      if (btn) { btn.disabled = true; btn.innerText = 'Verifying Code & API...'; }
       try {
+        let codeVerified = false;
+        const email = (state.user.email || '').trim().toLowerCase();
+        const sb = getSupabaseClient();
+        if (sb && email.includes('@')) {
+          const { error: sbErr } = await sb.auth.verifyOtp({
+            email,
+            token: verifyCode,
+            type: 'email'
+          });
+          if (!sbErr) codeVerified = true;
+        }
+        if (!codeVerified) {
+          const otpRes = await fetch(`${state.backendUrl}/api/v1/auth/verify-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, otpCode: verifyCode })
+          });
+          const otpData = await otpRes.json();
+          if (otpData.success) codeVerified = true;
+        }
+        if (!codeVerified) {
+          if (btn) { btn.disabled = false; btn.innerText = 'Bind'; }
+          showToast('Invalid or expired 6-digit email verification code', 'rose');
+          return;
+        }
+
         const res = await fetch(`${state.backendUrl}/api/v1/exchange/bind`, {
           method: 'POST',
           headers: {
@@ -2202,6 +2379,10 @@
     }
 
     function selectExchangeTab(btn, exName) {
+      if (exName === 'OKX' || exName === 'CoinDCX') {
+        showToast(`${exName} Spot engine coming soon — showing live Binance Spot feed`, 'emerald');
+        return;
+      }
       state.selectedExchange = exName;
       document.querySelectorAll('.ex-tab').forEach(b => {
         b.className = 'ex-tab px-3.5 py-1.5 rounded-full bg-bqCard text-slate-400 shrink-0';
@@ -2229,7 +2410,7 @@
     function setQuickCategory(cat) {
       state.quickCategory = cat;
       state.visibleLimit = 60;
-      ['ALL', 'MAJOR', 'MEME', 'AI', 'DEFI'].forEach(c => {
+      ['ALL', 'MAJOR', 'MEME', 'AI', 'UTILITY'].forEach(c => {
         const btn = document.getElementById(`cat-${c}`);
         if (btn) {
           btn.className = c === cat
@@ -2237,6 +2418,18 @@
             : 'cat-pill px-2.5 py-1 rounded-lg bg-bqCard text-slate-400 border border-bqBorder shrink-0';
         }
       });
+      const banner = document.getElementById('categoryStrategyBanner');
+      const txtEl = document.getElementById('categoryStrategyText');
+      const tagEl = document.getElementById('categoryBadgeTag');
+      if (banner && txtEl && tagEl) {
+        if (cat !== 'ALL' && CATEGORY_STRATEGY_HINTS[cat]) {
+          txtEl.innerText = CATEGORY_STRATEGY_HINTS[cat].text;
+          tagEl.innerText = CATEGORY_STRATEGY_HINTS[cat].tag;
+          banner.classList.remove('hidden');
+        } else {
+          banner.classList.add('hidden');
+        }
+      }
       renderPairs();
     }
 
@@ -2493,6 +2686,16 @@
       document.getElementById('cfgCallbackPct').value = p.callback || 0.3;
       document.getElementById('cfgBuyInCallback').value = p.buyInCallback || 0.5;
       document.getElementById('cfgSubBinTp').value = p.subBinTp || 1.3;
+      const cycleBtn = document.getElementById('btnModalCycleType');
+      const cycleExp = document.getElementById('cycleModeExplainer');
+      if (cycleBtn) {
+        cycleBtn.innerHTML = `<i class="fa-solid fa-rotate mr-1"></i> ${p.cycleType === 'ONE_SHOT' ? 'One-Shot' : 'Cycle'}`;
+      }
+      if (cycleExp) {
+        cycleExp.innerHTML = p.cycleType === 'ONE_SHOT'
+          ? '<b class="text-amber-300">One-Shot Mode Active:</b> Bot will sell on the next Take-Profit and automatically <b>Pause</b> without opening a new cycle.'
+          : '<b class="text-bqGold">Cycle Mode Active:</b> Automatically restarts a new buy cycle after each Take-Profit sell. Tap <b>Cycle</b> to switch to <b>One-Shot</b>.';
+      }
       renderMarginCallLayersTable(p);
       openModal('tradeSettingsModal');
     }
@@ -2530,12 +2733,46 @@
       if (!p) return;
       p.cycleType = p.cycleType === 'ONE_SHOT' ? 'CYCLE' : 'ONE_SHOT';
       document.getElementById('btnModalCycleType').innerHTML = `<i class="fa-solid fa-rotate mr-1"></i> ${p.cycleType === 'ONE_SHOT' ? 'One-Shot' : 'Cycle'}`;
+      const cycleExp = document.getElementById('cycleModeExplainer');
+      if (cycleExp) {
+        cycleExp.innerHTML = p.cycleType === 'ONE_SHOT'
+          ? '<b class="text-amber-300">One-Shot Mode Active:</b> Bot will sell on the next Take-Profit and automatically <b>Pause</b> without opening a new cycle.'
+          : '<b class="text-bqGold">Cycle Mode Active:</b> Automatically restarts a new buy cycle after each Take-Profit sell. Tap <b>Cycle</b> to switch to <b>One-Shot</b>.';
+      }
       renderPairs();
       syncBotStrategyToBackend(p);
-      showToast(`Switched to ${p.cycleType === 'ONE_SHOT' ? 'One-Shot' : 'Cycle'}`, 'emerald');
+      showToast(
+        p.cycleType === 'ONE_SHOT'
+          ? 'One-Shot Mode: Bot will stop automatically after next Take-Profit'
+          : 'Cycle Mode: Bot will loop continuously 24/7',
+        'emerald'
+      );
     }
 
-    async function triggerManualReplenish() {
+    function setManualBuyPreset(amt) {
+      const inp = document.getElementById('manualBuyAmountInput');
+      if (inp) {
+        inp.value = amt;
+        recalcManualBuyPreview();
+      }
+    }
+
+    function recalcManualBuyPreview() {
+      const p = state.pairs.find(x => x.symbol === state.selectedPair);
+      if (!p) return;
+      const addUsdt = parseFloat(document.getElementById('manualBuyAmountInput')?.value) || 0;
+      const liveP = Number(p.price) || 0;
+      const curPos = Number(p.positionUsdt) || 0;
+      const curQty = Number(p.baseQty) || 0;
+      const addQty = liveP > 0 ? addUsdt / liveP : 0;
+      const newTotalPos = curPos + addUsdt;
+      const newTotalQty = curQty + addQty;
+      const newAvg = newTotalQty > 0 ? newTotalPos / newTotalQty : liveP;
+      const newAvgEl = document.getElementById('buyModalNewAvg');
+      if (newAvgEl) newAvgEl.innerText = liveP > 0 ? formatLiveTokenPrice(newAvg) : '--';
+    }
+
+    function openManualBuyModal() {
       const p = state.pairs.find(x => x.symbol === state.selectedPair);
       if (!p) return;
       if (!state.user.isOwnerFree && !state.user.isActivated) {
@@ -2550,48 +2787,122 @@
         return;
       }
       if (Object.keys(state.boundExchanges).length === 0) {
-        showToast('Bind your exchange API first to place real orders', 'rose');
+        showToast('Bind your Binance Spot API first to place real orders', 'rose');
+        openApiModal('BINANCE');
         return;
       }
-      if (state.jwtToken) {
-        try {
-          const res = await fetch(`${state.backendUrl}/api/v1/bot/manual-action`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
-            body: JSON.stringify({ symbol: p.symbol, action: 'MANUAL_REPLENISH', extraUsdt: p.firstBuy || 20 })
-          });
-          const data = await res.json();
-          if (data.success) {
-            p.calls = Math.min(p.maxCalls, p.calls + 1);
-            renderPairs();
-            showToast(data.message || `Manual buy executed for ${p.symbol}`, 'emerald');
-            return;
-          } else {
-            showToast(data.error || 'Exchange order rejected', 'rose');
-            return;
-          }
-        } catch (e) {}
-      }
-      showToast('Unable to execute order — check API connection', 'rose');
+      document.getElementById('buyModalSymbol').innerText = p.symbol;
+      document.getElementById('buyModalLivePrice').innerText = formatLiveTokenPrice(p.price);
+      document.getElementById('buyModalCurPos').innerText = `$${Number(p.positionUsdt || 0).toFixed(2)} USDT`;
+      document.getElementById('buyModalCurAvg').innerText = p.avgEntryPrice > 0 ? formatLiveTokenPrice(p.avgEntryPrice) : 'No Open Position';
+      document.getElementById('manualBuyAmountInput').value = p.firstBuy || 20;
+      recalcManualBuyPreview();
+      openModal('manualBuyConfirmModal');
     }
 
-    async function triggerSellAllPosition() {
+    async function executeConfirmedManualBuy() {
       const p = state.pairs.find(x => x.symbol === state.selectedPair);
       if (!p) return;
-      p.status = 'Paused';
-      p.calls = 0;
-      renderPairs();
-      closeModal('tradeSettingsModal');
-      if (state.jwtToken) {
-        try {
-          const res = await fetch(`${state.backendUrl}/api/v1/bot/manual-action`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
-            body: JSON.stringify({ symbol: p.symbol, action: 'SELL_ALL' })
-          });
-          const data = await res.json();
-          if (data.success) showToast(data.message, 'emerald');
-        } catch (e) {}
+      const extraUsdt = parseFloat(document.getElementById('manualBuyAmountInput')?.value) || 20;
+      if (extraUsdt < 10) {
+        showToast('Minimum Binance Spot order size is 10 USDT', 'rose');
+        return;
+      }
+      const btn = document.getElementById('btnConfirmManualBuy');
+      if (btn) { btn.disabled = true; btn.innerText = 'Executing on Binance Spot...'; }
+      try {
+        const res = await fetch(`${state.backendUrl}/api/v1/bot/manual-action`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
+          body: JSON.stringify({ symbol: p.symbol, action: 'MANUAL_REPLENISH', extraUsdt })
+        });
+        const data = await res.json();
+        if (btn) { btn.disabled = false; btn.innerText = 'Confirm Real Spot Buy'; }
+        if (data.success) {
+          p.calls = data.calls || (p.calls + 1);
+          p.positionUsdt = Number(data.positionUsdt || (p.positionUsdt + extraUsdt));
+          p.baseQty = Number(data.baseQty || p.baseQty);
+          p.avgEntryPrice = Number(data.avgEntryPrice || p.price);
+          renderPairs();
+          closeModal('manualBuyConfirmModal');
+          closeModal('tradeSettingsModal');
+          showToast(data.message || `Bought $${extraUsdt} of ${p.symbol}`, 'emerald');
+        } else {
+          showToast(data.error || 'Binance order rejected', 'rose');
+        }
+      } catch (e) {
+        if (btn) { btn.disabled = false; btn.innerText = 'Confirm Real Spot Buy'; }
+        showToast('Unable to reach server — check API connection', 'rose');
+      }
+    }
+
+    function openManualSellModal() {
+      const p = state.pairs.find(x => x.symbol === state.selectedPair);
+      if (!p) return;
+      if (!state.user.isOwnerFree && !state.user.isActivated) {
+        closeModal('tradeSettingsModal');
+        openVipActivationGateModal();
+        return;
+      }
+      if (Object.keys(state.boundExchanges).length === 0) {
+        showToast('Bind your Binance Spot API first to sell positions', 'rose');
+        openApiModal('BINANCE');
+        return;
+      }
+      const qty = Number(p.baseQty || 0);
+      const cost = Number(p.positionUsdt || 0);
+      if (qty <= 0 && cost <= 0) {
+        showToast(`No open ${p.symbol} position held to sell`, 'rose');
+        return;
+      }
+      const liveP = Number(p.price) || 0;
+      const estVal = qty > 0 && liveP > 0 ? qty * liveP : cost;
+      const pnl = estVal - cost;
+      const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
+
+      document.getElementById('sellModalSymbol').innerText = p.symbol;
+      document.getElementById('sellModalBaseName').innerText = p.base;
+      document.getElementById('sellModalQty').innerText = `${qty.toFixed(6)} ${p.base}`;
+      document.getElementById('sellModalCost').innerText = `$${cost.toFixed(2)} USDT`;
+      document.getElementById('sellModalEstValue').innerText = `$${estVal.toFixed(2)} USDT`;
+      const pnlEl = document.getElementById('sellModalPnl');
+      if (pnlEl) {
+        pnlEl.innerText = `${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)`;
+        pnlEl.className = pnl >= 0 ? 'text-bqEmerald font-mono' : 'text-bqRose font-mono';
+      }
+      openModal('manualSellConfirmModal');
+    }
+
+    async function executeConfirmedManualSell() {
+      const p = state.pairs.find(x => x.symbol === state.selectedPair);
+      if (!p) return;
+      const btn = document.getElementById('btnConfirmManualSell');
+      if (btn) { btn.disabled = true; btn.innerText = 'Selling on Binance Spot...'; }
+      try {
+        const res = await fetch(`${state.backendUrl}/api/v1/bot/manual-action`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
+          body: JSON.stringify({ symbol: p.symbol, action: 'SELL_ALL' })
+        });
+        const data = await res.json();
+        if (btn) { btn.disabled = false; btn.innerText = 'Confirm Sell Now'; }
+        if (data.success) {
+          p.status = 'Paused';
+          p.calls = 0;
+          p.positionUsdt = 0;
+          p.baseQty = 0;
+          p.avgEntryPrice = 0;
+          renderPairs();
+          closeModal('manualSellConfirmModal');
+          closeModal('tradeSettingsModal');
+          syncLiveUserProfile();
+          showToast(data.message || `Sold ${p.symbol} on Binance Spot`, 'emerald');
+        } else {
+          showToast(data.error || 'Binance Spot SELL failed', 'rose');
+        }
+      } catch (e) {
+        if (btn) { btn.disabled = false; btn.innerText = 'Confirm Sell Now'; }
+        showToast('Unable to reach server — check API connection', 'rose');
       }
     }
 
@@ -2745,18 +3056,38 @@
           const data = await res.json();
           if (data.success) {
             closeModal('createCircleModal');
-            syncLiveUserProfile();
-            showToast('Official Circle created!', 'emerald');
+            document.getElementById('newCircleNameInput').value = '';
+            document.getElementById('newCircleDescInput').value = '';
+            await syncLiveUserProfile();
+            showToast('Circle published live!', 'emerald');
+            return;
+          } else {
+            showToast(data.error || 'Could not create circle', 'rose');
             return;
           }
-        } catch (e) {}
+        } catch (e) {
+          showToast('Unable to reach server', 'rose');
+          return;
+        }
       }
     }
 
-    function toggleCircleSync(idx) {
-      state.circles[idx].synced = !state.circles[idx].synced;
+    async function toggleCircleSync(idx) {
+      const circle = state.circles[idx];
+      if (!circle) return;
+      const nextSynced = !circle.synced;
+      circle.synced = nextSynced;
       renderCircles();
-      showToast(state.circles[idx].synced ? 'Circle synced' : 'Circle unsynced', 'emerald');
+      if (state.jwtToken && circle.id) {
+        try {
+          await fetch(`${state.backendUrl}/api/v1/circles/sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
+            body: JSON.stringify({ circleId: circle.id, synced: nextSynced })
+          });
+        } catch (e) {}
+      }
+      showToast(nextSynced ? `Synced with ${circle.name}` : `Unsynced ${circle.name}`, 'emerald');
     }
 
     async function openLeaderboardReal() {
@@ -2800,9 +3131,18 @@
     }
 
     function calculateMarginReserve() {
-      const first = parseFloat(document.getElementById('mrFirstBuy').value) || 20;
-      const calls = parseInt(document.getElementById('mrCalls').value) || 7;
-      document.getElementById('mrTotalOutput').innerText = `$${(first * calls * 2.15).toFixed(2)} USDT`;
+      const first = parseFloat(document.getElementById('mrFirstBuy')?.value) || 10;
+      const calls = Math.max(1, Math.min(7, parseInt(document.getElementById('mrCalls')?.value) || 7));
+      const preset = document.getElementById('mrMultiplePreset')?.value || 'SMART';
+      const mults = preset === 'ROYALQ'
+        ? [2, 4, 8, 16, 32, 64, 128]
+        : [1.5, 2, 2.5, 3, 4, 5, 6];
+      const activeMultSum = mults.slice(0, calls).reduce((a, b) => a + b, 0);
+      const totalReserve = first * (1 + activeMultSum);
+      const outEl = document.getElementById('mrTotalOutput');
+      const detEl = document.getElementById('mrFormulaDetail');
+      if (outEl) outEl.innerText = `$${totalReserve.toFixed(2)} USDT`;
+      if (detEl) detEl.innerText = `$${first} × (1 + ${activeMultSum.toFixed(1)}) = $${totalReserve.toFixed(2)} USDT`;
     }
 
     function openWithdrawModal() {
@@ -3004,6 +3344,9 @@
             state.user.commissionBalance = Number(data.wallet.commission_balance ?? 0);
             state.user.cumProfit = Number(data.wallet.total_trading_profit ?? 0);
           }
+          if (data.todayProfit !== undefined) {
+            state.user.todayProfit = Number(data.todayProfit || 0);
+          }
           if (data.personalDepositAddress) {
             updatePersonalDepositModalUI(data.personalDepositAddress);
           }
@@ -3057,14 +3400,34 @@
             state.ledgerLogs = data.commissionLogs;
           }
           if (Array.isArray(data.circles)) {
+            const syncedSet = new Set(Array.isArray(data.syncedCircleIds) ? data.syncedCircleIds : []);
             state.circles = data.circles.map(c => ({
               id: c.id,
               name: c.name,
               author: `${c.owner_email} (V${c.owner_rank || 6})`,
               tag: 'Verified',
               desc: c.description || '',
-              synced: false
+              synced: syncedSet.has(c.id)
             }));
+          }
+          if (Array.isArray(data.botStrategies)) {
+            data.botStrategies.forEach(bs => {
+              const pairObj = state.pairs.find(x => x.symbol === bs.symbol);
+              if (pairObj) {
+                pairObj.status = bs.status === 'CYCLING' ? 'Cycling' : 'Paused';
+                pairObj.strategyMode = bs.strategy_mode || pairObj.strategyMode;
+                pairObj.cycleType = bs.cycle_type || 'CYCLE';
+                pairObj.firstBuy = Number(bs.first_buy_usdt || 20);
+                pairObj.calls = Number(bs.current_calls || 0);
+                pairObj.maxCalls = Number(bs.margin_call_limit || 7);
+                pairObj.positionUsdt = Number(bs.total_position_usdt || 0);
+                pairObj.baseQty = Number(bs.total_base_qty || 0);
+                pairObj.avgEntryPrice = Number(bs.avg_entry_price || 0);
+                pairObj.tp = Number(bs.take_profit_pct || 1.3);
+                pairObj.callback = Number(bs.callback_pct || 0.3);
+              }
+            });
+            renderPairs();
           }
           if (data.platformStats) {
             state.platformStats = data.platformStats;
@@ -3228,16 +3591,21 @@
 
       applyRoleAndRealStatusLabels();
       updateBoundExchangeBadges();
+      calculateMarginReserve();
       renderPairs();
       renderCircles();
       renderGasLogs();
       renderMlmLogs();
       renderRevenueDetails();
-      updateBalances();
-      updateUserIdentityUI();
-      syncLiveUserProfile();
+
+      if (state.jwtToken) {
+        updateUserIdentityUI();
+        updateBalances();
+        syncLiveUserProfile();
+      }
+
       fetchAllExchangeCoinsLive();
-      setInterval(fetchAllExchangeCoinsLive, 6000);
+      setInterval(fetchAllExchangeCoinsLive, 8000);
     });
   </script>
 </body>
