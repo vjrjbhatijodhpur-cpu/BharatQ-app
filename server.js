@@ -45,8 +45,10 @@ const pool = new Pool({
 let dcaCyclesProcessed = 0;
 let cachedServerPublicIp = '';
 const liveMarketPrices = {};
+const liveMarketTickers24h = {};
 const priceRollingHistory = {};
 const binanceSymbolRulesCache = {};
+let binanceIpBanUntilMs = 0;
 const BINANCE_REST_BASES = [
   'https://api.binance.com',
   'https://api1.binance.com',
@@ -55,8 +57,16 @@ const BINANCE_REST_BASES = [
   'https://api4.binance.com'
 ];
 
-// Global Binance REST Cluster Failover Helper
+// Global Binance REST Cluster Failover Helper (Respects 429/418 Rate-Limit Backoff)
 async function binanceSignedFetch(pathAndQuery, options = {}) {
+  if (Date.now() < binanceIpBanUntilMs) {
+    const unlockTime = new Date(binanceIpBanUntilMs).toLocaleTimeString();
+    return {
+      res: { ok: false, status: 418 },
+      data: { code: -1003, msg: `Binance rate-limit cooldown active until ${unlockTime}. Using WebSocket streams.` },
+      base: BINANCE_REST_BASES[0]
+    };
+  }
   let lastRes = null;
   let lastData = null;
   for (const base of BINANCE_REST_BASES) {
@@ -66,6 +76,11 @@ async function binanceSignedFetch(pathAndQuery, options = {}) {
       lastRes = res;
       lastData = data;
       const msg = String(data?.msg || '');
+      if (res.status === 429 || res.status === 418 || data?.code === -1003) {
+        const banMatch = msg.match(/until\s+(\d{13})/);
+        binanceIpBanUntilMs = banMatch ? Number(banMatch[1]) : Date.now() + 120000;
+        return { res, data, base };
+      }
       if (res.status === 451 || msg.toLowerCase().includes('restricted location')) {
         continue;
       }
@@ -79,8 +94,11 @@ async function binanceSignedFetch(pathAndQuery, options = {}) {
 async function getBinanceSymbolPrecisionRules(rawSymbol) {
   const clean = String(rawSymbol || '').toUpperCase();
   if (binanceSymbolRulesCache[clean]) return binanceSymbolRulesCache[clean];
+  if (Date.now() < binanceIpBanUntilMs) {
+    return { stepSize: 0.00001, minQty: 0.00001, minNotional: 10, quotePrecision: 2 };
+  }
   try {
-    const res = await fetch(`https://api.binance.com/api/v3/exchangeInfo?symbol=${clean}`);
+    const res = await fetch(`https://data-api.binance.vision/api/v3/exchangeInfo?symbol=${clean}`);
     if (res.ok) {
       const data = await res.json();
       const symInfo = (data.symbols || [])[0];
@@ -144,14 +162,14 @@ function computeLiveRsiAndVolatility(rawSym) {
   const volatilityPct = minP > 0 ? +(((maxP - minP) / minP) * 100).toFixed(2) : 0.8;
   return { rsi, volatilityPct };
 }
-
-// Fetch live Spot price for any listed symbol on Binance
+// Fetch live Spot price for any listed symbol on Binance (WebSocket-first, 0 REST weight)
 async function getOrFetchLiveSymbolPrice(rawSym) {
   if (liveMarketPrices[rawSym] && liveMarketPrices[rawSym] > 0) {
     return liveMarketPrices[rawSym];
   }
+  if (Date.now() < binanceIpBanUntilMs) return 0;
   try {
-    const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${rawSym}`);
+    const res = await fetch(`https://data-api.binance.vision/api/v3/ticker/price?symbol=${rawSym}`);
     if (res.ok) {
       const data = await res.json();
       if (data && data.price) {
@@ -867,22 +885,22 @@ app.get('/api/v1/health', async (req, res) => {
   }
 });
 
-// Live 400+ USDT Spot Tickers Proxy
+// Live 400+ USDT Spot Tickers Endpoint (Served 100% from WebSocket memory — 0 REST weight)
 let cachedAllUsdtTickers = [];
 let cachedTickersUpdatedAt = 0;
 
 app.get('/api/v1/market/tickers', async (req, res) => {
   try {
-    if (cachedAllUsdtTickers.length > 50 && Date.now() - cachedTickersUpdatedAt < 5000) {
+    const wsList = Object.values(liveMarketTickers24h);
+    if (wsList.length > 40) {
+      return res.json(wsList);
+    }
+    if (cachedAllUsdtTickers.length > 50 && Date.now() - cachedTickersUpdatedAt < 60000) {
       return res.json(cachedAllUsdtTickers);
     }
-    const endpoints = [
-      'https://api.binance.com/api/v3/ticker/24hr',
-      'https://data-api.binance.vision/api/v3/ticker/24hr'
-    ];
-    for (const url of endpoints) {
+    if (Date.now() >= binanceIpBanUntilMs) {
       try {
-        const bRes = await fetch(url);
+        const bRes = await fetch('https://data-api.binance.vision/api/v3/ticker/24hr');
         if (bRes.ok) {
           const all = await bRes.json();
           if (Array.isArray(all) && all.length > 50) {
@@ -898,32 +916,85 @@ app.get('/api/v1/market/tickers', async (req, res) => {
     res.status(500).json([]);
   }
 });
+// Live Binance WebSocket Ticker Stream for All USDT Spot Pairs (Zero REST Weight)
+function startBinanceAllMarketStream() {
+  const wsUrls = [
+    'wss://data-stream.binance.vision/ws/!ticker@arr',
+    'wss://stream.binance.com:9443/ws/!ticker@arr'
+  ];
+  let wsIdx = 0;
 
-// Live Outbound IP Group Endpoint for Binance IP Restriction
+  const connectStream = () => {
+    try {
+      const ws = new WebSocket(wsUrls[wsIdx % wsUrls.length]);
+      ws.on('message', raw => {
+        try {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) {
+            for (let i = 0; i < arr.length; i++) {
+              const item = arr[i];
+              if (item && item.s && item.s.endsWith('USDT') && item.c) {
+                const sym = item.s;
+                const price = parseFloat(item.c);
+                liveMarketPrices[sym] = price;
+                liveMarketTickers24h[sym] = {
+                  symbol: sym,
+                  lastPrice: item.c,
+                  priceChangePercent: item.P || '0',
+                  quoteVolume: item.q || '0'
+                };
+                if (!priceRollingHistory[sym]) priceRollingHistory[sym] = [];
+                priceRollingHistory[sym].push(price);
+                if (priceRollingHistory[sym].length > 15) priceRollingHistory[sym].shift();
+              }
+            }
+          }
+        } catch (e) {}
+      });
+      ws.on('error', () => {});
+      ws.on('close', () => {
+        wsIdx += 1;
+        setTimeout(connectStream, 5000);
+      });
+    } catch (e) {
+      wsIdx += 1;
+      setTimeout(connectStream, 5000);
+    }
+  };
+  connectStream();
+}
+
+// Live Server Outbound IP Group Endpoint for Exchange API IP Whitelisting
 app.get('/api/v1/exchange/whitelist-ips', async (req, res) => {
-  const liveIp = await detectOutboundServerIp();
-  res.json({
-    success: true,
-    primaryServerIp: liveIp || '',
-    ipList: liveIp ? [liveIp] : [],
-    ipGroupString: liveIp || 'Server IP unavailable — check Render outbound network'
-  });
+  try {
+    const ip = await detectOutboundServerIp();
+    res.json({
+      success: true,
+      ips: ip ? [ip] : [],
+      ipGroupString: ip || 'Detecting server IP...'
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
-// Real Verified Leader Ranking Endpoint
+// Verified Leader Ranking Endpoint
 app.get('/api/v1/leaderboard', async (req, res) => {
   try {
     const q = await pool.query(`
-      SELECT u.uid,
-             CONCAT(LEFT(u.email, 3), '***@', SPLIT_PART(u.email, '@', 2)) AS masked_email,
-             u.rank_level,
+      SELECT u.uid, u.email, u.rank_level,
              (SELECT COUNT(*)::int FROM users d WHERE d.sponsor_uid = u.uid) AS direct_count
       FROM users u
       WHERE u.is_activated = TRUE OR u.is_owner_exempt = TRUE
-      ORDER BY u.rank_level DESC, direct_count DESC, u.created_at ASC
+      ORDER BY u.rank_level DESC, direct_count DESC
       LIMIT 20
     `);
-    res.json({ success: true, leaders: q.rows });
+    const leaders = q.rows.map(r => {
+      const parts = String(r.email || 'user@bharatq.io').split('@');
+      const masked = parts[0].slice(0, 3) + '***@' + (parts[1] || 'gmail.com');
+      return { uid: r.uid, masked_email: masked, rank_level: r.rank_level, direct_count: r.direct_count };
+    });
+    res.json({ success: true, leaders });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
