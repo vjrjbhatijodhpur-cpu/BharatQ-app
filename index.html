@@ -31,7 +31,7 @@
     async function executeBinanceOrderViaIndianClient(relayOrder) {
       let serverTime = Date.now();
       try {
-        const tRes = await fetch('https://api.binance.com/api/v3/time');
+        const tRes = await fetch('https://data-api.binance.vision/api/v3/time');
         if (tRes.ok) {
           const tData = await tRes.json();
           if (tData.serverTime) serverTime = tData.serverTime;
@@ -286,7 +286,7 @@
       <!-- Hidden Server Endpoint Drawer (Accessible via Top-Right Gear Icon Only) -->
       <div id="advancedCloudDrawer" class="hidden pt-3 border-t border-bqBorder space-y-2 text-xs">
         <span class="text-[11px] font-bold text-slate-400 block">Backend Connection Settings</span>
-        <input id="gateBackendUrlInput" type="text" value="https://bharatq-backend-api.onrender.com" oninput="syncBackendUrlFromAuth(this.value)" placeholder="Backend API URL" class="w-full bg-bqCard border border-bqBorder rounded-xl px-3 py-2 text-[11px] font-mono text-bqGold">
+        <input id="gateBackendUrlInput" type="text" value="https://bharatq-backend-sg.onrender.com" oninput="syncBackendUrlFromAuth(this.value)" placeholder="Backend API URL" class="w-full bg-bqCard border border-bqBorder rounded-xl px-3 py-2 text-[11px] font-mono text-bqGold">
         <input id="cfgSupabaseUrl" type="hidden" value="https://dthsnlfybujksgmihakt.supabase.co">
         <input id="cfgSupabaseAnonKey" type="hidden" value="sb_publishable_bGJvNp4teGIt3rBSaEPPMg_aln2JwGK">
       </div>
@@ -1342,10 +1342,10 @@
 
       <div class="flex gap-2">
         <button onclick="closeModal('vipActivationGateModal'); openDepositModal();" class="flex-1 py-3 rounded-2xl bg-bqBg border border-bqGold/50 text-bqGold font-black text-xs">
-          1. Recharge USDT
+1. Recharge USDT
         </button>
         <button onclick="confirmActivateFromModal()" class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-bqGold to-bqSaffron text-black font-black text-xs shadow-lg">
-          2. Activate ($120)
+2. Activate ($120)
         </button>
       </div>
     </div>
@@ -1583,7 +1583,7 @@
       selectedPair: 'BTC/USDT',
       gateMode: 'otp',
       isAuthenticated: Boolean(localStorage.getItem('bq_jwt')),
-      backendUrl: localStorage.getItem('bq_backend_url') || 'https://bharatq-backend-api.onrender.com',
+      backendUrl: localStorage.getItem('bq_backend_url') || 'https://bharatq-backend-sg.onrender.com',
       supabaseUrl: localStorage.getItem('bq_supabase_url') || DEFAULT_SUPABASE_URL,
       supabaseAnonKey: localStorage.getItem('bq_supabase_anon_key') || DEFAULT_SUPABASE_ANON_KEY,
       jwtToken: localStorage.getItem('bq_jwt') || null,
@@ -2377,8 +2377,8 @@
         if (data.success) {
           state.boundExchanges[exchangeName] = {
             boundAt: Date.now(),
-            apiKey: cleanKey,
-            apiSecret: cleanSecret,
+            apiKey: apiKey,
+            apiSecret: apiSecret,
             maskedKey: apiKey.slice(0, 6) + '••••••',
             spotUsdtNum: data.spotUsdtBalance,
             spotUsdt: data.spotUsdtBalance !== null ? `$${Number(data.spotUsdtBalance).toFixed(2)}` : 'Verified'
@@ -3472,6 +3472,8 @@
               const prev = state.boundExchanges[b.exchange_name] || {};
               freshBound[b.exchange_name] = {
                 boundAt: Date.now(),
+                apiKey: prev.apiKey || '',
+                apiSecret: prev.apiSecret || '',
                 maskedKey: (b.api_key || '').slice(0, 6) + '••••••',
                 spotUsdtNum: prev.spotUsdtNum ?? null,
                 spotUsdt: prev.spotUsdt || 'Verified'
@@ -3624,10 +3626,45 @@
 
     const EXCLUDED_LEVERAGED_SUFFIXES = ['UPUSDT', 'DOWNUSDT', 'BEARUSDT', 'BULLUSDT', 'USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'BUSDUSDT', 'USDPUSDT', 'EURUSDT', 'TRYUSDT', 'BRLUSDT', 'ARSUSDT', 'AEURUSDT', 'EURIUSDT'];
 
+    function startZeroWeightBinanceWebSocket() {
+      try {
+        const ws = new WebSocket('wss://data-stream.binance.vision/ws/!ticker@arr');
+        ws.onmessage = (ev) => {
+          try {
+            const arr = JSON.parse(ev.data);
+            if (!Array.isArray(arr)) return;
+            let added = false;
+            for (const item of arr) {
+              const sym = item.s || '';
+              if (!sym.endsWith('USDT') || EXCLUDED_LEVERAGED_SUFFIXES.includes(sym) || sym.endsWith('UPUSDT') || sym.endsWith('DOWNUSDT')) continue;
+              const lastP = parseFloat(item.c);
+              const chg = parseFloat(item.P || '0');
+              const qVol = parseFloat(item.q || '0');
+              if (lastP <= 0) continue;
+              if (state.pairMap[sym]) {
+                state.pairMap[sym].price = lastP;
+                state.pairMap[sym].change = chg;
+                state.pairMap[sym].quoteVolume = qVol;
+              } else if (qVol > 50000) {
+                const newObj = buildDefaultPairObject(sym, lastP, chg, qVol);
+                state.pairMap[sym] = newObj;
+                state.pairs.push(newObj);
+                added = true;
+              }
+            }
+            if (added) {
+              state.pairs.sort((a, b) => (b.quoteVolume || 0) - (a.quoteVolume || 0));
+            }
+            renderPairs();
+          } catch (e) {}
+        };
+        ws.onclose = () => setTimeout(startZeroWeightBinanceWebSocket, 5000);
+      } catch (e) {}
+    }
+
     async function fetchAllExchangeCoinsLive() {
       const feedUrls = [
         'https://data-api.binance.vision/api/v3/ticker/24hr',
-        'https://api.binance.com/api/v3/ticker/24hr',
         `${state.backendUrl}/api/v1/market/tickers`
       ];
 
@@ -3683,6 +3720,9 @@
         switchGateTab('register');
       }
 
+      const gateUrlInp = document.getElementById('gateBackendUrlInput');
+      if (gateUrlInp) gateUrlInp.value = state.backendUrl;
+
       const sb = getSupabaseClient();
       if (sb) {
         sb.auth.onAuthStateChange(async (event, session) => {
@@ -3720,8 +3760,8 @@
         syncLiveUserProfile();
       }
 
-      fetchAllExchangeCoinsLive();
-      setInterval(fetchAllExchangeCoinsLive, 8000);
+      await fetchAllExchangeCoinsLive();
+      startZeroWeightBinanceWebSocket();
     });
   </script>
 </body>
