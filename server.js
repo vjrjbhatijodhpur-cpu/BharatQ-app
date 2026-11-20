@@ -1498,20 +1498,55 @@ app.post('/api/v1/bot/strategy', requireAuth, async (req, res) => {
     const existingRow = existingRes.rows[0];
     const hasOpenPosition = existingRow && Number(existingRow.total_position_usdt) > 0 && Number(existingRow.total_base_qty) > 0;
 
-    let initialPosUsdt = hasOpenPosition ? Number(existingRow.total_position_usdt) : effectiveFirstBuy;
-    let initialBaseQty = hasOpenPosition ? Number(existingRow.total_base_qty) : (effectiveFirstBuy / curPrice);
-    let initialEntryPrice = hasOpenPosition ? Number(existingRow.avg_entry_price) : curPrice;
+    let initialPosUsdt = hasOpenPosition ? Number(existingRow.total_position_usdt) : 0;
+    let initialBaseQty = hasOpenPosition ? Number(existingRow.total_base_qty) : 0;
+    let initialEntryPrice = hasOpenPosition ? Number(existingRow.avg_entry_price) : 0;
 
-    if (desiredStatus === 'CYCLING' && !hasOpenPosition) {
-      const firstOrder = await executeBinanceSpotOrder(req.user.uid, rawSym, 'BUY', effectiveFirstBuy);
-      if (firstOrder.executedOnExchange) {
-        if (firstOrder.filledQuoteUsdt && firstOrder.filledQuoteUsdt > 0) {
-          initialPosUsdt = firstOrder.filledQuoteUsdt;
+    if (desiredStatus === 'CYCLING') {
+      const boundKeyRes = await pool.query(
+        "SELECT api_key, encrypted_secret, iv_hex, auth_tag_hex FROM exchange_api_keys WHERE uid = $1 AND exchange_name = 'BINANCE' AND is_valid = TRUE LIMIT 1",
+        [req.user.uid]
+      );
+      if (!boundKeyRes.rows.length) {
+        return res.status(400).json({
+          success: false,
+          error: 'No valid Binance Spot API key bound. Bind your Binance API first.'
+        });
+      }
+
+      // Always verify live Binance Spot USDT balance first so $0 accounts can NEVER fake "Cycling"
+      const kRow = boundKeyRes.rows[0];
+      const plainSecret = decryptApiSecret(kRow.encrypted_secret, kRow.iv_hex, kRow.auth_tag_hex);
+      const liveAccountCheck = await verifyExchangeCredentialsLive('BINANCE', kRow.api_key, plainSecret);
+      if (!liveAccountCheck.valid) {
+        return res.status(400).json({
+          success: false,
+          error: liveAccountCheck.error || 'Binance API verification failed.'
+        });
+      }
+
+      const liveSpotUsdt = Number(liveAccountCheck.spotUsdtBalance || 0);
+      if (!hasOpenPosition && liveSpotUsdt < effectiveFirstBuy) {
+        return res.status(400).json({
+          success: false,
+          spotUsdtBalance: liveSpotUsdt,
+          error: `Insufficient Binance Spot Balance ($${liveSpotUsdt.toFixed(2)} USDT available, $${effectiveFirstBuy.toFixed(2)} USDT required). Add USDT to your Binance Spot Wallet first.`
+        });
+      }
+
+      if (!hasOpenPosition) {
+        const firstOrder = await executeBinanceSpotOrder(req.user.uid, rawSym, 'BUY', effectiveFirstBuy);
+        if (!firstOrder.executedOnExchange) {
+          const binanceReason = firstOrder.details?.msg || firstOrder.error || firstOrder.friendlyError || 'Exchange rejected initial Spot BUY order';
+          return res.status(400).json({
+            success: false,
+            spotUsdtBalance: liveSpotUsdt,
+            error: `Binance Spot Order Failed: ${binanceReason} (Spot Balance: $${liveSpotUsdt.toFixed(2)} USDT).`
+          });
         }
-        if (firstOrder.filledBaseQty && firstOrder.filledBaseQty > 0) {
-          initialBaseQty = firstOrder.filledBaseQty;
-          initialEntryPrice = initialPosUsdt / initialBaseQty;
-        }
+        initialPosUsdt = firstOrder.filledQuoteUsdt && firstOrder.filledQuoteUsdt > 0 ? firstOrder.filledQuoteUsdt : effectiveFirstBuy;
+        initialBaseQty = firstOrder.filledBaseQty && firstOrder.filledBaseQty > 0 ? firstOrder.filledBaseQty : (initialPosUsdt / curPrice);
+        initialEntryPrice = initialPosUsdt / initialBaseQty;
       }
     }
 
@@ -2014,34 +2049,6 @@ app.post('/api/v1/wallet/transfer', requireAuth, async (req, res) => {
     client.release();
   }
 });
-
-// Live Binance WebSocket Ticker Stream for All USDT Spot Pairs
-function startBinanceAllMarketStream() {
-  const wsUrl = 'wss://stream.binance.com:9443/ws/!ticker@arr';
-  try {
-    const ws = new WebSocket(wsUrl);
-    ws.on('message', raw => {
-      try {
-        const arr = JSON.parse(raw);
-        if (Array.isArray(arr)) {
-          for (let i = 0; i < arr.length; i++) {
-            const item = arr[i];
-            if (item && item.s && item.s.endsWith('USDT') && item.c) {
-              const sym = item.s;
-              const price = parseFloat(item.c);
-              liveMarketPrices[sym] = price;
-              if (!priceRollingHistory[sym]) priceRollingHistory[sym] = [];
-              priceRollingHistory[sym].push(price);
-              if (priceRollingHistory[sym].length > 15) priceRollingHistory[sym].shift();
-            }
-          }
-        }
-      } catch (e) {}
-    });
-    ws.on('error', () => {});
-    ws.on('close', () => setTimeout(startBinanceAllMarketStream, 5000));
-  } catch (e) {}
-}
 
 // 24/7 Cloud Quantitative DCA Engine (Strictly Runs Only for $120 VIP Active Users with >= $20 Fuel Gas & V6 Owner)
 async function evaluateActiveDcaBots() {
