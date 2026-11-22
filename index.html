@@ -1042,7 +1042,7 @@
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
         <div>
           <h3 class="text-sm font-black text-white">Buy / Replenish <span id="buyModalSymbol" class="text-bqEmerald">BTC/USDT</span></h3>
-          <span class="text-[10px] text-slate-400">Real Binance Spot Market Order</span>
+          <span class="text-[10px] text-slate-400">Spot Market Order</span>
         </div>
         <button onclick="closeModal('manualBuyConfirmModal')" class="w-7 h-7 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
       </div>
@@ -1078,7 +1078,7 @@
       </div>
 
       <button id="btnConfirmManualBuy" onclick="executeConfirmedManualBuy()" class="w-full py-3 rounded-2xl bg-bqEmerald text-black font-black text-xs shadow-lg">
-        Confirm Real Spot Buy
+        Confirm Spot Buy
       </button>
     </div>
   </div>
@@ -1089,7 +1089,7 @@
       <div class="flex justify-between items-center pb-2 border-b border-bqBorder">
         <div>
           <h3 class="text-sm font-black text-white">Sell / Clearance <span id="sellModalSymbol" class="text-bqRose">BTC/USDT</span></h3>
-          <span class="text-[10px] text-slate-400">Real Binance Spot Market Liquidation</span>
+          <span class="text-[10px] text-slate-400">Spot Market Liquidation</span>
         </div>
         <button onclick="closeModal('manualSellConfirmModal')" class="w-7 h-7 rounded-full bg-bqBg text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
       </div>
@@ -1114,7 +1114,7 @@
       </div>
 
       <p class="text-[11px] text-slate-400 leading-relaxed">
-        Confirming will immediately sell 100% of your held <b id="sellModalBaseName" class="text-white">BTC</b> on Binance Spot at market price and set the bot to <b>Paused</b>.
+        Confirming will immediately sell 100% of your held <b id="sellModalBaseName" class="text-white">BTC</b> at market price and set the bot to <b>Paused</b>.
       </p>
 
       <div class="flex gap-2">
@@ -2566,39 +2566,76 @@
         const up = p.change >= 0;
         const badgeText = p.base.length > 5 ? p.base.slice(0, 5) : p.base;
         const modeShort = p.strategyMode === 'SUB_BIN_REALTIME' ? 'Sub-Bin RT' : (p.strategyMode === 'SUB_BIN' ? 'Sub-Bin' : 'Whole');
+        const cycleLabel = p.cycleType === 'ONE_SHOT' ? 'One-Shot' : 'Cycle';
         const statusBadgeLabel = !isUserVipActive ? 'Unactivated' : (!hasMinFuelGas ? 'Low Fuel (<$20)' : (isStarting ? 'Starting...' : (isRunning ? (isDemo ? 'Demo Cycling' : 'Cycling') : 'Paused')));
         const actionBtnLabel = !isUserVipActive
           ? '<i class="fa-solid fa-lock text-[9px] mr-1"></i>Activate'
           : (!hasMinFuelGas ? '<i class="fa-solid fa-gas-pump text-[9px] mr-1"></i>Add Gas' : (isStarting ? 'Starting...' : (isRunning ? 'Stop' : 'Start')));
-        return `
-          <div class="native-card p-3 flex items-center justify-between gap-2">
-            <div onclick="openStrategyModal('${p.symbol}')" class="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer">
-              <div class="w-9 h-9 rounded-full bg-bqCardLight border border-bqBorder flex items-center justify-center font-black text-[10px] text-bqGold shrink-0">
-                ${badgeText}
-              </div>
-              <div class="min-w-0">
-                <div class="flex items-center gap-1.5">
-                  <span class="font-bold text-white text-xs truncate">${p.symbol}</span>
-                  <span class="text-[9px] px-1.5 py-0.2 rounded ${!canRunBot ? 'bg-bqRose/20 text-bqRose' : (isRunning ? 'bg-bqEmerald/20 text-bqEmerald' : (isStarting ? 'bg-bqGold/20 text-bqGold' : 'bg-slate-800 text-slate-400'))} font-semibold">
-                    ${statusBadgeLabel}
-                  </span>
-                </div>
-                <div class="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5 font-mono">
-                  <span>${priceDisplay}</span>
-                  <span class="${up ? 'text-bqEmerald' : 'text-bqRose'} font-bold">${up ? '+' : ''}${p.change.toFixed(2)}%</span>
-                  <span>• ${modeShort}</span>
-                </div>
-              </div>
-            </div>
 
-            <div class="flex items-center gap-1.5 shrink-0">
-              <button onclick="openStrategyModal('${p.symbol}')" class="px-2.5 py-1.5 rounded-xl bg-bqBg border border-bqBorder text-slate-300 text-[11px] font-semibold">
-                Settings
-              </button>
-              <button ${isStarting ? 'disabled' : ''} onclick="toggleBotStatus('${p.symbol}')" class="px-3 py-1.5 rounded-xl text-[11px] font-bold ${!canRunBot ? 'bg-slate-800 text-slate-400 border border-bqBorder' : (isStarting ? 'bg-bqGold/40 text-black' : (isRunning ? 'bg-bqRose/20 text-bqRose' : 'bg-bqGold text-black'))}">
-                ${actionBtnLabel}
-              </button>
+        // Real-time Royal Q Position & Floating P&L Calculation (Shown ONLY on active started trades)
+        const posUsdt = Number(p.positionUsdt || 0);
+        const baseQty = Number(p.baseQty || 0);
+        const avgEntry = Number(p.avgEntryPrice || 0);
+        const livePrice = Number(p.price || 0);
+        const hasPosition = posUsdt > 0 && baseQty > 0 && avgEntry > 0;
+        const currentValUsdt = hasPosition && livePrice > 0 ? (baseQty * livePrice) : posUsdt;
+        const floatingPnlUsdt = hasPosition && livePrice > 0 ? (currentValUsdt - posUsdt) : 0;
+        const floatingPnlPct = hasPosition && avgEntry > 0 && livePrice > 0 ? (((livePrice - avgEntry) / avgEntry) * 100) : 0;
+        const targetTpPrice = hasPosition ? (avgEntry * (1 + (Number(p.tp || 1.3) / 100))) : 0;
+        const pnlPositive = floatingPnlUsdt >= 0;
+
+        const royalQPositionStrip = isRunning ? `
+          <div class="mt-2.5 pt-2.5 border-t border-bqBorder/70 grid grid-cols-3 gap-2 text-[10px] font-mono">
+            <div class="bg-bqBg/80 rounded-xl px-2 py-1.5">
+              <span class="text-slate-400 font-sans block">Position / Qty</span>
+              <b class="text-white block">$${posUsdt.toFixed(2)} USDT</b>
+              <span class="text-[9px] text-slate-400 block truncate">${baseQty > 0 ? baseQty.toFixed(4) + ' ' + p.base : 'Waiting buy...'}</span>
             </div>
+            <div class="bg-bqBg/80 rounded-xl px-2 py-1.5">
+              <span class="text-slate-400 font-sans block">Avg Price / Calls</span>
+              <b class="text-bqGold block">${avgEntry > 0 ? formatLiveTokenPrice(avgEntry) : '--'}</b>
+              <span class="text-[9px] text-cyan-300 block">Calls: ${p.calls || 0} / ${p.maxCalls || 7} • ${cycleLabel}</span>
+            </div>
+            <div class="bg-bqBg/80 rounded-xl px-2 py-1.5 text-right">
+              <span class="text-slate-400 font-sans block">Floating P&amp;L</span>
+              <b class="${pnlPositive ? 'text-bqEmerald' : 'text-bqRose'} block">${pnlPositive ? '+' : ''}$${floatingPnlUsdt.toFixed(2)}</b>
+              <span class="text-[9px] font-bold ${pnlPositive ? 'text-bqEmerald' : 'text-bqRose'} block">${pnlPositive ? '+' : ''}${floatingPnlPct.toFixed(2)}%${targetTpPrice > 0 ? ' (TP ' + formatLiveTokenPrice(targetTpPrice) + ')' : ''}</span>
+            </div>
+          </div>
+        ` : '';
+
+        return `
+          <div class="native-card p-3">
+            <div class="flex items-center justify-between gap-2">
+              <div onclick="openStrategyModal('${p.symbol}')" class="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer">
+                <div class="w-9 h-9 rounded-full bg-bqCardLight border border-bqBorder flex items-center justify-center font-black text-[10px] text-bqGold shrink-0">
+                  ${badgeText}
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-white text-xs truncate">${p.symbol}</span>
+                    <span class="text-[9px] px-1.5 py-0.2 rounded ${!canRunBot ? 'bg-bqRose/20 text-bqRose' : (isRunning ? 'bg-bqEmerald/20 text-bqEmerald' : (isStarting ? 'bg-bqGold/20 text-bqGold' : 'bg-slate-800 text-slate-400'))} font-semibold">
+                      ${statusBadgeLabel}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5 font-mono">
+                    <span>${priceDisplay}</span>
+                    <span class="${up ? 'text-bqEmerald' : 'text-bqRose'} font-bold">${up ? '+' : ''}${p.change.toFixed(2)}%</span>
+                    <span>• ${modeShort}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="openStrategyModal('${p.symbol}')" class="px-2.5 py-1.5 rounded-xl bg-bqBg border border-bqBorder text-slate-300 text-[11px] font-semibold">
+                  Settings
+                </button>
+                <button ${isStarting ? 'disabled' : ''} onclick="toggleBotStatus('${p.symbol}')" class="px-3 py-1.5 rounded-xl text-[11px] font-bold ${!canRunBot ? 'bg-slate-800 text-slate-400 border border-bqBorder' : (isStarting ? 'bg-bqGold/40 text-black' : (isRunning ? 'bg-bqRose/20 text-bqRose' : 'bg-bqGold text-black'))}">
+                  ${actionBtnLabel}
+                </button>
+              </div>
+            </div>
+            ${royalQPositionStrip}
           </div>
         `;
       };
@@ -2707,7 +2744,7 @@
       if (!state.jwtToken || !p) return false;
       const desiredStatus = targetStatusOverride || (p.status === 'Cycling' ? 'CYCLING' : 'PAUSED');
       try {
-        const res = await fetch(`${state.backendUrl}/api/v1/bot/strategy`, {
+        const res = await fetchWithColdStartRetry(`${state.backendUrl}/api/v1/bot/strategy`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -2729,7 +2766,8 @@
             aiRsiFilter: document.getElementById('cfgAiRsiFilter')?.checked !== false,
             aiDynamicTp: document.getElementById('cfgAiDynamicTp')?.checked !== false,
             autoCompound: document.getElementById('cfgAutoCompound')?.checked !== false,
-            layerSchedule: p.layerSchedule || []
+            layerSchedule: p.layerSchedule || [],
+            clientLivePrice: Number(p.price || 0)
           })
         });
         const data = await res.json();
@@ -2758,11 +2796,15 @@
         if (!data.success) {
           p.status = 'Paused';
           renderPairs();
-          showToast(data.error || 'Exchange rejected bot start — check Binance Spot USDT balance', 'rose');
+          showToast(data.error || 'Exchange rejected bot start — check Spot USDT balance', 'rose');
           if (data.error && data.error.includes('Fuel Gas')) openDepositModal();
           return false;
         }
         p.status = desiredStatus === 'CYCLING' ? 'Cycling' : 'Paused';
+        if (data.positionUsdt !== undefined) p.positionUsdt = Number(data.positionUsdt || 0);
+        if (data.baseQty !== undefined) p.baseQty = Number(data.baseQty || 0);
+        if (data.avgEntryPrice !== undefined) p.avgEntryPrice = Number(data.avgEntryPrice || 0);
+        if (data.calls !== undefined) p.calls = Number(data.calls || 0);
         renderPairs();
         return true;
       } catch (e) {
@@ -2926,7 +2968,7 @@
         let res = await fetch(`${state.backendUrl}/api/v1/bot/manual-action`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
-          body: JSON.stringify({ symbol: p.symbol, action: 'MANUAL_REPLENISH', extraUsdt })
+          body: JSON.stringify({ symbol: p.symbol, action: 'MANUAL_REPLENISH', extraUsdt, clientLivePrice: Number(p.price || 0) })
         });
         let data = await res.json();
 
@@ -2941,7 +2983,7 @@
             apiSecret: localCreds.apiSecret
           };
           if (!relayPayload.apiKey || !relayPayload.apiSecret) {
-            if (btn) { btn.disabled = false; btn.innerText = 'Confirm Real Spot Buy'; }
+            if (btn) { btn.disabled = false; btn.innerText = 'Confirm Spot Buy'; }
             showToast('Please re-bind your Binance API Key & Secret once to enable Direct Device Execution', 'rose');
             openApiModal('BINANCE');
             return;
@@ -2957,7 +2999,7 @@
           renderPairs();
           closeModal('manualBuyConfirmModal');
           closeModal('tradeSettingsModal');
-          if (btn) { btn.disabled = false; btn.innerText = 'Confirm Real Spot Buy'; }
+          if (btn) { btn.disabled = false; btn.innerText = 'Confirm Spot Buy'; }
           showToast(`Bought $${filledUsdt.toFixed(2)} USDT of ${p.symbol} on Binance Spot!`, 'emerald');
           fetch(`${state.backendUrl}/api/v1/bot/manual-action`, {
             method: 'POST',
@@ -2967,7 +3009,7 @@
           return;
         }
 
-        if (btn) { btn.disabled = false; btn.innerText = 'Confirm Real Spot Buy'; }
+        if (btn) { btn.disabled = false; btn.innerText = 'Confirm Spot Buy'; }
         if (data.success) {
           p.calls = data.calls || (p.calls + 1);
           p.positionUsdt = Number(data.positionUsdt || (p.positionUsdt + extraUsdt));
@@ -2982,7 +3024,7 @@
           showToast(data.error || 'Order rejected', 'rose');
         }
       } catch (e) {
-        if (btn) { btn.disabled = false; btn.innerText = 'Confirm Real Spot Buy'; }
+        if (btn) { btn.disabled = false; btn.innerText = 'Confirm Spot Buy'; }
         showToast(e.message || 'Unable to execute order', 'rose');
       }
     }
@@ -3034,7 +3076,7 @@
         let res = await fetch(`${state.backendUrl}/api/v1/bot/manual-action`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` },
-          body: JSON.stringify({ symbol: p.symbol, action: 'SELL_ALL' })
+          body: JSON.stringify({ symbol: p.symbol, action: 'SELL_ALL', clientLivePrice: Number(p.price || 0) })
         });
         let data = await res.json();
 
@@ -3210,7 +3252,7 @@
       const btn = document.getElementById('btnToggleDemoMode');
       if (btn) { btn.disabled = true; btn.innerText = enableNext ? 'Activating...' : 'Stopping...'; }
       try {
-        const res = await fetch(`${state.backendUrl}/api/v1/demo/toggle`, {
+        const res = await fetchWithColdStartRetry(`${state.backendUrl}/api/v1/demo/toggle`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3218,6 +3260,12 @@
           },
           body: JSON.stringify({ enable: enableNext })
         });
+        if (!res.ok) {
+          if (btn) btn.disabled = false;
+          updateDemoBannerUI();
+          showToast(`Server error (${res.status}) — make sure latest server.js is deployed on Render`, 'rose');
+          return;
+        }
         const data = await res.json();
         if (btn) btn.disabled = false;
         if (data.success && data.demo) {
@@ -3252,7 +3300,7 @@
       } catch (e) {
         if (btn) btn.disabled = false;
         updateDemoBannerUI();
-        showToast('Unable to reach server', 'rose');
+        showToast('Server waking up — tap Start $10K Test once more', 'rose');
       }
     }
 
@@ -3951,6 +3999,7 @@
         updateUserIdentityUI();
         updateBalances();
         syncLiveUserProfile();
+        setInterval(syncLiveUserProfile, 5000);
       }
 
       fetchAllExchangeCoinsLive();
