@@ -367,6 +367,21 @@
           </div>
         </div>
 
+        <!-- 24-HOUR $10,000 FREE PAPER-TRADING SANDBOX BANNER -->
+        <div id="demoSandboxBanner" class="native-card p-3.5 border border-cyan-500/40 bg-gradient-to-r from-[#0B1936] to-[#0E2438] flex items-center justify-between gap-2.5">
+          <div class="space-y-0.5 min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-cyan-400/20 text-cyan-300 border border-cyan-400/40">24H Free Test</span>
+              <span id="demoTimerLabel" class="text-[10px] font-mono text-slate-300">No Real Funds Needed</span>
+            </div>
+            <b id="demoBalanceHeading" class="text-xs text-white block truncate">Test Bot 24H with $10,000 Virtual USDT</b>
+            <span id="demoProfitSubtext" class="text-[10px] text-slate-400 block truncate">Runs on real live Binance prices &amp; real DCA logic</span>
+          </div>
+          <button type="button" id="btnToggleDemoMode" onclick="toggle24HourDemoSandbox()" class="px-3 py-2 rounded-xl bg-cyan-400 text-black font-black text-[11px] shrink-0 shadow">
+            Start $10K Test
+          </button>
+        </div>
+
         <div class="native-card p-3.5">
           <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
             <button onclick="openApiModal('BINANCE')" class="flex flex-col items-center gap-1.5 group relative">
@@ -580,7 +595,7 @@
             <span class="font-bold text-bqGold"><i class="fa-solid fa-crown mr-1"></i> Real Platform Network Summary (Live DB)</span>
             <span class="text-[10px] text-bqEmerald font-mono">Verified</span>
           </div>
-          <div class="grid grid-cols-3 gap-2 text-center text-11px">
+          <div class="grid grid-cols-3 gap-2 text-center text-[11px]">
             <div class="bg-bqBg p-2 rounded-xl">
               <span class="text-[10px] text-slate-400 block">Total Users</span>
               <b id="ownerRealTotalUsers" class="text-white font-mono">0</b>
@@ -1622,7 +1637,14 @@
       fullDownlineMembers: [],
       teamViewFilter: 'ALL',
       ledgerLogs: [],
-      platformStats: null
+      platformStats: null,
+      demoMode: {
+        active: false,
+        usdtBalance: 0,
+        gasBalance: 0,
+        profitUsdt: 0,
+        expiresAt: null
+      }
     };
 
     state.pairs.forEach(p => { state.pairMap[p.raw] = p; });
@@ -1941,7 +1963,7 @@
       const region = document.getElementById('regRegionSelect')?.value || 'IN';
       const email = (document.getElementById('regEmailInput')?.value || '').trim().toLowerCase();
       const otpCode = (document.getElementById('regOtpCodeInput')?.value || '').trim();
-      const password = document.getElementById('regPasswordInput')?.value || '';
+      const password = (document.getElementById('regPasswordInput')?.value || '').trim();
       const sponsorCode = (document.getElementById('regSponsorInput')?.value || 'BHARAT1').trim().toUpperCase();
       const mobileNumber = (document.getElementById('regMobileInput')?.value || '').trim();
       const agreed = document.getElementById('regTermsCheckbox')?.checked;
@@ -2534,8 +2556,9 @@
       }
 
       const buildRow = (p) => {
-        const isUserVipActive = Boolean(state.user.isOwnerFree || state.user.isActivated);
-        const hasMinFuelGas = Boolean(state.user.isOwnerFree || Number(state.user.fuelBalance || 0) >= 20);
+        const isDemo = Boolean(state.demoMode?.active);
+        const isUserVipActive = Boolean(isDemo || state.user.isOwnerFree || state.user.isActivated);
+        const hasMinFuelGas = Boolean(isDemo || state.user.isOwnerFree || Number(state.user.fuelBalance || 0) >= 20);
         const canRunBot = isUserVipActive && hasMinFuelGas;
         const isStarting = canRunBot && p.status === 'Starting';
         const isRunning = canRunBot && p.status === 'Cycling';
@@ -2543,7 +2566,7 @@
         const up = p.change >= 0;
         const badgeText = p.base.length > 5 ? p.base.slice(0, 5) : p.base;
         const modeShort = p.strategyMode === 'SUB_BIN_REALTIME' ? 'Sub-Bin RT' : (p.strategyMode === 'SUB_BIN' ? 'Sub-Bin' : 'Whole');
-        const statusBadgeLabel = !isUserVipActive ? 'Unactivated' : (!hasMinFuelGas ? 'Low Fuel (<$20)' : (isStarting ? 'Starting...' : (isRunning ? 'Cycling' : 'Paused')));
+        const statusBadgeLabel = !isUserVipActive ? 'Unactivated' : (!hasMinFuelGas ? 'Low Fuel (<$20)' : (isStarting ? 'Starting...' : (isRunning ? (isDemo ? 'Demo Cycling' : 'Cycling') : 'Paused')));
         const actionBtnLabel = !isUserVipActive
           ? '<i class="fa-solid fa-lock text-[9px] mr-1"></i>Activate'
           : (!hasMinFuelGas ? '<i class="fa-solid fa-gas-pump text-[9px] mr-1"></i>Add Gas' : (isStarting ? 'Starting...' : (isRunning ? 'Stop' : 'Start')));
@@ -2710,6 +2733,28 @@
           })
         });
         const data = await res.json();
+
+        // Direct Device Relay fallback if shared server IP is in Binance rate-limit cooldown
+        if (!data.success && data.requiresClientRelay && data.relayOrder) {
+          const localCreds = getLocalBinanceRelayCredentials();
+          const relayPayload = {
+            ...data.relayOrder,
+            apiKey: data.relayOrder.apiKey || localCreds.apiKey,
+            apiSecret: data.relayOrder.apiSecret || localCreds.apiSecret
+          };
+          if (relayPayload.apiKey && relayPayload.apiSecret) {
+            const directFill = await executeBinanceOrderViaIndianClient(relayPayload);
+            const filledUsdt = directFill.filledQuoteUsdt || Number(p.firstBuy || 20);
+            const filledQty = directFill.filledBaseQty || (p.price > 0 ? filledUsdt / p.price : 0);
+            p.status = 'Cycling';
+            p.positionUsdt = filledUsdt;
+            p.baseQty = filledQty;
+            p.avgEntryPrice = filledQty > 0 ? filledUsdt / filledQty : p.price;
+            renderPairs();
+            return true;
+          }
+        }
+
         if (!data.success) {
           p.status = 'Paused';
           renderPairs();
@@ -2729,11 +2774,12 @@
     }
 
     function openStrategyModal(sym) {
-      if (!state.user.isOwnerFree && !state.user.isActivated) {
+      const isDemo = Boolean(state.demoMode?.active);
+      if (!isDemo && !state.user.isOwnerFree && !state.user.isActivated) {
         openVipActivationGateModal();
         return;
       }
-      if (!state.user.isOwnerFree && Number(state.user.fuelBalance || 0) < 20) {
+      if (!isDemo && !state.user.isOwnerFree && Number(state.user.fuelBalance || 0) < 20) {
         showToast('Minimum 20.00 USDT Fuel Gas balance required before trading!', 'rose');
         openDepositModal();
         return;
@@ -2840,18 +2886,19 @@
     function openManualBuyModal() {
       const p = state.pairs.find(x => x.symbol === state.selectedPair);
       if (!p) return;
-      if (!state.user.isOwnerFree && !state.user.isActivated) {
+      const isDemo = Boolean(state.demoMode?.active);
+      if (!isDemo && !state.user.isOwnerFree && !state.user.isActivated) {
         closeModal('tradeSettingsModal');
         openVipActivationGateModal();
         return;
       }
-      if (!state.user.isOwnerFree && Number(state.user.fuelBalance || 0) < 20) {
+      if (!isDemo && !state.user.isOwnerFree && Number(state.user.fuelBalance || 0) < 20) {
         closeModal('tradeSettingsModal');
         showToast('Minimum 20.00 USDT Fuel Gas required before trading!', 'rose');
         openDepositModal();
         return;
       }
-      if (Object.keys(state.boundExchanges).length === 0) {
+      if (!isDemo && Object.keys(state.boundExchanges).length === 0) {
         showToast('Bind your Binance Spot API first to place real orders', 'rose');
         openApiModal('BINANCE');
         return;
@@ -2870,11 +2917,11 @@
       if (!p) return;
       const extraUsdt = parseFloat(document.getElementById('manualBuyAmountInput')?.value) || 20;
       if (extraUsdt < 10) {
-        showToast('Minimum Binance Spot order size is 10 USDT', 'rose');
+        showToast('Minimum Spot order size is 10 USDT', 'rose');
         return;
       }
       const btn = document.getElementById('btnConfirmManualBuy');
-      if (btn) { btn.disabled = true; btn.innerText = 'Executing on Binance Spot...'; }
+      if (btn) { btn.disabled = true; btn.innerText = 'Executing Spot Buy...'; }
       try {
         let res = await fetch(`${state.backendUrl}/api/v1/bot/manual-action`, {
           method: 'POST',
@@ -2895,11 +2942,11 @@
           };
           if (!relayPayload.apiKey || !relayPayload.apiSecret) {
             if (btn) { btn.disabled = false; btn.innerText = 'Confirm Real Spot Buy'; }
-            showToast('Please re-bind your Binance API Key & Secret once to enable Direct India Execution', 'rose');
+            showToast('Please re-bind your Binance API Key & Secret once to enable Direct Device Execution', 'rose');
             openApiModal('BINANCE');
             return;
           }
-          if (btn) btn.innerText = 'Executing Direct India Spot Order...';
+          if (btn) btn.innerText = 'Executing Direct Device Spot Order...';
           const directFill = await executeBinanceOrderViaIndianClient(relayPayload);
           const filledUsdt = directFill.filledQuoteUsdt || extraUsdt;
           const filledQty = directFill.filledBaseQty || (p.price > 0 ? filledUsdt / p.price : 0);
@@ -2929,25 +2976,27 @@
           renderPairs();
           closeModal('manualBuyConfirmModal');
           closeModal('tradeSettingsModal');
+          syncLiveUserProfile();
           showToast(data.message || `Bought $${extraUsdt} of ${p.symbol}`, 'emerald');
         } else {
-          showToast(data.error || 'Binance order rejected', 'rose');
+          showToast(data.error || 'Order rejected', 'rose');
         }
       } catch (e) {
         if (btn) { btn.disabled = false; btn.innerText = 'Confirm Real Spot Buy'; }
-        showToast(e.message || 'Unable to execute Binance order', 'rose');
+        showToast(e.message || 'Unable to execute order', 'rose');
       }
     }
 
     function openManualSellModal() {
       const p = state.pairs.find(x => x.symbol === state.selectedPair);
       if (!p) return;
-      if (!state.user.isOwnerFree && !state.user.isActivated) {
+      const isDemo = Boolean(state.demoMode?.active);
+      if (!isDemo && !state.user.isOwnerFree && !state.user.isActivated) {
         closeModal('tradeSettingsModal');
         openVipActivationGateModal();
         return;
       }
-      if (Object.keys(state.boundExchanges).length === 0) {
+      if (!isDemo && Object.keys(state.boundExchanges).length === 0) {
         showToast('Bind your Binance Spot API first to sell positions', 'rose');
         openApiModal('BINANCE');
         return;
@@ -2980,7 +3029,7 @@
       const p = state.pairs.find(x => x.symbol === state.selectedPair);
       if (!p) return;
       const btn = document.getElementById('btnConfirmManualSell');
-      if (btn) { btn.disabled = true; btn.innerText = 'Selling on Binance Spot...'; }
+      if (btn) { btn.disabled = true; btn.innerText = 'Selling Spot Position...'; }
       try {
         let res = await fetch(`${state.backendUrl}/api/v1/bot/manual-action`, {
           method: 'POST',
@@ -3001,11 +3050,11 @@
           };
           if (!relayPayload.apiKey || !relayPayload.apiSecret) {
             if (btn) { btn.disabled = false; btn.innerText = 'Confirm Sell Now'; }
-            showToast('Please re-bind your Binance API Key & Secret once to enable Direct India Execution', 'rose');
+            showToast('Please re-bind your Binance API Key & Secret once to enable Direct Device Execution', 'rose');
             openApiModal('BINANCE');
             return;
           }
-          if (btn) btn.innerText = 'Executing Direct India Spot Sell...';
+          if (btn) btn.innerText = 'Executing Direct Device Spot Sell...';
           const directFill = await executeBinanceOrderViaIndianClient(relayPayload);
           const soldUsdt = directFill.filledQuoteUsdt || (Number(p.baseQty || 0) * Number(p.price || 0));
           p.status = 'Paused';
@@ -3037,23 +3086,24 @@
           closeModal('manualSellConfirmModal');
           closeModal('tradeSettingsModal');
           syncLiveUserProfile();
-          showToast(data.message || `Sold ${p.symbol} on Binance Spot`, 'emerald');
+          showToast(data.message || `Sold ${p.symbol}`, 'emerald');
         } else {
-          showToast(data.error || 'Binance Spot SELL failed', 'rose');
+          showToast(data.error || 'Spot SELL failed', 'rose');
         }
       } catch (e) {
         if (btn) { btn.disabled = false; btn.innerText = 'Confirm Sell Now'; }
-        showToast(e.message || 'Unable to execute Binance sell order', 'rose');
+        showToast(e.message || 'Unable to execute sell order', 'rose');
       }
     }
 
     function saveStrategySettings() {
-      if (!state.user.isOwnerFree && !state.user.isActivated) {
+      const isDemo = Boolean(state.demoMode?.active);
+      if (!isDemo && !state.user.isOwnerFree && !state.user.isActivated) {
         closeModal('tradeSettingsModal');
         openVipActivationGateModal();
         return;
       }
-      if (!state.user.isOwnerFree && Number(state.user.fuelBalance || 0) < 20) {
+      if (!isDemo && !state.user.isOwnerFree && Number(state.user.fuelBalance || 0) < 20) {
         closeModal('tradeSettingsModal');
         showToast('Minimum 20.00 USDT Fuel Gas required before saving strategy!', 'rose');
         openDepositModal();
@@ -3080,16 +3130,17 @@
     async function toggleBotStatus(sym) {
       const p = state.pairs.find(x => x.symbol === sym);
       if (!p) return;
-      if (!state.user.isOwnerFree && !state.user.isActivated) {
+      const isDemo = Boolean(state.demoMode?.active);
+      if (!isDemo && !state.user.isOwnerFree && !state.user.isActivated) {
         openVipActivationGateModal();
         return;
       }
-      if (p.status !== 'Cycling' && !state.user.isOwnerFree && Number(state.user.fuelBalance || 0) < 20) {
+      if (!isDemo && p.status !== 'Cycling' && !state.user.isOwnerFree && Number(state.user.fuelBalance || 0) < 20) {
         showToast('Minimum 20.00 USDT Fuel Gas balance required to start trading!', 'rose');
         openDepositModal();
         return;
       }
-      if (p.status !== 'Cycling' && Object.keys(state.boundExchanges).length === 0) {
+      if (!isDemo && p.status !== 'Cycling' && Object.keys(state.boundExchanges).length === 0) {
         showToast('Please bind your Binance / Exchange API first!', 'rose');
         openApiModal('BINANCE');
         return;
@@ -3101,20 +3152,107 @@
         showToast(`${sym} Paused`, 'emerald');
         return;
       }
-      const binanceBound = state.boundExchanges?.BINANCE;
       const requiredBuy = p.openDoubling ? (Number(p.firstBuy || 20) * 2) : Number(p.firstBuy || 20);
-      if (binanceBound && binanceBound.spotUsdtNum !== null && binanceBound.spotUsdtNum !== undefined && Number(binanceBound.spotUsdtNum) < requiredBuy) {
-        p.status = 'Paused';
-        renderPairs();
-        showToast(`Insufficient Binance Spot USDT ($${Number(binanceBound.spotUsdtNum).toFixed(2)} available, $${requiredBuy.toFixed(2)} needed)`, 'rose');
-        return;
+      if (isDemo) {
+        if (Number(state.demoMode.usdtBalance || 0) < requiredBuy) {
+          showToast(`Insufficient 24H Demo USDT ($${Number(state.demoMode.usdtBalance || 0).toFixed(2)} left)`, 'rose');
+          return;
+        }
+      } else {
+        const binanceBound = state.boundExchanges?.BINANCE;
+        if (binanceBound && binanceBound.spotUsdtNum !== null && binanceBound.spotUsdtNum !== undefined && Number(binanceBound.spotUsdtNum) < requiredBuy) {
+          p.status = 'Paused';
+          renderPairs();
+          showToast(`Insufficient Binance Spot USDT ($${Number(binanceBound.spotUsdtNum).toFixed(2)} available, $${requiredBuy.toFixed(2)} needed)`, 'rose');
+          return;
+        }
       }
       p.status = 'Starting';
       renderPairs();
       const startedOk = await syncBotStrategyToBackend(p, 'CYCLING');
       if (startedOk) {
         syncLiveUserProfile();
-        showToast(`${sym} First Spot Buy Filled — Cycling 24/7!`, 'emerald');
+        showToast(isDemo ? `${sym} 24H Demo Order Filled — Cycling 24/7!` : `${sym} First Spot Buy Filled — Cycling 24/7!`, 'emerald');
+      }
+    }
+
+    function updateDemoBannerUI() {
+      const heading = document.getElementById('demoBalanceHeading');
+      const sub = document.getElementById('demoProfitSubtext');
+      const timerLbl = document.getElementById('demoTimerLabel');
+      const btn = document.getElementById('btnToggleDemoMode');
+      if (!heading || !btn) return;
+
+      if (state.demoMode?.active && state.demoMode?.expiresAt) {
+        const msLeft = Math.max(0, new Date(state.demoMode.expiresAt).getTime() - Date.now());
+        const hrs = Math.floor(msLeft / 3600000);
+        const mins = Math.floor((msLeft % 3600000) / 60000);
+        if (timerLbl) timerLbl.innerText = `ACTIVE • ${hrs}h ${mins}m left`;
+        heading.innerText = `Demo Spot: $${Number(state.demoMode.usdtBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
+        if (sub) sub.innerText = `Demo Fuel: $${Number(state.demoMode.gasBalance || 0).toFixed(2)} • Demo Profit: +$${Number(state.demoMode.profitUsdt || 0).toFixed(2)}`;
+        btn.innerText = 'End Test';
+        btn.className = 'px-3 py-2 rounded-xl bg-bqRose/20 border border-bqRose/50 text-bqRose font-black text-[11px] shrink-0';
+      } else {
+        if (timerLbl) timerLbl.innerText = 'No Real Funds Needed';
+        heading.innerText = 'Test Bot 24H with $10,000 Virtual USDT';
+        if (sub) sub.innerText = 'Runs on real live Binance prices & real DCA logic';
+        btn.innerText = 'Start $10K Test';
+        btn.className = 'px-3 py-2 rounded-xl bg-cyan-400 text-black font-black text-[11px] shrink-0 shadow';
+      }
+    }
+
+    async function toggle24HourDemoSandbox() {
+      if (!state.jwtToken) {
+        showToast('Please log in first to start the 24-Hour $10,000 test', 'rose');
+        return;
+      }
+      const enableNext = !state.demoMode?.active;
+      const btn = document.getElementById('btnToggleDemoMode');
+      if (btn) { btn.disabled = true; btn.innerText = enableNext ? 'Activating...' : 'Stopping...'; }
+      try {
+        const res = await fetch(`${state.backendUrl}/api/v1/demo/toggle`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${state.jwtToken}`
+          },
+          body: JSON.stringify({ enable: enableNext })
+        });
+        const data = await res.json();
+        if (btn) btn.disabled = false;
+        if (data.success && data.demo) {
+          state.demoMode = {
+            active: Boolean(data.demo.demo_mode_active),
+            usdtBalance: Number(data.demo.demo_usdt_balance || 0),
+            gasBalance: Number(data.demo.demo_gas_balance || 0),
+            profitUsdt: Number(data.demo.demo_profit_usdt || 0),
+            expiresAt: data.demo.demo_expires_at || null
+          };
+          if (!state.demoMode.active) {
+            state.pairs.forEach(p => {
+              p.status = 'Paused';
+              p.calls = 0;
+              p.positionUsdt = 0;
+              p.baseQty = 0;
+              p.avgEntryPrice = 0;
+            });
+          }
+          updateDemoBannerUI();
+          renderPairs();
+          showToast(
+            state.demoMode.active
+              ? '24-Hour $10,000 Paper Sandbox Active! Tap Start on any coin.'
+              : '24-Hour Demo Sandbox ended — switched back to Real Spot Mode',
+            'emerald'
+          );
+        } else {
+          updateDemoBannerUI();
+          showToast(data.error || 'Could not toggle demo mode', 'rose');
+        }
+      } catch (e) {
+        if (btn) btn.disabled = false;
+        updateDemoBannerUI();
+        showToast('Unable to reach server', 'rose');
       }
     }
 
@@ -3502,6 +3640,15 @@
             state.user.fuelBalance = Number(data.wallet.gas_balance ?? 0);
             state.user.commissionBalance = Number(data.wallet.commission_balance ?? 0);
             state.user.cumProfit = Number(data.wallet.total_trading_profit ?? 0);
+            const demoActive = Boolean(data.wallet.demo_mode_active && data.wallet.demo_expires_at && new Date(data.wallet.demo_expires_at) > new Date());
+            state.demoMode = {
+              active: demoActive,
+              usdtBalance: demoActive ? Number(data.wallet.demo_usdt_balance || 0) : 0,
+              gasBalance: demoActive ? Number(data.wallet.demo_gas_balance || 0) : 0,
+              profitUsdt: demoActive ? Number(data.wallet.demo_profit_usdt || 0) : 0,
+              expiresAt: demoActive ? data.wallet.demo_expires_at : null
+            };
+            updateDemoBannerUI();
           }
           if (data.todayProfit !== undefined) {
             state.user.todayProfit = Number(data.todayProfit || 0);
@@ -3515,6 +3662,8 @@
               const prev = state.boundExchanges[b.exchange_name] || {};
               freshBound[b.exchange_name] = {
                 boundAt: Date.now(),
+                apiKey: prev.apiKey || '',
+                apiSecret: prev.apiSecret || '',
                 maskedKey: (b.api_key || '').slice(0, 6) + '••••••',
                 spotUsdtNum: prev.spotUsdtNum ?? null,
                 spotUsdt: prev.spotUsdt || 'Verified'
@@ -3700,7 +3849,6 @@
     }
 
     async function fetchAllExchangeCoinsLive() {
-      // Single initial snapshot via 0-ban public vision CDN or server WebSocket cache
       const snapshotUrls = [
         'https://data-api.binance.vision/api/v3/ticker/24hr',
         `${state.backendUrl}/api/v1/market/tickers`
@@ -3717,7 +3865,6 @@
         } catch (e) {}
       }
 
-      // Connect 0-weight Binance WebSocket Stream (!ticker@arr) for continuous live updates
       if (binanceLiveWs && (binanceLiveWs.readyState === WebSocket.OPEN || binanceLiveWs.readyState === WebSocket.CONNECTING)) {
         return;
       }
