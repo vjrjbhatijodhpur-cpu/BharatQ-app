@@ -938,10 +938,15 @@ async function scanAllUserTrc20SubWallets() {
 const liveMarketPriceMap = new Map();
 const priceHistoryRingMap = new Map();
 let marketWs = null;
+let marketMiniWs = null;
 let serverWsEndpointIdx = 0;
 const SERVER_WS_ENDPOINTS = [
   'wss://data-stream.binance.vision/ws/!ticker@arr',
   'wss://stream.binance.com:9443/ws/!ticker@arr'
+];
+const SERVER_MINI_WS_ENDPOINTS = [
+  'wss://data-stream.binance.vision/ws/!miniTicker@arr',
+  'wss://stream.binance.com:9443/ws/!miniTicker@arr'
 ];
 let lastWsBroadcastMs = 0;
 const sseClients = new Set();
@@ -960,54 +965,75 @@ function computeLiveRsi14(prices) {
   return 100 - (100 / (1 + rs));
 }
 
+function ingestServerMarketArray(arr) {
+  if (!Array.isArray(arr)) return;
+  const compactBatch = [];
+  for (const item of arr) {
+    const sym = item.s || '';
+    if (!sym.endsWith('USDT')) continue;
+    const price = parseFloat(item.c);
+    if (!price || price <= 0) continue;
+
+    const prev = liveMarketPriceMap.get(sym);
+    const openP = parseFloat(item.o || '0');
+    const changePct = item.P !== undefined
+      ? parseFloat(item.P)
+      : (openP > 0 ? ((price - openP) / openP) * 100 : (prev?.changePct || 0));
+    const quoteVol = parseFloat(item.q || '0') || prev?.quoteVol || 0;
+
+    liveMarketPriceMap.set(sym, { price, changePct, quoteVol, updatedAt: Date.now() });
+    const hist = priceHistoryRingMap.get(sym) || [];
+    if (hist.length === 0 || hist[hist.length - 1] !== price) {
+      hist.push(price);
+      if (hist.length > 30) hist.shift();
+      priceHistoryRingMap.set(sym, hist);
+    }
+    compactBatch.push({ s: sym, c: price, P: changePct, q: quoteVol });
+  }
+
+  if (sseClients.size > 0 && compactBatch.length > 0 && Date.now() - lastWsBroadcastMs >= 80) {
+    lastWsBroadcastMs = Date.now();
+    const payload = `data: ${JSON.stringify(compactBatch)}\n\n`;
+    for (const clientRes of sseClients) {
+      try { clientRes.write(payload); } catch (e) { sseClients.delete(clientRes); }
+    }
+  }
+}
+
 function startBinanceAllMarketStream() {
-  if (marketWs && (marketWs.readyState === WebSocket.OPEN || marketWs.readyState === WebSocket.CONNECTING)) return;
-  const wsEndpoint = SERVER_WS_ENDPOINTS[serverWsEndpointIdx % SERVER_WS_ENDPOINTS.length];
-  serverWsEndpointIdx++;
-  try {
-    marketWs = new WebSocket(wsEndpoint);
-    marketWs.on('message', (raw) => {
-      try {
-        const arr = JSON.parse(raw.toString());
-        if (!Array.isArray(arr)) return;
-        const compactBatch = [];
-        for (const item of arr) {
-          const sym = item.s || '';
-          if (!sym.endsWith('USDT')) continue;
-          const price = parseFloat(item.c);
-          const changePct = parseFloat(item.P || '0');
-          const quoteVol = parseFloat(item.q || '0');
-          if (!price || price <= 0) continue;
+  const idx = serverWsEndpointIdx++;
+  if (!marketMiniWs || marketMiniWs.readyState === WebSocket.CLOSED) {
+    try {
+      marketMiniWs = new WebSocket(SERVER_MINI_WS_ENDPOINTS[idx % SERVER_MINI_WS_ENDPOINTS.length]);
+      marketMiniWs.on('message', (raw) => {
+        try { ingestServerMarketArray(JSON.parse(raw.toString())); } catch (e) {}
+      });
+      marketMiniWs.on('close', () => {
+        marketMiniWs = null;
+        setTimeout(startBinanceAllMarketStream, 2000);
+      });
+      marketMiniWs.on('error', () => {
+        try { marketMiniWs.close(); } catch (e) {}
+      });
+    } catch (e) {}
+  }
 
-          liveMarketPriceMap.set(sym, { price, changePct, quoteVol, updatedAt: Date.now() });
-          const hist = priceHistoryRingMap.get(sym) || [];
-          if (hist.length === 0 || hist[hist.length - 1] !== price) {
-            hist.push(price);
-            if (hist.length > 30) hist.shift();
-            priceHistoryRingMap.set(sym, hist);
-          }
-          compactBatch.push({ s: sym, c: price, P: changePct, q: quoteVol });
-        }
-
-        if (sseClients.size > 0 && Date.now() - lastWsBroadcastMs > 1000) {
-          lastWsBroadcastMs = Date.now();
-          const payload = `data: ${JSON.stringify(compactBatch)}\n\n`;
-          for (const clientRes of sseClients) {
-            try { clientRes.write(payload); } catch (e) { sseClients.delete(clientRes); }
-          }
-        }
-      } catch (e) {}
-    });
-
-    marketWs.on('close', () => {
-      marketWs = null;
-      setTimeout(startBinanceAllMarketStream, 3000);
-    });
-    marketWs.on('error', () => {
-      try { marketWs.close(); } catch (e) {}
-    });
-  } catch (e) {
-    setTimeout(startBinanceAllMarketStream, 4000);
+  if (!marketWs || marketWs.readyState === WebSocket.CLOSED) {
+    try {
+      marketWs = new WebSocket(SERVER_WS_ENDPOINTS[idx % SERVER_WS_ENDPOINTS.length]);
+      marketWs.on('message', (raw) => {
+        try { ingestServerMarketArray(JSON.parse(raw.toString())); } catch (e) {}
+      });
+      marketWs.on('close', () => {
+        marketWs = null;
+        setTimeout(startBinanceAllMarketStream, 3000);
+      });
+      marketWs.on('error', () => {
+        try { marketWs.close(); } catch (e) {}
+      });
+    } catch (e) {
+      setTimeout(startBinanceAllMarketStream, 4000);
+    }
   }
 }
 
@@ -1202,7 +1228,7 @@ app.get('/api/v1/health', (req, res) => {
   res.json({
     success: true,
     service: 'BharatQ Quantitative Engine (Singapore)',
-    wsConnected: Boolean(marketWs && marketWs.readyState === WebSocket.OPEN),
+    wsConnected: Boolean((marketWs && marketWs.readyState === WebSocket.OPEN) || (marketMiniWs && marketMiniWs.readyState === WebSocket.OPEN)),
     trackedPairs: liveMarketPriceMap.size,
     timestamp: new Date().toISOString()
   });
@@ -1477,6 +1503,15 @@ app.get('/api/v1/user/profile', requireAuth, async (req, res) => {
     );
 
     const stratRes = await pool.query('SELECT * FROM bot_strategies WHERE user_id = $1', [userId]);
+    const todayProfitRes = await pool.query(
+      `SELECT COALESCE(SUM(amount_usdt / 0.20), 0) AS today_net_profit
+       FROM ledger_journal
+       WHERE event_type = 'GAS_FEE_20PCT'
+         AND debit_account = $1
+         AND created_at >= DATE_TRUNC('day', NOW())`,
+      [`USER_${userId}`]
+    );
+    const todayRealProfit = Number(todayProfitRes.rows[0]?.today_net_profit || 0);
     const circlesRes = await pool.query(
       `SELECT sc.*, u.email AS owner_email, u.rank_level AS owner_rank
        FROM strategy_circles sc
@@ -1505,7 +1540,7 @@ app.get('/api/v1/user/profile', requireAuth, async (req, res) => {
       success: true,
       user,
       wallet,
-      todayProfit: Number(wallet.total_trading_profit || 0),
+      todayProfit: todayRealProfit,
       personalDepositAddress: depositAddr,
       boundExchanges: exRes.rows,
       directTeam: teamRes.rows.filter(r => r.gen_level === 1),
