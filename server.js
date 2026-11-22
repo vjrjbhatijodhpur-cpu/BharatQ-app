@@ -938,6 +938,11 @@ async function scanAllUserTrc20SubWallets() {
 const liveMarketPriceMap = new Map();
 const priceHistoryRingMap = new Map();
 let marketWs = null;
+let serverWsEndpointIdx = 0;
+const SERVER_WS_ENDPOINTS = [
+  'wss://data-stream.binance.vision/ws/!ticker@arr',
+  'wss://stream.binance.com:9443/ws/!ticker@arr'
+];
 let lastWsBroadcastMs = 0;
 const sseClients = new Set();
 
@@ -957,8 +962,10 @@ function computeLiveRsi14(prices) {
 
 function startBinanceAllMarketStream() {
   if (marketWs && (marketWs.readyState === WebSocket.OPEN || marketWs.readyState === WebSocket.CONNECTING)) return;
+  const wsEndpoint = SERVER_WS_ENDPOINTS[serverWsEndpointIdx % SERVER_WS_ENDPOINTS.length];
+  serverWsEndpointIdx++;
   try {
-    marketWs = new WebSocket('wss://data-stream.binance.vision/ws/!ticker@arr');
+    marketWs = new WebSocket(wsEndpoint);
     marketWs.on('message', (raw) => {
       try {
         const arr = JSON.parse(raw.toString());
@@ -970,7 +977,7 @@ function startBinanceAllMarketStream() {
           const price = parseFloat(item.c);
           const changePct = parseFloat(item.P || '0');
           const quoteVol = parseFloat(item.q || '0');
-          if (!price || price <= 0 || quoteVol < 10000) continue;
+          if (!price || price <= 0) continue;
 
           liveMarketPriceMap.set(sym, { price, changePct, quoteVol, updatedAt: Date.now() });
           const hist = priceHistoryRingMap.get(sym) || [];
@@ -982,7 +989,7 @@ function startBinanceAllMarketStream() {
           compactBatch.push({ s: sym, c: price, P: changePct, q: quoteVol });
         }
 
-        if (sseClients.size > 0 && Date.now() - lastWsBroadcastMs > 1200) {
+        if (sseClients.size > 0 && Date.now() - lastWsBroadcastMs > 1000) {
           lastWsBroadcastMs = Date.now();
           const payload = `data: ${JSON.stringify(compactBatch)}\n\n`;
           for (const clientRes of sseClients) {
@@ -994,13 +1001,13 @@ function startBinanceAllMarketStream() {
 
     marketWs.on('close', () => {
       marketWs = null;
-      setTimeout(startBinanceAllMarketStream, 4000);
+      setTimeout(startBinanceAllMarketStream, 3000);
     });
     marketWs.on('error', () => {
       try { marketWs.close(); } catch (e) {}
     });
   } catch (e) {
-    setTimeout(startBinanceAllMarketStream, 5000);
+    setTimeout(startBinanceAllMarketStream, 4000);
   }
 }
 
@@ -1273,6 +1280,13 @@ app.get('/api/v1/market/stream', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders?.();
+  if (liveMarketPriceMap.size > 0) {
+    const initialSnapshot = [];
+    for (const [s, info] of liveMarketPriceMap.entries()) {
+      initialSnapshot.push({ s, c: info.price, P: info.changePct || 0, q: info.quoteVol || 0 });
+    }
+    try { res.write(`data: ${JSON.stringify(initialSnapshot)}\n\n`); } catch (e) {}
+  }
   sseClients.add(res);
   req.on('close', () => sseClients.delete(res));
 });
